@@ -25,18 +25,14 @@ import optparse
 import os
 import subprocess
 import re
+import six
 import sys
-import time
-import yaml
 
 from abc import ABCMeta, abstractmethod
 
 from ansible_galaxy import exceptions
-from galaxy_client.compat import six
-from galaxy_client.config import defaults
-from galaxy_client.config import runtime
-from galaxy_client.release import __version__
-from galaxy_client.utils.path import unfrackpath
+from ansible_galaxy.config import defaults
+from ansible_galaxy.config import runtime
 from galaxy_client.utils.text import to_bytes, to_text
 
 try:
@@ -214,28 +210,6 @@ class CLI(six.with_metaclass(ABCMeta, object)):
                 self.parser.error("The number of processes (--forks) must be >= 1")
 
     @staticmethod
-    def unfrack_paths(option, opt, value, parser):
-        paths = getattr(parser.values, option.dest)
-        if paths is None:
-            paths = []
-
-        if isinstance(value, six.string_types):
-            paths[:0] = [unfrackpath(x) for x in value.split(os.pathsep) if x]
-        elif isinstance(value, list):
-            paths[:0] = [unfrackpath(x) for x in value if x]
-        else:
-            pass  # FIXME: should we raise options error?
-
-        setattr(parser.values, option.dest, paths)
-
-    @staticmethod
-    def unfrack_path(option, opt, value, parser):
-        if value != '-':
-            setattr(parser.values, option.dest, unfrackpath(value))
-        else:
-            setattr(parser.values, option.dest, value)
-
-    @staticmethod
     def base_parser(usage="", output_opts=False, runas_opts=False, meta_opts=False, runtask_opts=False, vault_opts=False, module_opts=False,
                     async_opts=False, connect_opts=False, subset_opts=False, check_opts=False, inventory_opts=False, epilog=None, fork_opts=False,
                     runas_prompt_opts=False, desc=None, basedir_opts=False, vault_rekey_opts=False):
@@ -246,18 +220,6 @@ class CLI(six.with_metaclass(ABCMeta, object)):
         parser.add_option('-v', '--verbose', dest='verbosity', default=defaults.DEFAULT_VERBOSITY, action="count",
                           help="verbose mode (-vvv for more, -vvvv to enable connection debugging)")
 
-        if module_opts:
-            parser.add_option('-M', '--module-path', dest='module_path', default=None,
-                              help="prepend colon-separated path(s) to module library (default=%s)" % defaults.DEFAULT_MODULE_PATH,
-                              action="callback", callback=CLI.unfrack_paths, type='str')
-        if runtask_opts:
-            parser.add_option('-e', '--extra-vars', dest="extra_vars", action="append",
-                              help="set additional variables as key=value or YAML/JSON, if filename prepend with @", default=[])
-
-        if basedir_opts:
-            parser.add_option('--playbook-dir', default=None, dest='basedir', action='store',
-                              help="Since this tool does not use playbooks, use this as a subsitute playbook directory."
-                                   "This sets the relative path for many features including roles/ group_vars/ etc.")
         return parser
 
     @abstractmethod
@@ -326,4 +288,3 @@ class CLI(six.with_metaclass(ABCMeta, object)):
         t = cls._CONST.sub("`" + r"\1" + "'", t)        # C(word) => `word'
 
         return t
-
