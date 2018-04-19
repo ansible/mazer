@@ -32,29 +32,23 @@ import yaml
 
 from jinja2 import Environment, FileSystemLoader
 
-# import ansible.constants as C
-# from ansible.cli import CLI
-# from ansible.galaxy import Galaxy
-# from ansible.galaxy.api import GalaxyAPI
-# from ansible.galaxy.login import GalaxyLogin
-# from ansible.galaxy.content import GalaxyContent
-# from ansible.galaxy.token import GalaxyToken
-# from ansible.module_utils._text import to_text
-
-
-from galaxy_client import base
-from galaxy_client import cli
-from galaxy_client.config import defaults
-from galaxy_client.config import runtime
-from galaxy_client.content import CONTENT_TYPES
-from galaxy_client import exceptions
-from galaxy_client.utils.text import to_text
+from ansible_galaxy_cli import cli
+from ansible_galaxy.config import defaults
+from ansible_galaxy.config import runtime
+from ansible_galaxy_cli.exceptions import cli as cli_exceptions
+from ansible_galaxy import exceptions
+from ansible_galaxy.models.context import GalaxyContext
+from ansible_galaxy.utils.text import to_text
 
 # FIXME: importing class, fix name collision later or use this style
-from galaxy_client.api import GalaxyAPI
-from galaxy_client.login import GalaxyLogin
-from galaxy_client.content import GalaxyContent
-from galaxy_client.token import GalaxyToken
+# TODO: replace flat_rest_api with a OO interface
+from ansible_galaxy.flat_rest_api.api import GalaxyAPI
+from ansible_galaxy.flat_rest_api.login import GalaxyLogin
+from ansible_galaxy.flat_rest_api.content import GalaxyContent
+from ansible_galaxy.flat_rest_api.token import GalaxyToken
+
+# FIXME: not a model...
+from ansible_galaxy.flat_rest_api.content import CONTENT_TYPES
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +102,9 @@ class GalaxyCLI(cli.CLI):
             self.parser.add_option('-i', '--ignore-errors', dest='ignore_errors', action='store_true', default=False,
                                    help='Ignore errors and continue with the next specified role.')
             self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False, help='Don\'t download roles listed as dependencies')
-            self.parser.add_option('-r', '--role-file', dest='role_file', help='A file containing a list of roles to be imported')  # FIXME - Unsure about keeping this around
+            # FIXME - Unsure about keeping this around
+            self.parser.add_option('-r', '--role-file', dest='role_file',
+                                   help='A file containing a list of roles to be imported')
             self.parser.add_option('-t', '--type', dest='content_type', default="all", help='A type of Galaxy Content to install: role, module, etc')
         elif self.action == "remove":
             self.parser.set_usage("usage: %prog remove role1 role2 ...")
@@ -158,7 +154,8 @@ class GalaxyCLI(cli.CLI):
 
         super(GalaxyCLI, self).parse()
 
-        self.galaxy = base.Galaxy(self.options)
+        # self.galaxy = base.Galaxy(self.options)
+        self.galaxy = GalaxyContext(self.options)
 
     def run(self):
 
@@ -211,16 +208,16 @@ class GalaxyCLI(cli.CLI):
 
         role_name = self.args.pop(0).strip() if self.args else None
         if not role_name:
-            raise exceptions.CliOptionsError("- no role name specified for init")
+            raise cli_exceptions.CliOptionsError("- no role name specified for init")
         role_path = os.path.join(init_path, role_name)
         if os.path.exists(role_path):
             if os.path.isfile(role_path):
                 raise exceptions.GalaxyClientError("- the path %s already exists, but is a file - aborting" % role_path)
             elif not force:
                 raise exceptions.GalaxyClientError("- the directory %s already exists."
-                                   "you can use --force to re-initialize this directory,\n"
-                                   "however it will reset any main.yml files that may have\n"
-                                   "been modified there already." % role_path)
+                                                   "you can use --force to re-initialize this directory,\n"
+                                                   "however it will reset any main.yml files that may have\n"
+                                                   "been modified there already." % role_path)
 
         inject_data = dict(
             role_name=role_name,
@@ -270,7 +267,7 @@ class GalaxyCLI(cli.CLI):
                 if not os.path.exists(dir_path):
                     os.makedirs(dir_path)
 
-        display.display("- %s was created successfully" % role_name)
+        self.display("- %s was created successfully" % role_name)
 
     def execute_info(self):
         """
@@ -279,7 +276,7 @@ class GalaxyCLI(cli.CLI):
 
         if len(self.args) == 0:
             # the user needs to specify a role
-            raise exceptions.CliOptionsError("- you must specify a user/role name")
+            raise cli_exceptions.CliOptionsError("- you must specify a user/role name")
 
         roles_path = self.options.roles_path
 
@@ -334,7 +331,7 @@ class GalaxyCLI(cli.CLI):
         #
         # Fix content_path if this was not provided
         if self.options.content_type != "all" and self.options.content_type not in CONTENT_TYPES:
-            raise exceptions.CliOptionsError(
+            raise cli_exceptions.CliOptionsError(
                 "- invalid Galaxy Content type provided: %s\n  - Expected one of: %s" %
                 (self.options.content_type, ", ".join(CONTENT_TYPES))
             )
@@ -349,7 +346,7 @@ class GalaxyCLI(cli.CLI):
 
         if len(self.args) == 0 and self.galaxy_file is None:
             # the user needs to specify one of either --role-file or specify a single user/role name
-            raise exceptions.CliOptionsError("- you must specify user/content name or a ansible-galaxy.yml file")
+            raise cli_exceptions.CliOptionsError("- you must specify user/content name or a ansible-galaxy.yml file")
 
         no_deps = self.options.no_deps
         force = self.options.force
@@ -396,8 +393,7 @@ class GalaxyCLI(cli.CLI):
                             continue
                     else:
                         if not force:
-                            # FIXME: where does 'role' come from?
-                            self.display('- %s is already installed, skipping.' % str(role))
+                            self.display('- %s is already installed, skipping.' % str(content))
                             continue
 
             try:
@@ -415,7 +411,7 @@ class GalaxyCLI(cli.CLI):
             if content.type == "role":
                 if not no_deps and installed:
                     if not content.metadata:
-                        log.warning("Meta file %s is empty. Skipping dependencies.", role.path)
+                        log.warning("Meta file %s is empty. Skipping dependencies.", content.path)
                     else:
                         role_dependencies = content.metadata.get('dependencies') or []
                         for dep in role_dependencies:
@@ -435,7 +431,7 @@ class GalaxyCLI(cli.CLI):
                             else:
                                 if dep_role.install_info['version'] != dep_role.version:
                                     log.warning('- dependency %s from role %s differs from already installed version (%s), skipping',
-                                                    str(dep_role), role.name, dep_role.install_info['version'])
+                                                str(dep_role), content.name, dep_role.install_info['version'])
                                 else:
                                     self.display('- dependency %s is already installed, skipping.' % dep_role.name)
 
@@ -454,7 +450,7 @@ class GalaxyCLI(cli.CLI):
 
         if len(self.args) == 0 and role_file is None:
             # the user needs to specify one of either --role-file or specify a single user/role name
-            raise exceptions.CliOptionsError("- you must specify a user/role name or a roles file")
+            raise cli_exceptions.CliOptionsError("- you must specify a user/role name or a roles file")
 
         no_deps = self.options.no_deps
         force = self.options.force
@@ -511,43 +507,43 @@ class GalaxyCLI(cli.CLI):
         for role in roles_left:
             # only process roles in roles files when names matches if given
             if role_file and self.args and role.name not in self.args:
-                display.vvv('Skipping role %s' % role.name)
+                log.info('Skipping role %s', role.name)
                 continue
 
-            display.vvv('Processing role %s ' % role.name)
+            log.info('Processing role %s ', role.name)
 
             # query the galaxy API for the role data
 
             if role.install_info is not None:
                 if role.install_info['version'] != role.version or force:
                     if force:
-                        display.display('- changing role %s from %s to %s' %
-                                        (role.name, role.install_info['version'], role.version or "unspecified"))
+                        self.display('- changing role %s from %s to %s' %
+                                     role.name, role.install_info['version'], role.version or "unspecified")
                         role.remove()
                     else:
-                        display.warning('- %s (%s) is already installed - use --force to change version to %s' %
-                                        (role.name, role.install_info['version'], role.version or "unspecified"))
+                        log.warn('- %s (%s) is already installed - use --force to change version to %s',
+                                 role.name, role.install_info['version'], role.version or "unspecified")
                         continue
                 else:
                     if not force:
-                        display.display('- %s is already installed, skipping.' % str(role))
+                        self.display('- %s is already installed, skipping.' % str(role))
                         continue
 
             try:
                 installed = role.install()
             except exceptions.GalaxyClientError as e:
-                display.warning("- %s was NOT installed successfully: %s " % (role.name, str(e)))
+                log.warn("- %s was NOT installed successfully: %s ", role.name, str(e))
                 self.exit_without_ignore()
                 continue
 
             # install dependencies, if we want them
             if not no_deps and installed:
                 if not role.metadata:
-                    display.warning("Meta file %s is empty. Skipping dependencies." % role.path)
+                    log.warn("Meta file %s is empty. Skipping dependencies.", role.path)
                 else:
                     role_dependencies = role.metadata.get('dependencies') or []
                     for dep in role_dependencies:
-                        display.debug('Installing dep %s' % dep)
+                        log.debug('Installing dep %s', dep)
                         dep_info = GalaxyContent.yaml_parse(dep)
                         dep_role = GalaxyContent(self.galaxy, **dep_info)
                         if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
@@ -556,19 +552,19 @@ class GalaxyCLI(cli.CLI):
                             continue
                         if dep_role.install_info is None:
                             if dep_role not in roles_left:
-                                display.display('- adding dependency: %s' % str(dep_role))
+                                self.display('- adding dependency: %s' % str(dep_role))
                                 roles_left.append(dep_role)
                             else:
-                                display.display('- dependency %s already pending installation.' % dep_role.name)
+                                self.display('- dependency %s already pending installation.' % dep_role.name)
                         else:
                             if dep_role.install_info['version'] != dep_role.version:
-                                display.warning('- dependency %s from role %s differs from already installed version (%s), skipping' %
-                                                (str(dep_role), role.name, dep_role.install_info['version']))
+                                log.warning('- dependency %s from role %s differs from already installed version (%s), skipping' %
+                                            str(dep_role), role.name, dep_role.install_info['version'])
                             else:
-                                display.display('- dependency %s is already installed, skipping.' % dep_role.name)
+                                self.display('- dependency %s is already installed, skipping.' % dep_role.name)
 
             if not installed:
-                display.warning("- %s was NOT installed successfully." % role.name)
+                log.warning("- %s was NOT installed successfully.", role.name)
                 self.exit_without_ignore()
 
         return 0
@@ -579,15 +575,15 @@ class GalaxyCLI(cli.CLI):
         """
 
         if len(self.args) == 0:
-            raise exceptions.CliOptionsError('- you must specify at least one role to remove.')
+            raise cli_exceptions.CliOptionsError('- you must specify at least one role to remove.')
 
         for role_name in self.args:
             role = GalaxyContent(self.galaxy, role_name)
             try:
                 if role.remove():
-                    display.display('- successfully removed %s' % role_name)
+                    self.display('- successfully removed %s' % role_name)
                 else:
-                    display.display('- %s is not installed, skipping.' % role_name)
+                    self.display('- %s is not installed, skipping.' % role_name)
             except Exception as e:
                 raise exceptions.GalaxyClientError("Failed to remove role %s: %s" % (role_name, str(e)))
 
@@ -599,7 +595,7 @@ class GalaxyCLI(cli.CLI):
         """
 
         if len(self.args) > 1:
-            raise exceptions.CliOptionsError("- please specify only one role to list, or specify no roles to see a full list")
+            raise cli_exceptions.CliOptionsError("- please specify only one role to list, or specify no roles to see a full list")
 
         if len(self.args) == 1:
             # show only the request role, if it exists
@@ -613,18 +609,18 @@ class GalaxyCLI(cli.CLI):
                 if not version:
                     version = "(unknown version)"
                 # show some more info about single roles here
-                display.display("- %s, %s" % (name, version))
+                self.display("- %s, %s" % (name, version))
             else:
-                display.display("- the role %s was not found" % name)
+                self.display("- the role %s was not found" % name)
         else:
             # show all valid roles in the roles_path directory
             roles_path = self.options.roles_path
             for path in roles_path:
                 role_path = os.path.expanduser(path)
                 if not os.path.exists(role_path):
-                    raise exceptions.CliOptionsError("- the path %s does not exist. Please specify a valid path with --roles-path" % role_path)
+                    raise cli_exceptions.CliOptionsError("- the path %s does not exist. Please specify a valid path with --roles-path" % role_path)
                 elif not os.path.isdir(role_path):
-                    raise exceptions.CliOptionsError("- %s exists, but it is not a directory. Please specify a valid path with --roles-path" % role_path)
+                    raise cli_exceptions.CliOptionsError("- %s exists, but it is not a directory. Please specify a valid path with --roles-path" % role_path)
                 path_files = os.listdir(role_path)
                 for path_file in path_files:
                     gr = GalaxyContent(self.galaxy, path_file)
@@ -635,7 +631,7 @@ class GalaxyCLI(cli.CLI):
                             version = install_info.get("version", None)
                         if not version:
                             version = "(unknown version)"
-                        display.display("- %s, %s" % (path_file, version))
+                        self.display("- %s, %s" % (path_file, version))
         return 0
 
     def execute_search(self):
@@ -656,7 +652,7 @@ class GalaxyCLI(cli.CLI):
                                          tags=self.options.galaxy_tags, author=self.options.author, page_size=page_size)
 
         if response['count'] == 0:
-            display.display("No roles match your search.", color=runtime.COLOR_ERROR)
+            self.display("No roles match your search.")
             return True
 
         data = [u'']
@@ -705,7 +701,7 @@ class GalaxyCLI(cli.CLI):
         token = GalaxyToken()
         token.set(galaxy_response['token'])
 
-        display.display("Successfully logged into Galaxy as %s" % galaxy_response['username'])
+        self.display("Successfully logged into Galaxy as %s" % galaxy_response['username'])
         return 0
 
     def execute_import(self):
@@ -733,19 +729,19 @@ class GalaxyCLI(cli.CLI):
 
             if len(task) > 1:
                 # found multiple roles associated with github_user/github_repo
-                display.display("WARNING: More than one Galaxy role associated with Github repo %s/%s." % (github_user, github_repo),
-                                color='yellow')
-                display.display("The following Galaxy roles are being updated:" + u'\n', color=runtime.COLOR_CHANGED)
+                self.display("WARNING: More than one Galaxy role associated with Github repo %s/%s." % (github_user, github_repo),
+                             color='yellow')
+                self.display("The following Galaxy roles are being updated:" + u'\n', color=runtime.COLOR_CHANGED)
                 for t in task:
-                    display.display('%s.%s' % (t['summary_fields']['role']['namespace'], t['summary_fields']['role']['name']), color=runtime.COLOR_CHANGED)
-                display.display(u'\nTo properly namespace this role, remove each of the above and re-import %s/%s from scratch' % (github_user, github_repo),
-                                color=runtime.COLOR_CHANGED)
+                    self.display('%s.%s' % (t['summary_fields']['role']['namespace'], t['summary_fields']['role']['name']), color=runtime.COLOR_CHANGED)
+                    self.display(u'\nTo properly namespace this role, remove each of the above and re-import %s/%s from scratch' % (github_user, github_repo),
+                                 color=runtime.COLOR_CHANGED)
                 return 0
             # found a single role as expected
-            display.display("Successfully submitted import request %d" % task[0]['id'])
+            self.display("Successfully submitted import request %d" % task[0]['id'])
             if not self.options.wait:
-                display.display("Role name: %s" % task[0]['summary_fields']['role']['name'])
-                display.display("Repo: %s/%s" % (task[0]['github_user'], task[0]['github_repo']))
+                self.display("Role name: %s" % task[0]['summary_fields']['role']['name'])
+                self.display("Repo: %s/%s" % (task[0]['github_user'], task[0]['github_repo']))
 
         if self.options.check_status or self.options.wait:
             # Get the status of the import
@@ -755,7 +751,7 @@ class GalaxyCLI(cli.CLI):
                 task = self.api.get_import_task(task_id=task[0]['id'])
                 for msg in task[0]['summary_fields']['task_messages']:
                     if msg['id'] not in msg_list:
-                        display.display(msg['message_text'], color=colors[msg['message_type']])
+                        self.display(msg['message_text'], color=colors[msg['message_type']])
                         msg_list.append(msg['id'])
                 if task[0]['state'] in ['SUCCESS', 'FAILED']:
                     finished = True
@@ -772,19 +768,19 @@ class GalaxyCLI(cli.CLI):
             secrets = self.api.list_secrets()
             if len(secrets) == 0:
                 # None found
-                display.display("No integrations found.")
+                self.display("No integrations found.")
                 return 0
-            display.display(u'\n' + "ID         Source     Repo", color=runtime.COLOR_OK)
-            display.display("---------- ---------- ----------", color=runtime.COLOR_OK)
+            self.display(u'\n' + "ID         Source     Repo", color=runtime.COLOR_OK)
+            self.display("---------- ---------- ----------", color=runtime.COLOR_OK)
             for secret in secrets:
-                display.display("%-10s %-10s %s/%s" % (secret['id'], secret['source'], secret['github_user'],
-                                                       secret['github_repo']), color=runtime.COLOR_OK)
+                self.display("%-10s %-10s %s/%s" % (secret['id'], secret['source'], secret['github_user'],
+                                                    secret['github_repo']), color=runtime.COLOR_OK)
             return 0
 
         if self.options.remove_id:
             # Remove a secret
             self.api.remove_secret(self.options.remove_id)
-            display.display("Secret removed. Integrations using this secret will not longer work.", color=runtime.COLOR_OK)
+            self.display("Secret removed. Integrations using this secret will not longer work.", color=runtime.COLOR_OK)
             return 0
 
         if len(self.args) < 4:
@@ -796,7 +792,7 @@ class GalaxyCLI(cli.CLI):
         source = self.args.pop()
 
         resp = self.api.add_secret(source, github_user, github_repo, secret)
-        display.display("Added integration for %s %s/%s" % (resp['source'], resp['github_user'], resp['github_repo']))
+        self.display("Added integration for %s %s/%s" % (resp['source'], resp['github_user'], resp['github_repo']))
 
         return 0
 
@@ -811,12 +807,12 @@ class GalaxyCLI(cli.CLI):
         resp = self.api.delete_role(github_user, github_repo)
 
         if len(resp['deleted_roles']) > 1:
-            display.display("Deleted the following roles:")
-            display.display("ID     User            Name")
-            display.display("------ --------------- ----------")
+            self.display("Deleted the following roles:")
+            self.display("ID     User            Name")
+            self.display("------ --------------- ----------")
             for role in resp['deleted_roles']:
-                display.display("%-8s %-15s %s" % (role.id, role.namespace, role.name))
+                self.display("%-8s %-15s %s" % (role.id, role.namespace, role.name))
 
-        display.display(resp['status'])
+        self.display(resp['status'])
 
         return True
