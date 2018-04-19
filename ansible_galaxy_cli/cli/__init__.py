@@ -28,10 +28,10 @@ import six
 
 from abc import ABCMeta, abstractmethod
 
-from ansible_galaxy import exceptions
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import runtime
 from ansible_galaxy.utils.text import to_text
+from ansible_galaxy_cli.exceptions import cli as cli_exceptions
 
 log = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
             tmp_parser = InvalidOptsParser(self.parser)
             tmp_options, tmp_args = tmp_parser.parse_args(self.args)
             if not(hasattr(tmp_options, 'help') and tmp_options.help) or (hasattr(tmp_options, 'version') and tmp_options.version):
-                raise exceptions.CliOptionsError("Missing required action")
+                raise cli_exceptions.CliOptionsError("Missing required action")
 
     def execute(self):
         """
@@ -211,7 +211,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
         ''' create an options parser for most ansible scripts '''
 
         # base opts
-        parser = SortedOptParser(usage, version=CLI.version("%prog"), description=desc, epilog=epilog)
+        parser = SortedOptParser(usage,  description=desc, epilog=epilog)
         parser.add_option('-v', '--verbose', dest='verbosity', default=defaults.DEFAULT_VERBOSITY, action="count",
                           help="verbose mode (-vvv for more, -vvvv to enable connection debugging)")
 
@@ -244,6 +244,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
 
     # FIXME: replace with output callback
     def display(self, *args, **kwargs):
+        kwargs.pop('color')
         print(*args, **kwargs)
 
     @classmethod
