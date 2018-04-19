@@ -242,6 +242,10 @@ class CLI(six.with_metaclass(ABCMeta, object)):
         self.options, self.args = self.parser.parse_args(self.args[1:])
         # process inventory options except for CLIs that require their own processing
 
+    # FIXME: replace with output callback
+    def display(self, *args, **kwargs):
+        print(*args, **kwargs)
+
     @classmethod
     def tty_ify(cls, text):
 
