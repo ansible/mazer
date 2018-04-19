@@ -24,18 +24,16 @@ __metaclass__ = type
 
 import getpass
 import json
+import logging
 
-from galaxy_client.compat import six
-from galaxy_client.compat.six.moves.urllib.error import HTTPError
-from galaxy_client import exceptions
-from galaxy_client.remove_me.urls import open_url
-from galaxy_client.utils.color import stringc
+import six
+from six.moves.urllib.error import HTTPError
 
-try:
-    from __main__ import display
-except ImportError:
-    from ansible.utils.display import Display
-    display = Display()
+from ansible_galaxy import exceptions
+from ansible_galaxy.flat_rest_api.urls import open_url
+
+
+log = logging.getLogger(__name__)
 
 
 class GalaxyLogin(object):
@@ -48,17 +46,20 @@ class GalaxyLogin(object):
         self.github_username = None
         self.github_password = None
 
+        self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+
         if github_token is None:
             self.get_credentials()
 
     def get_credentials(self):
-        display.display(u'\n\n' + "We need your " + stringc("Github login", 'bright cyan') +
-                        " to identify you.", screen_only=True)
-        display.display("This information will " + stringc("not be sent to Galaxy", 'bright cyan') +
-                        ", only to " + stringc("api.github.com.", "yellow"), screen_only=True)
-        display.display("The password will not be displayed." + u'\n\n', screen_only=True)
-        display.display("Use " + stringc("--github-token", 'yellow') +
-                        " if you do not want to enter your password." + u'\n\n', screen_only=True)
+        # FIXME(alikins) replace with a display callback
+        print(u'\n\n' + "We need your " + 'Github login' +
+              " to identify you.")
+        print("This information will " + "not be sent to Galaxy" +
+              ", only to " + "api.github.com.")
+        print("The password will not be displayed." + u'\n\n')
+        print("Use " + "--github-token" +
+              " if you do not want to enter your password." + u'\n\n')
 
         try:
             self.github_username = six.input("Github Username: ")
@@ -87,11 +88,12 @@ class GalaxyLogin(object):
 
         for token in tokens:
             if token['note'] == 'ansible-galaxy login':
-                display.vvvvv('removing token: %s' % token['token_last_eight'])
+                self.log.debug('removing token: %s', token['token_last_eight'])
                 try:
                     open_url('https://api.github.com/authorizations/%d' % token['id'], url_username=self.github_username,
                              url_password=self.github_password, method='DELETE', force_basic_auth=True)
                 except HTTPError as e:
+                    self.log.exception(e)
                     res = json.load(e)
                     raise exceptions.GalaxyClientError(res['message'])
 
@@ -105,6 +107,7 @@ class GalaxyLogin(object):
             data = json.load(open_url(self.GITHUB_AUTH, url_username=self.github_username,
                              url_password=self.github_password, force_basic_auth=True, data=args))
         except HTTPError as e:
+            self.log.exception(e)
             res = json.load(e)
             raise exceptions.GalaxyClientError(res['message'])
         return data['token']

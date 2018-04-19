@@ -22,39 +22,35 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import logging
 import json
+import six
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.parse import quote as urlquote, urlencode
 
-
-from galaxy_client.token import GalaxyToken
-from galaxy_client.compat import six
-from galaxy_client.compat.six.moves.urllib.error import HTTPError
-from galaxy_client.compat.six.moves.urllib.parse import quote as urlquote, urlencode
-from galaxy_client.config import runtime
-from galaxy_client import exceptions
-from galaxy_client.utils.text import to_native, to_text
+from ansible_galaxy.flat_rest_api.token import GalaxyToken
+from ansible_galaxy.config import runtime
+from ansible_galaxy import exceptions
+from ansible_galaxy.utils.text import to_native, to_text
 
 # FIXME: would be nice to just use requests, or better, some async https client
-from galaxy_client.remove_me.urls import open_url
+from ansible_galaxy.flat_rest_api.urls import open_url
 
-try:
-    from __main__ import display
-except ImportError:
-    from ansible.utils.display import Display
-    display = Display()
+log = logging.getLogger(__name__)
 
 
 def g_connect(method):
     ''' wrapper to lazily initialize connection info to galaxy '''
     def wrapped(self, *args, **kwargs):
         if not self.initialized:
-            display.vvvv("Initial connection to galaxy_server: %s" % self._api_server)
+            log.debug("Initial connection to galaxy_server: %s", self._api_server)
             server_version = self._get_server_api_version()
             if server_version not in self.SUPPORTED_VERSIONS:
                 raise exceptions.GalaxyClientError("Unsupported Galaxy server API version: %s" % server_version)
 
             self.baseurl = '%s/api/%s' % (self._api_server, server_version)
             self.version = server_version  # for future use
-            display.vvvv("Base API: %s" % self.baseurl)
+            log.debug("Base API: %s", self.baseurl)
             self.initialized = True
         return method(self, *args, **kwargs)
     return wrapped
@@ -73,8 +69,9 @@ class GalaxyAPI(object):
         self.baseurl = None
         self.version = None
         self.initialized = False
+        self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
-        display.debug('Validate TLS certificates: %s' % self._validate_certs)
+        self.log.debug('Validate TLS certificates: %s', self._validate_certs)
 
         # set the API server
         if galaxy.options.api_server != runtime.GALAXY_SERVER:
@@ -91,7 +88,7 @@ class GalaxyAPI(object):
         if args and not headers:
             headers = self.__auth_header()
         try:
-            display.vvv(url)
+            self.log.info(url)
             resp = open_url(url, data=args, validate_certs=self._validate_certs, headers=headers, method=method,
                             timeout=20)
             data = json.loads(to_text(resp.read(), errors='surrogate_or_strict'))
@@ -188,8 +185,9 @@ class GalaxyAPI(object):
             user_name = ".".join(parts[0:-1])
             role_name = parts[-1]
             if notify:
-                display.display("- downloading role '%s', owned by %s" % (role_name, user_name))
-        except:
+                self.log.info("- downloading role '%s', owned by %s", role_name, user_name)
+        except Exception as e:
+            self.log.exception(e)
             raise exceptions.GalaxyClientError("Invalid role name (%s). Specify role as format: username.rolename" % role_name)
 
         url = '%s/roles/?owner__username=%s&name=%s' % (self.baseurl, user_name, role_name)
@@ -216,7 +214,8 @@ class GalaxyAPI(object):
                 results += data['results']
                 done = (data.get('next_link', None) is None)
             return results
-        except:
+        except Exception as e:
+            self.log.exception(e)
             return None
 
     @g_connect
@@ -241,6 +240,7 @@ class GalaxyAPI(object):
                 done = (data.get('next_link', None) is None)
             return results
         except Exception as error:
+            self.log.exception(error)
             raise exceptions.GalaxyClientError("Failed to download the %s list: %s" % (what, str(error)))
 
     @g_connect

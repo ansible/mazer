@@ -21,16 +21,13 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import logging
 import os
 from stat import S_IRUSR, S_IWUSR
 
 import yaml
 
-try:
-    from __main__ import display
-except ImportError:
-    from ansible.utils.display import Display
-    display = Display()
+log = logging.getLogger(__name__)
 
 
 class GalaxyToken(object):
@@ -38,19 +35,21 @@ class GalaxyToken(object):
 
     def __init__(self):
         self.file = os.path.expanduser("~") + '/.ansible_galaxy'
+        self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+
         self.config = yaml.safe_load(self.__open_config_for_read())
         if not self.config:
             self.config = {}
 
     def __open_config_for_read(self):
         if os.path.isfile(self.file):
-            display.vvv('Opened %s' % self.file)
+            self.log.info('Opened %s', self.file)
             return open(self.file, 'r')
         # config.yml not found, create and chomd u+rw
         f = open(self.file, 'w')
         f.close()
         os.chmod(self.file, S_IRUSR | S_IWUSR)  # owner has +rw
-        display.vvv('Created %s' % self.file)
+        self.log.info('Created %s', self.file)
         return open(self.file, 'r')
 
     def set(self, token):
