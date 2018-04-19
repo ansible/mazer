@@ -39,7 +39,7 @@ setup(
     include_package_data=True,
     keywords='ansible_galaxy_cli',
     name='ansible_galaxy_cli',
-    packages=find_packages(include=['ansible_galaxy_cli']),
+    packages=find_packages(include=['ansible_galaxy', 'ansible_galaxy_cli']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
