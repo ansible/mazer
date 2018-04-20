@@ -108,6 +108,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
         self.parser = None
         self.action = None
         self.callback = callback
+        self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
     def set_action(self):
         """
@@ -244,7 +245,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
 
     # FIXME: replace with output callback
     def display(self, *args, **kwargs):
-        kwargs.pop('color')
+        kwargs.pop('color', None)
         print(*args, **kwargs)
 
     @classmethod

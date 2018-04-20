@@ -35,8 +35,8 @@ from jinja2 import Environment, FileSystemLoader
 from ansible_galaxy_cli import cli
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import runtime
-from ansible_galaxy_cli.exceptions import cli as cli_exceptions
 from ansible_galaxy import exceptions
+from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.utils.text import to_text
 
@@ -170,8 +170,9 @@ class GalaxyCLI(cli.CLI):
         option --ignore-errors was specified
         """
         if not self.options.ignore_errors:
-            raise exceptions.GalaxyClientError('- you can use --ignore-errors to skip failed roles and finish processing the list.')
+            raise cli_exceptions.GalaxyCliError('- you can use --ignore-errors to skip failed roles and finish processing the list.')
 
+    # TODO: move to a repr for Role?
     def _display_role_info(self, role_info):
 
         text = [u"", u"Role: %s" % to_text(role_info['name'])]
@@ -197,6 +198,7 @@ class GalaxyCLI(cli.CLI):
 # execute actions
 ############################
 
+    # TODO: most of this logic should be out of cli class
     def execute_init(self):
         """
         creates the skeleton framework of a role that complies with the galaxy metadata format.
@@ -212,9 +214,9 @@ class GalaxyCLI(cli.CLI):
         role_path = os.path.join(init_path, role_name)
         if os.path.exists(role_path):
             if os.path.isfile(role_path):
-                raise exceptions.GalaxyClientError("- the path %s already exists, but is a file - aborting" % role_path)
+                raise cli_exceptions.GalaxyCliError("- the path %s already exists, but is a file - aborting" % role_path)
             elif not force:
-                raise exceptions.GalaxyClientError("- the directory %s already exists."
+                raise cli_exceptions.GalaxyCliError("- the directory %s already exists."
                                                    "you can use --force to re-initialize this directory,\n"
                                                    "however it will reset any main.yml files that may have\n"
                                                    "been modified there already." % role_path)
@@ -245,6 +247,7 @@ class GalaxyCLI(cli.CLI):
 
         template_env = Environment(loader=FileSystemLoader(role_skeleton))
 
+        # TODO: mv elsewhere, this is main role install logic
         for root, dirs, files in os.walk(role_skeleton, topdown=True):
             rel_root = os.path.relpath(root, role_skeleton)
             in_templates_dir = rel_root.split(os.sep, 1)[0] == 'templates'
@@ -398,7 +401,7 @@ class GalaxyCLI(cli.CLI):
 
             try:
                 installed = content.install()
-            except exceptions.GalaxyClientError as e:
+            except cli_exceptions.GalaxyCliError as e:
                 log.warning("- %s was NOT installed successfully: %s ", content.name, str(e))
                 self.exit_without_ignore()
                 continue
@@ -463,17 +466,17 @@ class GalaxyCLI(cli.CLI):
                     try:
                         required_roles = yaml.safe_load(f.read())
                     except Exception as e:
-                        raise exceptions.GalaxyClientError("Unable to load data from the requirements file: %s" % role_file)
+                        raise cli_exceptions.GalaxyCliError("Unable to load data from the requirements file: %s" % role_file)
 
                     if required_roles is None:
-                        raise exceptions.GalaxyClientError("No roles found in file: %s" % role_file)
+                        raise cli_exceptions.GalaxyCliError("No roles found in file: %s" % role_file)
 
                     for role in required_roles:
                         if "include" not in role:
                             role = GalaxyContent.yaml_parse(role)
                             log.info("found role %s in yaml file", str(role))
                             if "name" not in role and "scm" not in role:
-                                raise exceptions.GalaxyClientError("Must specify name or src for role")
+                                raise cli_exceptions.GalaxyCliError("Must specify name or src for role")
                             roles_left.append(GalaxyContent(self.galaxy, **role))
                         else:
                             with open(role["include"]) as f_include:
@@ -484,7 +487,7 @@ class GalaxyCLI(cli.CLI):
                                     ]
                                 except Exception as e:
                                     msg = "Unable to load data from the include requirements file: %s %s"
-                                    raise exceptions.GalaxyClientError(msg % (role_file, e))
+                                    raise cli_exceptions.GalaxyCliError(msg % (role_file, e))
                 else:
                     log.warn("DEPRECATED going forward only the yaml format will be supported (version='%s')", "2.6")
                     # roles listed in a file, one per line
@@ -496,7 +499,7 @@ class GalaxyCLI(cli.CLI):
                         roles_left.append(GalaxyContent(self.galaxy, **role))
                 f.close()
             except (IOError, OSError) as e:
-                raise exceptions.GalaxyClientError('Unable to open %s: %s' % (role_file, str(e)))
+                raise cli_exceptions.GalaxyCliError('Unable to open %s: %s' % (role_file, str(e)))
         else:
             # roles were specified directly, so we'll just go out grab them
             # (and their dependencies, unless the user doesn't want us to).
@@ -531,7 +534,8 @@ class GalaxyCLI(cli.CLI):
 
             try:
                 installed = role.install()
-            except exceptions.GalaxyClientError as e:
+            except exceptions.GalaxyError as e:
+                self.log.exception(e)
                 log.warn("- %s was NOT installed successfully: %s ", role.name, str(e))
                 self.exit_without_ignore()
                 continue
@@ -585,7 +589,7 @@ class GalaxyCLI(cli.CLI):
                 else:
                     self.display('- %s is not installed, skipping.' % role_name)
             except Exception as e:
-                raise exceptions.GalaxyClientError("Failed to remove role %s: %s" % (role_name, str(e)))
+                raise cli_exceptions.GalaxyCliError("Failed to remove role %s: %s" % (role_name, str(e)))
 
         return 0
 
@@ -646,7 +650,7 @@ class GalaxyCLI(cli.CLI):
             search = '+'.join(terms[::-1])
 
         if not search and not self.options.platforms and not self.options.galaxy_tags and not self.options.author:
-            raise exceptions.GalaxyClientError("Invalid query. At least one search term, platform, galaxy tag or author must be provided.")
+            raise cli_exceptions.GalaxyCliError("Invalid query. At least one search term, platform, galaxy tag or author must be provided.")
 
         response = self.api.search_roles(search, platforms=self.options.platforms,
                                          tags=self.options.galaxy_tags, author=self.options.author, page_size=page_size)
@@ -716,7 +720,7 @@ class GalaxyCLI(cli.CLI):
         }
 
         if len(self.args) < 2:
-            raise exceptions.GalaxyClientError("Expected a github_username and github_repository. Use --help.")
+            raise cli_exceptions.GalaxyCliError("Expected a github_username and github_repository. Use --help.")
 
         github_repo = to_text(self.args.pop(), errors='surrogate_or_strict')
         github_user = to_text(self.args.pop(), errors='surrogate_or_strict')
@@ -784,7 +788,7 @@ class GalaxyCLI(cli.CLI):
             return 0
 
         if len(self.args) < 4:
-            raise exceptions.GalaxyClientError("Missing one or more arguments. Expecting: source github_user github_repo secret")
+            raise cli_exceptions.GalaxyCliError("Missing one or more arguments. Expecting: source github_user github_repo secret")
 
         secret = self.args.pop()
         github_repo = self.args.pop()
@@ -800,7 +804,7 @@ class GalaxyCLI(cli.CLI):
         """ Delete a role from Ansible Galaxy. """
 
         if len(self.args) < 2:
-            raise exceptions.GalaxyClientError("Missing one or more arguments. Expected: github_user github_repo")
+            raise cli_exceptions.GalaxyCliError("Missing one or more arguments. Expected: github_user github_repo")
 
         github_repo = self.args.pop()
         github_user = self.args.pop()

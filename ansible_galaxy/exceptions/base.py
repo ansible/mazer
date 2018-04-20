@@ -6,6 +6,10 @@ class GalaxyError(Exception):
     pass
 
 
+class GalaxyClientError(GalaxyError):
+    pass
+
+
 class ParserError(GalaxyError):
     """Base exception raised for errors while parsing galaxy content"""
     pass
