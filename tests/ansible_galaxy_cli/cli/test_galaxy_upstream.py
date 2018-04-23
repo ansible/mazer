@@ -424,7 +424,13 @@ class TestGalaxyInitContainer(unittest.TestCase, ValidRoleTests):
 
     @classmethod
     def setUpClass(cls):
-        cls.setUpRole('delete_me_container', galaxy_args=['--type=container'], skeleton_path=cls.role_skeleton_path)
+        content_type = 'container'
+        this_dir, this_filename = os.path.split(__file__)
+        # FIXME(alikins): kind of klugey, but original tests did that and I kind of see why (avoid duping lots of data)
+        container_role_skeleton_path = os.path.join(this_dir, '../../../', 'ansible_galaxy_cli/data/', 'role_skeleton', content_type)
+        log.debug('normpath(container_role_skeleton_path): %s', os.path.normpath(container_role_skeleton_path))
+        cls.setUpRole('delete_me_container', galaxy_args=['--type=container', '--role-skeleton=%s' % container_role_skeleton_path],
+                      skeleton_path=container_role_skeleton_path)
 
     def test_metadata_container_tag(self):
         with open(os.path.join(self.role_dir, 'meta', 'main.yml'), 'r') as mf:
