@@ -217,9 +217,9 @@ class GalaxyCLI(cli.CLI):
                 raise cli_exceptions.GalaxyCliError("- the path %s already exists, but is a file - aborting" % role_path)
             elif not force:
                 raise cli_exceptions.GalaxyCliError("- the directory %s already exists."
-                                                   "you can use --force to re-initialize this directory,\n"
-                                                   "however it will reset any main.yml files that may have\n"
-                                                   "been modified there already." % role_path)
+                                                    "you can use --force to re-initialize this directory,\n"
+                                                    "however it will reset any main.yml files that may have\n"
+                                                    "been modified there already." % role_path)
 
         inject_data = dict(
             role_name=role_name,
