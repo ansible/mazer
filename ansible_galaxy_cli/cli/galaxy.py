@@ -245,9 +245,12 @@ class GalaxyCLI(cli.CLI):
             skeleton_ignore_expressions = runtime.GALAXY_ROLE_SKELETON_IGNORE
         else:
             this_dir, this_filename = os.path.split(__file__)
+
             type_path = getattr(self.options, 'role_type', "default")
-            role_skeleton_path = os.path.join(this_dir, '../', 'data', type_path)
+            role_skeleton_path = os.path.join(this_dir, '../', 'data/role_skelton', type_path)
+
             self.log.debug('role_skeleton_path: %s', role_skeleton_path)
+
             skeleton_ignore_expressions = ['^.*/.git_keep$']
 
         role_skeleton = os.path.expanduser(role_skeleton_path)
