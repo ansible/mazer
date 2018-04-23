@@ -206,7 +206,7 @@ class GalaxyCLI(cli.CLI):
 
         init_path = self.options.init_path
         force = self.options.force
-        role_skeleton = self.options.role_skeleton
+        role_skeleton_path = self.options.role_skeleton
 
         role_name = self.args.pop(0).strip() if self.args else None
         if not role_name:
@@ -221,6 +221,8 @@ class GalaxyCLI(cli.CLI):
                                                     "however it will reset any main.yml files that may have\n"
                                                     "been modified there already." % role_path)
 
+        # FIXME(akl): role_skeleton stuff should probably be a module or two and a few classes instead of inline here
+        # role_skeleton ends mostly being a list of file paths to copy
         inject_data = dict(
             role_name=role_name,
             author='your name',
@@ -232,17 +234,25 @@ class GalaxyCLI(cli.CLI):
             role_type=self.options.role_type
         )
 
+        import pprint
+        self.log.debug('inject_data: %s', pprint.pformat(inject_data))
+
         # create role directory
         if not os.path.exists(role_path):
             os.makedirs(role_path)
 
-        if role_skeleton is not None:
+        if role_skeleton_path is not None:
             skeleton_ignore_expressions = runtime.GALAXY_ROLE_SKELETON_IGNORE
         else:
-            role_skeleton = self.galaxy.default_role_skeleton_path
+            this_dir, this_filename = os.path.split(__file__)
+            type_path = getattr(self.options, 'role_type', "default")
+            role_skeleton_path = os.path.join(this_dir, '../', 'data', type_path)
+            self.log.debug('role_skeleton_path: %s', role_skeleton_path)
             skeleton_ignore_expressions = ['^.*/.git_keep$']
 
-        role_skeleton = os.path.expanduser(role_skeleton)
+        role_skeleton = os.path.expanduser(role_skeleton_path)
+
+        self.log.debug('role_skeleton: %s', role_skeleton)
         skeleton_ignore_re = [re.compile(x) for x in skeleton_ignore_expressions]
 
         template_env = Environment(loader=FileSystemLoader(role_skeleton))

@@ -595,6 +595,8 @@ class GalaxyContent(object):
                 galaxy_file = None
                 archive_parent_dir = None
                 members = content_tar_file.getmembers()
+                import pprint
+                self.log.debug('tmp_file (%s) members: %s', tmp_file, pprint.pformat(members))
                 # next find the metadata file
                 for member in members:
                     if self.META_MAIN in member.name or self.GALAXY_FILE in member.name:
@@ -654,6 +656,7 @@ class GalaxyContent(object):
                         if self.content_type in CONTENT_PLUGIN_TYPES:
                             raise exceptions.GalaxyClientError("No content metadata provided, nor content directories found for content_type: %s" % self.content_type)
 
+                self.log.debug("meta_file: %s galaxy_file: %s self.content_type: %s", meta_file, galaxy_file, self.content_type)
                 if not meta_file and not galaxy_file and self.content_type == "role":
                     raise exceptions.GalaxyClientError("this role does not appear to have a meta/main.yml file or ansible-galaxy.yml.")
                 else:

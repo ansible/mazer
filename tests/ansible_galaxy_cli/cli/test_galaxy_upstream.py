@@ -288,26 +288,33 @@ class TestGalaxy(unittest.TestCase):
 class ValidRoleTests(object):
 
     expected_role_dirs = ('defaults', 'files', 'handlers', 'meta', 'tasks', 'templates', 'vars', 'tests')
+    role_skeleton_path = os.path.join(os.path.split(__file__)[0], 'data/role_skeleton')
 
     @classmethod
-    def setUpRole(cls, role_name, galaxy_args=None, skeleton_path=None):
+    def setUpRole(cls, role_name, skeleton_path, galaxy_args=None):
         if galaxy_args is None:
             galaxy_args = []
 
-        if skeleton_path is not None:
-            cls.role_skeleton_path = skeleton_path
+        # cls.role_skeleton_path = skeleton_path
+        if '--role-skeleton' not in galaxy_args:
             galaxy_args += ['--role-skeleton', skeleton_path]
+            log.debug('role_skeleton_path: %s', cls.role_skeleton_path)
 
         # Make temp directory for testing
         cls.test_dir = tempfile.mkdtemp()
         if not os.path.isdir(cls.test_dir):
             os.makedirs(cls.test_dir)
+        log.debug('test_dir: %s', cls.test_dir)
 
         cls.role_dir = os.path.join(cls.test_dir, role_name)
         cls.role_name = role_name
+        log.debug('role_dir: %s', cls.role_dir)
+        log.debug('role_name: %s', cls.role_name)
 
         # create role using default skeleton
-        gc = GalaxyCLI(args=['ansible-galaxy', 'init', '-c', '--offline'] + galaxy_args + ['--init-path', cls.test_dir, cls.role_name])
+        gc_args = ['ansible-galaxy', 'init', '-c', '--offline'] + galaxy_args + ['--init-path', cls.test_dir, cls.role_name]
+        log.debug('gc_args: %s', gc_args)
+        gc = GalaxyCLI(args=gc_args)
         gc.parse()
         gc.run()
         cls.gc = gc
@@ -375,7 +382,7 @@ class TestGalaxyInitDefault(unittest.TestCase, ValidRoleTests):
 
     @classmethod
     def setUpClass(cls):
-        cls.setUpRole(role_name='delete_me')
+        cls.setUpRole(role_name='delete_me', skeleton_path=cls.role_skeleton_path)
 
     def test_metadata_contents(self):
         with open(os.path.join(self.role_dir, 'meta', 'main.yml'), 'r') as mf:
@@ -387,7 +394,7 @@ class TestGalaxyInitAPB(unittest.TestCase, ValidRoleTests):
 
     @classmethod
     def setUpClass(cls):
-        cls.setUpRole('delete_me_apb', galaxy_args=['--type=apb'])
+        cls.setUpRole('delete_me_apb', galaxy_args=['--type=apb'], skeleton_path=cls.role_skeleton_path)
 
     def test_metadata_apb_tag(self):
         with open(os.path.join(self.role_dir, 'meta', 'main.yml'), 'r') as mf:
@@ -417,7 +424,7 @@ class TestGalaxyInitContainer(unittest.TestCase, ValidRoleTests):
 
     @classmethod
     def setUpClass(cls):
-        cls.setUpRole('delete_me_container', galaxy_args=['--type=container'])
+        cls.setUpRole('delete_me_container', galaxy_args=['--type=container'], skeleton_path=cls.role_skeleton_path)
 
     def test_metadata_container_tag(self):
         with open(os.path.join(self.role_dir, 'meta', 'main.yml'), 'r') as mf:
@@ -447,8 +454,7 @@ class TestGalaxyInitSkeleton(unittest.TestCase, ValidRoleTests):
 
     @classmethod
     def setUpClass(cls):
-        role_skeleton_path = os.path.join(os.path.split(__file__)[0], 'test_data', 'role_skeleton')
-        cls.setUpRole('delete_me_skeleton', skeleton_path=role_skeleton_path)
+        cls.setUpRole('delete_me_skeleton', skeleton_path=cls.role_skeleton_path)
 
     def test_empty_files_dir(self):
         files_dir = os.path.join(self.role_dir, 'files')

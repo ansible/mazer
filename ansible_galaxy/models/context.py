@@ -53,13 +53,10 @@ class GalaxyContext(object):
         self.content = {}
 
         # load data path for resource usage
-        this_dir, this_filename = os.path.split(__file__)
-        type_path = getattr(self.options, 'role_type', "default")
-        self.DATA_PATH = os.path.join(this_dir, 'data', type_path)
-
-    @property
-    def default_role_skeleton_path(self):
-        return self.DATA_PATH
+        # FIXME/TODO(akl): Need better way to find this other than __file__
+        # this_dir, this_filename = os.path.split(__file__)
+        # type_path = getattr(self.options, 'role_type', "default")
+        # self.DATA_PATH = os.path.join(this_dir, 'data', type_path)
 
     def add_role(self, role):
         self.roles[role.name] = role
