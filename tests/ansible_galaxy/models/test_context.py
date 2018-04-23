@@ -1,8 +1,6 @@
 
 import logging
 
-import six
-
 from ansible_galaxy.models import context
 
 log = logging.getLogger(__name__)
@@ -21,7 +19,6 @@ class FauxOptions(object):
 
 def assert_types(galaxy_context):
     assert isinstance(galaxy_context.roles_paths, list)
-    assert isinstance(galaxy_context.DATA_PATH, six.string_types)
     assert isinstance(galaxy_context.content, dict)
 
 
@@ -32,7 +29,6 @@ def test_context():
     assert_types(galaxy_context)
     assert galaxy_context.roles_paths == []
 
-    log.debug('DATA_PATH: %s', galaxy_context.DATA_PATH)
     # TODO/FIXME: what should DATA_PATH be for tests? currently based on __file__ which seems wrong
     # assert galaxy_context.DATA_PATH
 
