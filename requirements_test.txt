@@ -1,0 +1,6 @@
+coverage
+flake8
+pip
+pytest
+pytest-runner
+tox

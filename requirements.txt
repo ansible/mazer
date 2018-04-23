@@ -1,1 +1,5 @@
 six
+PyYaml
+
+# TODO: we can likely eliminate this
+jinja2

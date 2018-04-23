@@ -1,10 +1,4 @@
 # TODO(alikins): remove bumpverion if we dont use it
 bumpversion
-coverage
-flake8
-pip
-pytest
-pytest-runner
 Sphinx
-tox
 wheel
