@@ -39,7 +39,7 @@ from ansible_galaxy_cli.cli.galaxy import GalaxyCLI
 from ansible_galaxy_cli import exceptions as cli_exceptions
 # from ansible.compat.tests import unittest
 #from ansible.compat.tests.mock import call, patch
-from ansible.errors import AnsibleError, AnsibleOptionsError
+# from ansible.errors import AnsibleError, AnsibleOptionsError
 # from ansible.module_utils.six import PY3
 
 log = logging.getLogger(__name__)
@@ -159,27 +159,23 @@ class TestGalaxy(unittest.TestCase):
         removed_role = not os.path.exists(role_file)
         self.assertTrue(removed_role)
 
-#    def test_exit_without_ignore_without_flag(self):
-#        ''' tests that GalaxyCLI exits with the error specified if the --ignore-errors flag is not used '''
-#        gc = GalaxyCLI(args=["ansible-galaxy", "install", "--server=None", "fake_role_name"])
-#        gc.parse()
-#        with patch.object(ansible.utils.display.Display, "display", return_value=None) as mocked_display:
-#            # testing that error expected is raised
-#            self.assertRaises(AnsibleError, gc.run)
-#            self.assertTrue(mocked_display.called_once_with("- downloading role 'fake_role_name', owned by "))
+    def test_exit_without_ignore_without_flag(self):
+        ''' tests that GalaxyCLI exits with the error specified if the --ignore-errors flag is not used '''
+        gc = GalaxyCLI(args=["ansible-galaxy", "install", "--server=None", "fake_role_name"])
+        gc.parse()
+        # testing that error expected is raised
+        self.assertRaises(cli_exceptions.GalaxyCliError, gc.run)
+        # self.assertTrue(mocked_display.called_once_with("- downloading role 'fake_role_name', owned by "))
 
     def test_exit_without_ignore_with_flag(self):
         ''' tests that GalaxyCLI exits without the error specified if the --ignore-errors flag is used  '''
         # testing with --ignore-errors flag
         gc = GalaxyCLI(args=["ansible-galaxy", "install", "--server=None", "fake_role_name", "--ignore-errors"])
         gc.parse()
-        with patch.object(ansible.utils.display.Display, "display", return_value=None) as mocked_display:
-            gc.run()
-            self.assertTrue(mocked_display.called_once_with("- downloading role 'fake_role_name', owned by "))
+        gc.run()
+        #    self.assertTrue(mocked_display.called_once_with("- downloading role 'fake_role_name', owned by "))
 
     def run_parse_common(self, galaxycli_obj, action):
-        # import pprint
-        #log.debug('galaxycli_obj: %s, dir(): %s', galaxycli_obj, pprint.pformat(dir(galaxycli_obj)))
         with patch.object(ansible_galaxy_cli.cli.SortedOptParser, "set_usage") as mocked_usage:
             galaxycli_obj.parse()
 
@@ -205,10 +201,10 @@ class TestGalaxy(unittest.TestCase):
             calls = [call(first_call), call(second_call)]
             # mocked_usage.assert_has_calls(calls)
 
-#    def test_parse_no_action(self):
-#        ''' testing the options parser when no action is given '''
-#        gc = GalaxyCLI(args=["ansible-galaxy", ""])
-#        self.assertRaises(cli_exceptions.CliOptionsError, gc.parse)
+    def test_parse_no_action(self):
+        ''' testing the options parser when no action is given '''
+        gc = GalaxyCLI(args=["ansible-galaxy", ""])
+        self.assertRaises(cli_exceptions.CliOptionsError, gc.parse)
 
     def test_parse_invalid_action(self):
         ''' testing the options parser when an invalid action is given '''

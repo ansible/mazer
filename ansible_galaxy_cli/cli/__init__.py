@@ -31,7 +31,7 @@ from abc import ABCMeta, abstractmethod
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import runtime
 from ansible_galaxy.utils.text import to_text
-from ansible_galaxy_cli.exceptions import cli as cli_exceptions
+from ansible_galaxy_cli import exceptions as cli_exceptions
 
 log = logging.getLogger(__name__)
 
