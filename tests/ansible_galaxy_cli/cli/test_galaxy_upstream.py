@@ -25,7 +25,11 @@ import logging
 import shutil
 import tarfile
 import tempfile
-import unittest
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 from mock import call, patch
 import yaml
@@ -38,7 +42,7 @@ import ansible_galaxy
 from ansible_galaxy_cli.cli.galaxy import GalaxyCLI
 from ansible_galaxy_cli import exceptions as cli_exceptions
 # from ansible.compat.tests import unittest
-#from ansible.compat.tests.mock import call, patch
+# from ansible.compat.tests.mock import call, patch
 # from ansible.errors import AnsibleError, AnsibleOptionsError
 # from ansible.module_utils.six import PY3
 
