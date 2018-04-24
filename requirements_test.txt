@@ -1,5 +1,6 @@
 coverage
 flake8
+mock
 pip
 pytest
 pytest-cov
