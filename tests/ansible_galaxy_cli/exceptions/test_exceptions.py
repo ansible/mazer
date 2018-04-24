@@ -22,7 +22,7 @@ def test_galaxy_cli_error_with_message():
 
     assert isinstance(galaxy_cli_error, exceptions.GalaxyError)
 
-    with pytest.raises(cli_exceptions.GalaxyCliError, matches=msg) as exc_info:
+    with pytest.raises(cli_exceptions.GalaxyCliError, match=msg) as exc_info:
         raise cli_exceptions.GalaxyCliError(msg)
     log.debug("exc_info: %s", exc_info)
 
