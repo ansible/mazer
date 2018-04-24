@@ -40,35 +40,12 @@ from distutils.version import LooseVersion
 from ansible_galaxy.flat_rest_api.api import GalaxyAPI
 from ansible_galaxy.config import defaults
 from ansible_galaxy import exceptions
+from ansible_galaxy.models.content import CONTENT_PLUGIN_TYPES, CONTENT_TYPES
+from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP, VALID_ROLE_SPEC_KEYS
 
 from ansible_galaxy.flat_rest_api.urls import open_url
 
 log = logging.getLogger(__name__)
-
-
-VALID_ROLE_SPEC_KEYS = [
-    'name',
-    'role',
-    'scm',
-    'src',
-    'version',
-]
-
-# FIXME - need some stuff here
-VALID_CONTENT_SPEC_KEYS = [
-
-]
-
-# Galaxy Content Constants
-CONTENT_PLUGIN_TYPES = (
-    'module', 'module_util', 'action_plugin', 'filter_plugin',
-    'connection_plugin', 'inventory_plugin', 'lookup_plugin',
-    'shell_plugin', 'strategy_plugin', 'netconf_plugin'
-
-)
-CONTENT_TYPES = CONTENT_PLUGIN_TYPES + ('role',)
-# This is used to determine install location
-CONTENT_TYPE_DIR_MAP = {k: "%ss" % k for k in CONTENT_TYPES}
 
 
 class GalaxyContentData(object):

@@ -48,7 +48,7 @@ from ansible_galaxy.flat_rest_api.content import GalaxyContent
 from ansible_galaxy.flat_rest_api.token import GalaxyToken
 
 # FIXME: not a model...
-from ansible_galaxy.flat_rest_api.content import CONTENT_TYPES
+from ansible_galaxy.models.content import CONTENT_TYPES
 
 log = logging.getLogger(__name__)
 
