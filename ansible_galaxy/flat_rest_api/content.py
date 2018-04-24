@@ -42,23 +42,12 @@ from ansible_galaxy.config import defaults
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import CONTENT_PLUGIN_TYPES, CONTENT_TYPES
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP, VALID_ROLE_SPEC_KEYS
+from ansible_galaxy.models import content
 
 from ansible_galaxy.flat_rest_api.urls import open_url
 
 log = logging.getLogger(__name__)
 
-
-class GalaxyContentData(object):
-    def __init__(self, name=None, version=None,
-                 src=None, scm=None, content_type=None,
-                 path=None, content_dir=None):
-        self.name = name
-        self.version = version
-        self.src = src or name
-        self.scm = scm
-        self.content_type = content_type
-        self.content_dir = content_dir
-        self.path = path
 
 
 class GalaxyContent(object):
@@ -102,8 +91,8 @@ class GalaxyContent(object):
         self.options = galaxy.options
         self.galaxy = galaxy
 
-        self.content = GalaxyContentData(name=name, src=src, version=version,
-                                         scm=scm, path=path, content_type=content_type)
+        self.content = content.GalaxyContentMeta(name=name, src=src, version=version,
+                                                 scm=scm, path=path, content_type=content_type)
         # self.name = name
         # self.version = version
         # self.src = src or name
@@ -857,7 +846,7 @@ class GalaxyContent(object):
 
         return False
 
-    # TODO: property of GalaxyContentData ?
+    # TODO: property of GalaxyContentMeta ?
     @property
     def spec(self):
         """
@@ -925,7 +914,7 @@ class GalaxyContent(object):
         shutil.rmtree(tempdir, ignore_errors=True)
         return temp_file.name
 
-    # TODO: return a new GalaxyContentData
+    # TODO: return a new GalaxyContentMeta
     # TODO: dont munge the passed in content
     # TODO: split into smaller methods
     @staticmethod
