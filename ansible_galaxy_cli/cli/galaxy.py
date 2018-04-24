@@ -352,11 +352,13 @@ class GalaxyCLI(cli.CLI):
                 (self.options.content_type, ", ".join(CONTENT_TYPES))
             )
 
+        self.log.debug('galaxy.options: %s', self.galaxy.options)
         # If someone provides a --roles-path at the command line, we assume this is
         # for use with a legacy role and we want to maintain backwards compat
         if self.options.roles_path != defaults.DEFAULT_ROLES_PATH:
             self.galaxy.content_paths = self.options.roles_path
-            self.galaxy.options['type'] = 'role'
+            # self.galaxy.options['content_type'] = 'role'
+            self.galaxy.options.content_type = 'role'
 
             # FIXME - add more types here, PoC is just role/module
 
@@ -392,11 +394,11 @@ class GalaxyCLI(cli.CLI):
             #    display.vvv('Skipping role %s' % role.name)
             #    continue
 
-            log.debug('Processing %s %s ', content.type, content.name)
+            log.debug('Processing %s %s ', content.content_type, content.name)
 
             # FIXME - Unsure if we want to handle the install info for all galaxy
             #         content. Skipping for non-role types for now.
-            if content.type == "role":
+            if content.content_type == "role":
                 if content.install_info is not None:
                     if content.install_info['version'] != content.version or force:
                         if force:
@@ -404,7 +406,7 @@ class GalaxyCLI(cli.CLI):
                                          (content.name, content.install_info['version'], content.version or "unspecified"))
                             content.remove()
                         else:
-                            log.warn('- %s (%s) is already installed - use --force to change version to %s' %
+                            log.warn('- %s (%s) is already installed - use --force to change version to %s',
                                      content.name, content.install_info['version'], content.version or "unspecified")
                             continue
                     else:
@@ -424,7 +426,7 @@ class GalaxyCLI(cli.CLI):
             #         a content repo can contain many types and many of any single type and it's just
             #         easier to have that introspection there. In the future this should be more
             #         unified and have a clean API
-            if content.type == "role":
+            if content.content_type == "role":
                 if not no_deps and installed:
                     if not content.metadata:
                         log.warning("Meta file %s is empty. Skipping dependencies.", content.path)

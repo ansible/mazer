@@ -48,6 +48,10 @@ from ansible_galaxy.flat_rest_api.urls import open_url
 
 log = logging.getLogger(__name__)
 
+# has a GalaxyContentMeta FIXME: rename back to GalaxyContentData
+# FIXME: erk, and a metadata (ie, ansible-galaxy.yml)
+#
+# can provide a ContentInstallInfo
 
 
 class GalaxyContent(object):
@@ -58,8 +62,9 @@ class GalaxyContent(object):
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
     ROLE_DIRS = ('defaults', 'files', 'handlers', 'meta', 'tasks', 'templates', 'vars', 'tests')
 
+    # FIXME(alikins): Not a fan of vars/args with names like 'type', but leave it for now
     def __init__(self, galaxy, name,
-                 src=None, version=None, scm=None, path=None, content_type="role",
+                 src=None, version=None, scm=None, path=None, type="role",
                  display_callback=None):
         """
         The GalaxyContent type is meant to supercede the old GalaxyRole type,
@@ -77,6 +82,8 @@ class GalaxyContent(object):
         :kw path: str, local path to Galaxy Content
         :kw content_type: str, Galaxy Content type
         """
+
+        content_type = type
 
         self._metadata = None
         self._galaxy_metadata = None
@@ -279,6 +286,7 @@ class GalaxyContent(object):
 
         return self._galaxy_metadata
 
+    # TODO: class/module for ContentInstallInfo
     @property
     def install_info(self):
         """
@@ -620,7 +628,8 @@ class GalaxyContent(object):
 
                     if not parent_dir_found:
                         if self.content_type in CONTENT_PLUGIN_TYPES:
-                            raise exceptions.GalaxyClientError("No content metadata provided, nor content directories found for content_type: %s" % self.content_type)
+                            msg = "No content metadata provided, nor content directories found for content_type: %s" % self.content_type
+                            raise exceptions.GalaxyClientError(msg)
 
                 self.log.debug("meta_file: %s galaxy_file: %s self.content_type: %s", meta_file, galaxy_file, self.content_type)
                 if not meta_file and not galaxy_file and self.content_type == "role":
@@ -632,7 +641,7 @@ class GalaxyContent(object):
                             self._galaxy_metadata = yaml.safe_load(content_tar_file.extractfile(galaxy_file))
                         elif meta_file:
                             self._metadata = yaml.safe_load(content_tar_file.extractfile(meta_file))
-                        #else:
+                        # else:
                         # FIXME - Need to handle the scenario where we "walk the dirs" and place things where they should be
                     except Exception as e:
                         self.warn('unable to extract and yaml load galaxy_file=%s meta_file=%s tmpfile=%s', galaxy_file, meta_file, tmp_file)
@@ -656,7 +665,8 @@ class GalaxyContent(object):
                                 if not os.path.isdir(self.path):
                                     raise exceptions.GalaxyClientError("the specified roles path exists and is not a directory.")
                                 elif not getattr(self.options, "force", False):
-                                    raise exceptions.GalaxyClientError("the specified role %s appears to already exist. Use --force to replace it." % self.content.name)
+                                    msg = "the specified role %s appears to already exist. Use --force to replace it." % self.content.name
+                                    raise exceptions.GalaxyClientError(msg)
                                 else:
                                     # using --force, remove the old path
                                     if not self.remove():
