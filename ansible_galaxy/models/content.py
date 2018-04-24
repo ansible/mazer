@@ -22,8 +22,7 @@ CONTENT_PLUGIN_TYPES = (
 )
 CONTENT_TYPES = CONTENT_PLUGIN_TYPES + ('role',)
 
-# FIXME(alikins): remove dict comp for 2.6 compat
-CONTENT_TYPE_DIR_MAP = {k: "%ss" % k for k in CONTENT_TYPES}
+CONTENT_TYPE_DIR_MAP = dict([(k, '%ss' % k) for k in CONTENT_TYPES])
 
 
 class GalaxyContentMeta(object):
