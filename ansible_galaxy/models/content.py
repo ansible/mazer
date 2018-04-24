@@ -41,5 +41,5 @@ class GalaxyContentMeta(object):
     def __eq__(self, other):
         return (self.name, self.version, self.src, self.scm,
                 self.content_type, self.content_dir, self.path) == \
-            (self.name, self.version, self.src, self.scm,
-             self.content_type, self.content_dir, self.path)
+            (other.name, other.version, other.src, other.scm,
+             other.content_type, other.content_dir, other.path)
