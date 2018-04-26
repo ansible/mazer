@@ -28,10 +28,12 @@ def main(args=None):
         return os.EX_USAGE
 
     try:
-        res = cli.run()
+        exit_code = cli.run()
     except exceptions.GalaxyError as e:
         log.exception(e)
         print(e)
+        # exit with EX_SOFTWARE on generic error
+        exit_code = os.EX_SOFTWARE
 
     # do any return code setup we need here
-    return res
+    return exit_code
