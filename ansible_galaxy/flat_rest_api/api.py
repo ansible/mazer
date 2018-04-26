@@ -88,7 +88,9 @@ class GalaxyAPI(object):
         if args and not headers:
             headers = self.__auth_header()
         try:
-            self.log.info(url)
+            self.log.info('%s %s', method, url)
+            self.log.debug('%s %s args=%s', method, url, args)
+            self.log.debug('%s %s headers=%s', method, url, headers)
             resp = open_url(url, data=args, validate_certs=self._validate_certs, headers=headers, method=method,
                             timeout=20)
             data = json.loads(to_text(resp.read(), errors='surrogate_or_strict'))
@@ -152,7 +154,7 @@ class GalaxyAPI(object):
             args['alternate_role_name'] = role_name
         elif github_repo.startswith('ansible-role'):
             args['alternate_role_name'] = github_repo[len('ansible-role') + 1:]
-        data = self.__call_galaxy(url, args=urlencode(args))
+        data = self.__call_galaxy(url, args=urlencode(args), method='POST')
         if data.get('results', None):
             return data['results']
         return data
