@@ -11,11 +11,15 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ ]
+requirements = []
 
 setup_requirements = ['pytest-runner', ]
 
 test_requirements = ['pytest', ]
+
+entry_points = {
+    'console_scripts': ['ansible-galaxy-cli = ansible_galaxy_cli.__main__:main']
+}
 
 setup(
     author="Red Hat, Inc.",
@@ -33,13 +37,15 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     description="Manage Ansible roles and contents from the command line.",
+    entry_points=entry_points,
     install_requires=requirements,
     license="Apache-2.0",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='ansible_galaxy_cli',
     name='ansible_galaxy_cli',
-    packages=find_packages(include=['ansible_galaxy', 'ansible_galaxy_cli']),
+    packages=find_packages(include=['ansible_galaxy', 'ansible_galaxy_cli',
+                                    'ansible_galaxy.*', 'ansible_galaxy_cli.*']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
