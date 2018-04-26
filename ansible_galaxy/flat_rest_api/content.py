@@ -207,7 +207,8 @@ class GalaxyContent(object):
             # singular of type between the contants vars read in from the config
             # file and the subdirectories
             if self.content_type != "all":
-                self.galaxy.content_paths = [os.path.join(p, CONTENT_TYPE_DIR_MAP[self.content_type]) for p in defaults.DEFAULT_CONTENT_PATH]
+                self.galaxy.content_paths = [os.path.join(os.path.expanduser(p),
+                                                          CONTENT_TYPE_DIR_MAP[self.content_type]) for p in defaults.DEFAULT_CONTENT_PATH]
             else:
                 self.galaxy.content_paths = defaults.DEFAULT_CONTENT_PATH
 
