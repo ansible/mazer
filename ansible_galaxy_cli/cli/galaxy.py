@@ -726,12 +726,14 @@ class GalaxyCLI(cli.CLI):
     def execute_import(self):
         """ used to import a role into Ansible Galaxy """
 
+        # FIXME/TODO(alikins): replace with logging or display callback
         colors = {
             'INFO': 'normal',
             'WARNING': runtime.COLOR_WARN,
             'ERROR': runtime.COLOR_ERROR,
             'SUCCESS': runtime.COLOR_OK,
             'FAILED': runtime.COLOR_ERROR,
+            'DEBUG': runtime.COLOR_DEBUG,
         }
 
         if len(self.args) < 2:
