@@ -26,6 +26,7 @@ COLOR_DEPRECATE = "purple"
 COLOR_ERROR = "red"
 COLOR_VERBOSE = "blue"
 COLOR_WARN = "bright purple"
+COLOR_OK = "green"
 
 # FIXME: rm when config exists and display isnt used
 # used by display.py
