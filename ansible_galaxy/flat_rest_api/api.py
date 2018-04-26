@@ -93,8 +93,16 @@ class GalaxyAPI(object):
             self.log.debug('%s %s headers=%s', method, url, headers)
             resp = open_url(url, data=args, validate_certs=self._validate_certs, headers=headers, method=method,
                             timeout=20)
+            self.log.debug('%s %s http_status=%s', method, url, resp.getcode())
+            final_url = resp.geturl()
+            if final_url != url:
+                self.log.debug('%s %s Redirected to: %s', method, url, resp.geturl())
+            self.log.debug('%s %s info:\n%s', method, url, resp.info())
             data = json.loads(to_text(resp.read(), errors='surrogate_or_strict'))
+            self.log.debug('%s %s data: \n%s', method, url, json.dumps(data, indent=2))
         except HTTPError as e:
+            self.log.debug('Exception on %s %s', method, url)
+            self.log.exception(e)
             res = json.loads(to_text(e.fp.read(), errors='surrogate_or_strict'))
             raise exceptions.GalaxyClientError(res['detail'])
         return data
