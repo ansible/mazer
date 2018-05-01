@@ -355,7 +355,8 @@ class GalaxyCLI(cli.CLI):
         self.log.debug('galaxy.options: %s', self.galaxy.options)
         # If someone provides a --roles-path at the command line, we assume this is
         # for use with a legacy role and we want to maintain backwards compat
-        if self.options.roles_path != defaults.DEFAULT_ROLES_PATH:
+        if self.options.roles_path:
+            self.log.warn('Assuming content is of type "role" since --role-path was used')
             self.galaxy.content_paths = self.options.roles_path
             # self.galaxy.options['content_type'] = 'role'
             self.galaxy.options.content_type = 'role'
