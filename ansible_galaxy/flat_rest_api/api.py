@@ -231,6 +231,16 @@ class GalaxyAPI(object):
             return data["results"][0]
         return None
 
+    #@g_connect
+    #def fetch_content_related(self, related_url):
+    #    "Fetch a related item for the given content"
+    #    self.log.debug('related_url=%s', related_url)
+    #    url = '%s%s' % (self._api_server, related_url)
+    #    data = self.__call_galaxy(url)
+    #    if len(data["results"]) != 0:
+    #        return data["results"][0]
+    #    return None
+
     @g_connect
     def fetch_content_related(self, related_url):
         """
@@ -241,7 +251,11 @@ class GalaxyAPI(object):
         try:
             url = '%s%s?page_size=50' % (self._api_server, related_url)
             data = self.__call_galaxy(url)
-            results = data['results']
+            results = data.get('results', None)
+            if results is None:
+                # not a results list, just return the item
+                return data
+
             done = (data.get('next_link', None) is None)
             while not done:
                 url = '%s%s' % (self._api_server, data['next_link'])
