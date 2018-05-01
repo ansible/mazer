@@ -58,16 +58,20 @@ log = logging.getLogger(__name__)
 def parse_content_name(content_name):
     "split a full content_name into username, content_name"
 
+    repo_name = None
     try:
         parts = content_name.split(".")
         user_name = parts[0]
-        # user_name = ".".join(parts[0:-1])
-        content_name = '.'.join(parts[1:])
+        if len(parts) > 2:
+            repo_name = parts[1]
+            content_name = '.'.join(parts[2:])
+        else:
+            content_name = '.'.join(parts[1:])
     except Exception as e:
         log.exception(e)
         raise exceptions.GalaxyClientError("Invalid content name (%s). Specify content as format: username.contentname" % content_name)
 
-    return (user_name, content_name)
+    return (user_name, repo_name, content_name)
 
 
 class GalaxyContent(object):
@@ -528,8 +532,8 @@ class GalaxyContent(object):
             else:
                 api = GalaxyAPI(self.galaxy)
                 # FIXME - Need to update our API calls once Galaxy has them implemented
-                content_username, content_name = parse_content_name(self.src)
-                content_data = api.lookup_content_by_name(content_username, content_name)
+                content_username, repo_name, content_name = parse_content_name(self.src)
+                content_data = api.lookup_content_repo_by_name(content_username, repo_name)
                 if not content_data:
                     raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.src, api.api_server))
 
