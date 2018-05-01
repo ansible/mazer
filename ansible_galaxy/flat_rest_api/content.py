@@ -542,6 +542,9 @@ class GalaxyContent(object):
                 api = GalaxyAPI(self.galaxy)
                 # FIXME - Need to update our API calls once Galaxy has them implemented
                 content_username, repo_name, content_name = parse_content_name(self.src)
+                self.log.debug('content_username=%s, repo_name=%s content_name=%s', content_username, repo_name, content_name)
+                # TODO: extract parsing of cli content sorta-url thing and add better tests
+                repo_name = repo_name or content_name
                 content_data = api.lookup_content_repo_by_name(content_username, repo_name)
                 if not content_data:
                     raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.src, api.api_server))
