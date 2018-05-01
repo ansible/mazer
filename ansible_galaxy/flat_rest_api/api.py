@@ -99,7 +99,7 @@ class GalaxyAPI(object):
                 self.log.debug('%s %s Redirected to: %s', method, url, resp.geturl())
             # self.log.debug('%s %s info:\n%s', method, url, resp.info())
             data = json.loads(to_text(resp.read(), errors='surrogate_or_strict'))
-            # self.log.debug('%s %s data: \n%s', method, url, json.dumps(data, indent=2))
+            self.log.debug('%s %s data: \n%s', method, url, json.dumps(data, indent=2))
         except HTTPError as e:
             self.log.debug('Exception on %s %s', method, url)
             self.log.exception(e)
@@ -182,6 +182,17 @@ class GalaxyAPI(object):
 
         data = self.__call_galaxy(url)
         return data['results']
+
+    @g_connect
+    def lookup_content_repo_by_name(self, namespace, name):
+        namespace = urlquote(namespace)
+        name = urlquote(name)
+
+        url = '%s/content/?repository__name=%s&namespace__name=%s' % (self.baseurl, name, namespace)
+        data = self.__call_galaxy(url)
+        if len(data["results"]) != 0:
+            return data["results"][0]
+        return None
 
     @g_connect
     def lookup_content_by_name(self, user_name, content_name, content_type=None, notify=True):
