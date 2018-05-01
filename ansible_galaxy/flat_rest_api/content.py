@@ -543,7 +543,10 @@ class GalaxyContent(object):
                                           "Container" % self.content.name, level='warning')
 
                 # FIXME - Need to update our API calls once Galaxy has them implemented
-                content_versions = api.fetch_content_related('versions', content_data['id'])
+                related = content_data.get('related', None)
+                if related:
+                    related_versions_url = related.get('versions', None)
+                content_versions = api.fetch_content_related(related_versions_url)
                 if not self.version:
                     # convert the version names to LooseVersion objects
                     # and sort them to get the latest version. If there

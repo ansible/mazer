@@ -195,11 +195,12 @@ class GalaxyAPI(object):
         return None
 
     @g_connect
-    def lookup_content_by_name(self, user_name, content_name, content_type=None, notify=True):
+    def lookup_content_by_name(self, user_name, repo_name, content_name, content_type=None, notify=True):
         content_name = urlquote(content_name)
+        repo_name = urlquote(repo_name)
 
         if notify:
-            self.log.info("- downloading content '%s', type '%s'  owned by %s", content_name, content_type, user_name)
+            self.log.info("- downloading content '%s', type '%s',repo_name '%s'  owned by %s", content_name, content_type, repo_name, user_name)
 
         url = '%s/content/?owner__username=%s&name=%s' % (self.baseurl, user_name, content_name)
         data = self.__call_galaxy(url)
@@ -231,14 +232,14 @@ class GalaxyAPI(object):
         return None
 
     @g_connect
-    def fetch_role_related(self, related, role_id):
+    def fetch_content_related(self, related_url):
         """
         Fetch the list of related items for the given role.
         The url comes from the 'related' field of the role.
         """
-
+        self.log.debug('related_url=%s', related_url)
         try:
-            url = '%s/roles/%d/%s/?page_size=50' % (self.baseurl, int(role_id), related)
+            url = '%s%s?page_size=50' % (self._api_server, related_url)
             data = self.__call_galaxy(url)
             results = data['results']
             done = (data.get('next_link', None) is None)
