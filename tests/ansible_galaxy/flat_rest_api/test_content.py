@@ -1,7 +1,28 @@
-
+import logging
 import pytest
 
 from ansible_galaxy.flat_rest_api import content
+
+log = logging.getLogger(__name__)
+
+
+def test_yaml_parse():
+    content_str = 'git+https://github.com/atestuseraccount/ansible-testing-content.git,1.2.3'
+    ret = content.GalaxyContent.yaml_parse(content_str)
+
+    log.debug('content_str: %s ret: %s', content_str, ret)
+
+    assert ret['name'] == 'ansible-testing-content'
+    assert ret['version'] == '1.2.3'
+
+    content_str = 'git+https://github.com/atestuseraccount/ansible-testing-content.git,name=elasticsearch_plugin.py'
+    ret = content.GalaxyContent.yaml_parse(content_str)
+
+    log.debug('content_str: %s ret: %s', content_str, ret)
+
+    assert ret['name'] == 'ansible-testing-content'
+    assert ret['version'] == 'asdfsdf'
+
 
 
 def test_parse_content_name():
