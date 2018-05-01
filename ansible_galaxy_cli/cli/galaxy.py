@@ -378,6 +378,7 @@ class GalaxyCLI(cli.CLI):
         for content in self.args:
             galaxy_content = GalaxyContent.yaml_parse(content.strip())
             galaxy_content["type"] = self.options.content_type
+            self.log.debug('content install galaxy_content: %s', galaxy_content)
             content_left.append(GalaxyContent(self.galaxy, **galaxy_content))
 
         for content in content_left:

@@ -88,18 +88,18 @@ class GalaxyAPI(object):
         if args and not headers:
             headers = self.__auth_header()
         try:
-            self.log.info('%s %s', method, url)
-            self.log.debug('%s %s args=%s', method, url, args)
-            self.log.debug('%s %s headers=%s', method, url, headers)
+            # self.log.info('%s %s', method, url)
+            # self.log.debug('%s %s args=%s', method, url, args)
+            # self.log.debug('%s %s headers=%s', method, url, headers)
             resp = open_url(url, data=args, validate_certs=self._validate_certs, headers=headers, method=method,
                             timeout=20)
             self.log.debug('%s %s http_status=%s', method, url, resp.getcode())
             final_url = resp.geturl()
             if final_url != url:
                 self.log.debug('%s %s Redirected to: %s', method, url, resp.geturl())
-            self.log.debug('%s %s info:\n%s', method, url, resp.info())
+            # self.log.debug('%s %s info:\n%s', method, url, resp.info())
             data = json.loads(to_text(resp.read(), errors='surrogate_or_strict'))
-            self.log.debug('%s %s data: \n%s', method, url, json.dumps(data, indent=2))
+            # self.log.debug('%s %s data: \n%s', method, url, json.dumps(data, indent=2))
         except HTTPError as e:
             self.log.debug('Exception on %s %s', method, url)
             self.log.exception(e)
@@ -182,6 +182,19 @@ class GalaxyAPI(object):
 
         data = self.__call_galaxy(url)
         return data['results']
+
+    @g_connect
+    def lookup_content_by_name(self, user_name, content_name, content_type=None, notify=True):
+        content_name = urlquote(content_name)
+
+        if notify:
+            self.log.info("- downloading content '%s', type '%s'  owned by %s", content_name, content_type, user_name)
+
+        url = '%s/content/?owner__username=%s&name=%s' % (self.baseurl, user_name, content_name)
+        data = self.__call_galaxy(url)
+        if len(data["results"]) != 0:
+            return data["results"][0]
+        return None
 
     @g_connect
     def lookup_role_by_name(self, role_name, notify=True):

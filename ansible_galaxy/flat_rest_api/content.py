@@ -54,6 +54,22 @@ log = logging.getLogger(__name__)
 # can provide a ContentInstallInfo
 
 
+# TODO: test cases
+def parse_content_name(content_name):
+    "split a full content_name into username, content_name"
+
+    try:
+        parts = content_name.split(".")
+        user_name = parts[0]
+        # user_name = ".".join(parts[0:-1])
+        content_name = '.'.join(parts[1:])
+    except Exception as e:
+        log.exception(e)
+        raise exceptions.GalaxyClientError("Invalid content name (%s). Specify content as format: username.contentname" % content_name)
+
+    return (user_name, content_name)
+
+
 class GalaxyContent(object):
 
     SUPPORTED_SCMS = set(['git', 'hg'])
@@ -512,7 +528,8 @@ class GalaxyContent(object):
             else:
                 api = GalaxyAPI(self.galaxy)
                 # FIXME - Need to update our API calls once Galaxy has them implemented
-                content_data = api.lookup_role_by_name(self.src)
+                content_username, content_name = parse_content_name(self.src)
+                content_data = api.lookup_content_by_name(content_username, content_name)
                 if not content_data:
                     raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.src, api.api_server))
 
@@ -522,14 +539,14 @@ class GalaxyContent(object):
                                           "Container" % self.content.name, level='warning')
 
                 # FIXME - Need to update our API calls once Galaxy has them implemented
-                role_versions = api.fetch_role_related('versions', content_data['id'])
+                content_versions = api.fetch_content_related('versions', content_data['id'])
                 if not self.version:
                     # convert the version names to LooseVersion objects
                     # and sort them to get the latest version. If there
                     # are no versions in the list, we'll grab the head
                     # of the master branch
-                    if len(role_versions) > 0:
-                        loose_versions = [LooseVersion(a.get('name', None)) for a in role_versions]
+                    if len(content_versions) > 0:
+                        loose_versions = [LooseVersion(a.get('name', None)) for a in content_versions]
                         try:
                             loose_versions.sort()
                         except TypeError:
@@ -544,10 +561,10 @@ class GalaxyContent(object):
                     else:
                         self.content.version = 'master'
                 elif self.version != 'master':
-                    if role_versions and str(self.version) not in [a.get('name', None) for a in role_versions]:
+                    if content_versions and str(self.version) not in [a.get('name', None) for a in content_versions]:
                         raise exceptions.GalaxyError("- the specified version (%s) of %s was not found in the list of available versions (%s)." % (self.version,
                                                                                                                                                    self.content.name,
-                                                                                                                                                   role_versions))
+                                                                                                                                                   content_versions))
 
                 tmp_file = self.fetch(content_data)
 
