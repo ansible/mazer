@@ -25,6 +25,7 @@ __metaclass__ = type
 
 import datetime
 import errno
+import json
 import logging
 import os
 import shutil
@@ -484,17 +485,24 @@ class GalaxyContent(object):
 
         return False
 
-    def fetch(self, content_data):
+    # FIXME: let the archive_url be passed in
+    def fetch(self, content_data, external_url=None):
         """
         Downloads the archived content from github to a temp location
         """
+
+        self.log.debug('fetch content_data=%s', json.dumps(content_data, indent=4))
         if content_data:
 
+            archive_url = self.src
             # first grab the file and save it to a temp location
             if "github_user" in content_data and "github_repo" in content_data:
                 archive_url = 'https://github.com/%s/%s/archive/%s.tar.gz' % (content_data["github_user"], content_data["github_repo"], self.version)
-            else:
-                archive_url = self.src
+
+            if external_url:
+                archive_url = '%s/archive/%s.tar.gz' % (external_url, self.version)
+
+            self.log.debug('self.src=%s archive_url=%s', self.src, archive_url)
 
             self.display_callback("- downloading content from %s" % archive_url)
 
@@ -508,6 +516,7 @@ class GalaxyContent(object):
                 temp_file.close()
                 return temp_file.name
             except Exception as e:
+                self.log.exception(e)
                 self.display_callback("failed to download the file: %s" % str(e), level='error')
 
         return False
@@ -563,6 +572,7 @@ class GalaxyContent(object):
                                 'install.' % ', '.join([v.vstring for v in loose_versions])
                             )
                         self.content.version = str(loose_versions[-1])
+                    # FIXME: follow 'repository' branch and it's ['import_branch'] ?
                     elif content_data.get('github_branch', None):
                         self.content.version = content_data['github_branch']
                     else:
@@ -572,8 +582,17 @@ class GalaxyContent(object):
                         raise exceptions.GalaxyError("- the specified version (%s) of %s was not found in the list of available versions (%s)." % (self.version,
                                                                                                                                                    self.content.name,
                                                                                                                                                    content_versions))
+                related_repo_url = related.get('repository', None)
+                content_repo = None
+                if related_repo_url:
+                    content_repo = api.fetch_content_related(related_repo_url)
+                self.log.debug('content_repo: %s', content_repo)
 
-                tmp_file = self.fetch(content_data)
+                external_url = content_repo.get('external_url', None)
+                if external_url:
+                    tmp_file = self.fetch(content_data, external_url)
+                else:
+                    tmp_file = self.fetch(content_data)
 
         else:
             raise exceptions.GalaxyClientError("No valid content data found")
