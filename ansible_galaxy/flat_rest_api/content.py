@@ -435,25 +435,13 @@ class GalaxyContent(object):
         # now we do the actual extraction to the path
         self.log.debug('tar_file=%s, parent_dir=%s, file_name=%s', tar_file, parent_dir, file_name)
         files_to_extract = files_to_extract or []
-        file_names_to_extract = []
         plugin_found = None
 
         if file_name:
             files_to_extract.append(file_name)
-        file_names_to_extract.extend([tar_info.name for tar_info in files_to_extract])
-
-        self.log.debug('files_to_extract: %s', file_names_to_extract)
+        self.log.debug('files_to_extract: %s', files_to_extract)
 
         path = extract_to_path or self.path
-        #if file_names_to_extract:
-        #    self.log.debug('Extracting file_names=%s, path=%s', files_to_extract, path)
-        #    tar_file.extractall(path=path, members=files_to_extract)
-        #    for file_name_to_extract in file_names_to_extract:
-        #   tar_file.extract(file_name_to_extract, path)
-        #for file_to_extract in files_to_extract:
-        #    file_to_extract.name =
-        #    self.log.debug('Extracted the explicit files_to_extract, done now.')
-        #    return
 
         # do we need to drive this from tar_file members if we have file_names_to_extract?
         # for member in tar_file.getmembers():
@@ -495,10 +483,11 @@ class GalaxyContent(object):
                     elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP[self.content_type]:
                         plugin_found = CONTENT_TYPE_DIR_MAP[self.content_type]
 
-                    self.log.debug('plugin_found: %s', plugin_found)
+                    self.log.debug('plugin_found1: %s', plugin_found)
                     if not plugin_found:
                         continue
 
+                self.log.debug('plugin_found2: %s', plugin_found)
                 if plugin_found:
                     # If this is not a role, we don't expect it to be installed
                     # into a subdir under roles path but instead directly
@@ -521,6 +510,7 @@ class GalaxyContent(object):
                             continue
                 else:
                     parts = member.name.replace(parent_dir, "", 1).split(os.sep)
+                    self.log.debug('plugin_found falsey, building parts: %s', parts)
 
                 final_parts = []
                 for part in parts:
@@ -837,8 +827,13 @@ class GalaxyContent(object):
                             else:
                                 os.makedirs(self.path)
 
+                            tar_file_members = content_tar_file.getmembers()
+                            member_matches = [tar_file_member for tar_file_member in tar_file_members if tar_info_content_name_match(tar_file_member, content_name)]
+                            self.log.debug('member_matches: %s' % member_matches)
+                            self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
+                                                        extract_to_path=self.content.path)
 
-                            self._write_archived_files(content_tar_file, archive_parent_dir)
+                            # self._write_archived_files(content_tar_file, archive_parent_dir)
 
                             # write out the install info file for later use
                             self._write_galaxy_install_info()

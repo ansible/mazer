@@ -99,7 +99,7 @@ class GalaxyAPI(object):
                 self.log.debug('%s %s Redirected to: %s', method, url, resp.geturl())
             # self.log.debug('%s %s info:\n%s', method, url, resp.info())
             data = json.loads(to_text(resp.read(), errors='surrogate_or_strict'))
-            # self.log.debug('%s %s data: \n%s', method, url, json.dumps(data, indent=2))
+            self.log.debug('%s %s data: \n%s', method, url, json.dumps(data, indent=2))
         except HTTPError as e:
             self.log.debug('Exception on %s %s', method, url)
             self.log.exception(e)
