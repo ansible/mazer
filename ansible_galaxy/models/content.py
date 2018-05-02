@@ -23,6 +23,7 @@ CONTENT_PLUGIN_TYPES = (
 CONTENT_TYPES = CONTENT_PLUGIN_TYPES + ('role',)
 
 CONTENT_TYPE_DIR_MAP = dict([(k, '%ss' % k) for k in CONTENT_TYPES])
+CONTENT_TYPE_DIR_MAP['module'] = 'library'
 
 
 class GalaxyContentMeta(object):
