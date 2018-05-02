@@ -57,6 +57,7 @@ log = logging.getLogger(__name__)
 
 
 # TODO: test cases
+# TODO: class/type for a content spec
 def parse_content_name(content_name):
     "split a full content_name into username, content_name"
 
@@ -76,7 +77,6 @@ def parse_content_name(content_name):
     return (user_name, repo_name, content_name)
 
 
-# TODO: move to module scope
 def tar_info_content_name_match(tar_info, content_name, content_path=None):
     # only reg files or symlinks can match
     if not tar_info.isreg() and not tar_info.islnk():
@@ -394,6 +394,7 @@ class GalaxyContent(object):
                     f.close()
         return self._install_info
 
+    # FIXME: should probably be a GalaxyInfoInfo class
     def _write_galaxy_install_info(self):
         """
         Writes a YAML-formatted file to the role's meta/ directory
@@ -411,6 +412,8 @@ class GalaxyContent(object):
             os.makedirs(os.path.join(self.path, 'meta'))
         info_path = os.path.join(self.path, self.META_INSTALL)
         with open(info_path, 'w+') as f:
+            # FIXME: just return the install_info dict (or better, build it elsewhere and pass in)
+            # FIXME: stop minging self state
             try:
                 self._install_info = yaml.safe_dump(info, f)
             except Exception as e:
@@ -420,6 +423,13 @@ class GalaxyContent(object):
 
         return True
 
+    # FIXME: persisting of content archives or subsets thereof
+    # FIXME: currently does way too much, could be split into generic and special case classes
+    # FIXME: some weirdness here is caused by tarfile API being a little strange. To extract a file
+    #        to a different path than from the archive, you have to update each TarInfo member and
+    #        change it's 'name' attribute after loading/opening a TarFile() but before extract()
+    #        Since it's mutating the TarFile object, have to be careful if anything will use the object
+    #        after it was changed
     def _write_archived_files(self, tar_file, parent_dir,
                               file_name=None, files_to_extract=None,
                               extract_to_path=None):
@@ -586,9 +596,12 @@ class GalaxyContent(object):
         """
 
         # self.log.debug('fetch content_data=%s', json.dumps(content_data, indent=4))
+        # FIXME: return early if content_data is falsey and unindent
         if content_data:
 
             archive_url = self.src
+
+            # FIXME: 'github_user'/'github_repo' dont exist in v3 API
             # first grab the file and save it to a temp location
             if "github_user" in content_data and "github_repo" in content_data:
                 archive_url = 'https://github.com/%s/%s/archive/%s.tar.gz' % (content_data["github_user"], content_data["github_repo"], self.version)
@@ -610,6 +623,7 @@ class GalaxyContent(object):
                 temp_file.close()
                 return temp_file.name
             except Exception as e:
+                # FIXME: there is a ton of reasons a download and save could fail so could likely provided better errors here
                 self.log.exception(e)
                 self.display_callback("failed to download the file: %s" % str(e), level='error')
 
@@ -621,6 +635,36 @@ class GalaxyContent(object):
         # to the specified (or default) content directory
         local_file = False
 
+        # ContentArchive
+        #   path: None
+        #   scm_info: ScmInfo()
+        #   galaxy_content:
+        #     username
+        #     namespace
+        #     repo_name
+        #     content_name
+        #     versions: []
+        #     repository:
+        #       external_url:
+        #     scm_branch: ?
+        #     archive_url:
+        #   contents:
+        #    - name: content1
+        #      meta_file:
+        #        role_name:
+        #        version:
+        #        deps:
+        #      galaxy_metadata:
+        #        whichever_data:
+        #        other_ansible_galaxy_yml_data:
+        #      path_in_archive:
+        #      path_to_install_to:
+        #      content_type:
+        #    - name: content2
+        #      <..>
+        #
+        # FIXME: this is loading and persisting the archive and should be extract to another class/method
+        # FIXME: the exception case is no self.scm and no self.src, so detect that early and raise then unindent
         if self.scm:
             # create tar file from scm url
             tmp_file = GalaxyContent.scm_archive_content(**self.spec)
@@ -633,6 +677,7 @@ class GalaxyContent(object):
                 content_data = self.src
                 tmp_file = self.fetch(content_data)
             else:
+                # FIXME: all this stuff that hits galaxy api to eventually find the archive url should be extract elsewhere
                 api = GalaxyAPI(self.galaxy)
                 # FIXME - Need to update our API calls once Galaxy has them implemented
                 content_username, repo_name, content_name = parse_content_name(self.src)
@@ -653,6 +698,7 @@ class GalaxyContent(object):
                 related_versions_url = related.get('versions', None)
                 content_versions = api.fetch_content_related(related_versions_url)
 
+                # FIXME: mv to it's own method
                 if not self.version:
                     # convert the version names to LooseVersion objects
                     # and sort them to get the latest version. If there
@@ -676,9 +722,10 @@ class GalaxyContent(object):
                         self.content.version = 'master'
                 elif self.version != 'master':
                     if content_versions and str(self.version) not in [a.get('name', None) for a in content_versions]:
-                        raise exceptions.GalaxyError("- the specified version (%s) of %s was not found in the list of available versions (%s)." % (self.version,
-                                                                                                                                                   self.content.name,
-                                                                                                                                                   content_versions))
+                        raise exceptions.GalaxyError(
+                            "- the specified version (%s) of %s was not found in the list of available versions (%s)." % (self.version,
+                                                                                                                          self.content.name,
+                                                                                                                          content_versions))
                 related_repo_url = related.get('repository', None)
                 content_repo = None
                 if related_repo_url:
@@ -694,9 +741,13 @@ class GalaxyContent(object):
         else:
             raise exceptions.GalaxyClientError("No valid content data found")
 
+        # FIXME: the 'fetch', persist locally,  and 'install' steps should not be combined here
+        # FIXME: mv to own method[s], unindent
         if tmp_file:
 
             self.log.debug("installing from %s", tmp_file)
+
+            # FIXME: unindent the non error else here
             if not tarfile.is_tarfile(tmp_file):
                 raise exceptions.GalaxyClientError("the file downloaded was not a tar.gz")
             else:
@@ -713,6 +764,9 @@ class GalaxyContent(object):
                 # import pprint
                 # self.log.debug('tmp_file (%s) members: %s', tmp_file, pprint.pformat(members))
                 # next find the metadata file
+
+                # FIXME: mv to method or ditch entirely and drive from a iterable of files to extract and save
+                # FIXME: this is role specific logic so could move elsewhere
                 for member in members:
                     if self.META_MAIN in member.name or self.GALAXY_FILE in member.name:
                         # Look for parent of meta/main.yml
@@ -740,9 +794,11 @@ class GalaxyContent(object):
                                     meta_file = member
 
                 self.log.debug('self.content_type: %s', self.content_type)
+
                 # content types like 'module' shouldn't care about meta_file elsewhere
                 if self.content_type in self.NO_META:
                     meta_file = None
+
                 # FIXME: THIS IS A HACK
                 #
                 # We've determined that this is a legacy role, we're going to
@@ -753,6 +809,7 @@ class GalaxyContent(object):
                     self._set_content_paths(self._orig_path)
                     self._install_all_content = False
 
+                # FIXME: mv to it's own method
                 if not archive_parent_dir:
                     # archive_parent_dir wasn't found above when checking for metadata files
                     parent_dir_found = False
@@ -786,7 +843,9 @@ class GalaxyContent(object):
                 self.log.debug("meta_parent_dir: %s", meta_parent_dir)
                 if not meta_file and not galaxy_file and self.content_type == "role":
                     raise exceptions.GalaxyClientError("this role does not appear to have a meta/main.yml file or ansible-galaxy.yml.")
+                # FIXME: unindent
                 else:
+                    # FIXME: mv to AnsibleGalaxyMetadata
                     try:
                         if galaxy_file:
                             # Let the galaxy_file take precedence
@@ -803,16 +862,21 @@ class GalaxyContent(object):
                 # we strip off any higher-level directories for all of the files contained within
                 # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other
                 # hand, does not have a parent directory at all.
+
                 installed = False
+                # FIXME: get rid of the while loop or continue if nothing catches
                 while not installed:
                     if self.content_type != "all":
                         self.display_callback("- extracting %s %s to %s" % (self.content_type, self.content.name, self.path))
                     else:
                         self.display_callback("- extracting all content in %s to content directories" % self.content.name)
 
+                    # FIXME: a few pages of code in a try block, extract to own method/class
                     try:
+                        # FIXME: figure out what the 'case' is first, then branch to implementations and mv the impls
                         if self.content_type == "role" and meta_file and not galaxy_file:
                             # This is an old-style role
+                            # FIXME: should likely be responsibilty of the Content or RoleContent serializer
                             if os.path.exists(self.path):
                                 if not os.path.isdir(self.path):
                                     raise exceptions.GalaxyClientError("the specified roles path exists and is not a directory.")
@@ -821,12 +885,15 @@ class GalaxyContent(object):
                                     raise exceptions.GalaxyClientError(msg)
                                 else:
                                     # using --force, remove the old path
+                                    # FIXME: this is ~10 indent levels deep in the 'install' method which is a weird place to do a remove
                                     if not self.remove():
                                         raise exceptions.GalaxyClientError("%s doesn't appear to contain a role.\n  please remove this directory manually if you really "
                                                         "want to put the role here." % self.path)
                             else:
                                 os.makedirs(self.path)
 
+                            # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
+                            #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
                             tar_file_members = content_tar_file.getmembers()
                             member_matches = [tar_file_member for tar_file_member in tar_file_members if tar_info_content_name_match(tar_file_member, content_name)]
                             self.log.debug('member_matches: %s' % member_matches)
@@ -884,6 +951,9 @@ class GalaxyContent(object):
                                 #   if content == self.type_dir:
                                 #
                                 #   self.galaxy_metadata[content] # General processing
+
+                                # FIXME: suppose this is basically options for setting up a deserializer
+                                # FIXME: def should be elsewhere, likely some serializer class
                                 if content == "meta_version":
                                     continue
                                 elif content == "modules":
@@ -903,6 +973,7 @@ class GalaxyContent(object):
                                                 )
                                                 installed = True
 
+                                        # FIXME: on a general level, having content that only sometimes has dep info seems like a problem
                                         if 'dependencies' in module:
                                             for dep in module['dependencies']:
                                                 if 'src' not in dep:
@@ -951,6 +1022,7 @@ class GalaxyContent(object):
                             # heuristically walking the directories and install
                             # the appropriate things in the appropriate places
 
+                            # FIXME: this is basically a big switch to decide what serializer to use
                             if self.content_type != "all":
                                 # TODO: based on content_name, need to find/build the full path to that in the
                                 #       tar archive so we can extract it.
@@ -967,7 +1039,7 @@ class GalaxyContent(object):
                                                            extract_to_path=self.content.path)
                                 installed = True
                             else:
-
+                                # FIXME: extract and test, build a map of the name transforms first, then apply, then install
                                 # Find out what plugin type subdirs exist in this repo
                                 #
                                 # This list comprehension will iterate every member entry in
@@ -988,6 +1060,7 @@ class GalaxyContent(object):
                                 ]
 
                                 if plugin_subdirs:
+                                    # FIXME: stop munging state
                                     self._install_all_content = True
                                     for plugin_subdir in plugin_subdirs:
                                         # Set the type, this is neccesary for processing extraction of
@@ -1007,6 +1080,7 @@ class GalaxyContent(object):
 
                     except OSError as e:
                         error = True
+                        # FIXME: what is this doing? walking down dir tree ?
                         if e.errno == errno.EACCES and len(self.paths) > 1:
                             current = self.paths.index(self.path)
                             if len(self.paths) > current:
@@ -1042,6 +1116,7 @@ class GalaxyContent(object):
         """
         return dict(scm=self.scm, src=self.src, version=self.version, name=self.content.name)
 
+    # FIXME: dont see any reason not to mv this somewhere more general
     @staticmethod
     def scm_archive_content(src, scm='git', name=None, version='HEAD'):
         """
@@ -1099,6 +1174,8 @@ class GalaxyContent(object):
     # TODO: return a new GalaxyContentMeta
     # TODO: dont munge the passed in content
     # TODO: split into smaller methods
+    # FIXME: does this actually use yaml?
+    # FIXME: kind of seems like this does two different things
     @staticmethod
     def yaml_parse(content):
         """parses the passed in yaml string and returns a dict with name/src/scm/version
@@ -1183,6 +1260,7 @@ class GalaxyContent(object):
             trailing_path = trailing_path.split(',')[0]
         return trailing_path
 
+    # FIXME: likely needs to learn version=1,name='blip', etc. And tests
     @staticmethod
     def role_spec_parse(role_spec):
         # takes a repo and a version like
