@@ -1,21 +1,22 @@
+
 import logging
 
 
-from ansible_galaxy.flat_rest_api import content
+from ansible_galaxy.models import content_version
 from ansible_galaxy import exceptions
 
 log = logging.getLogger(__name__)
 
 
 def test_get_content_version_none():
-    ret = content.get_content_version({}, None, [], None)
+    ret = content_version.get_content_version({}, None, [], None)
     log.debug('ret=%s', ret)
 
     assert ret == 'master'
 
 
 def test_get_content_version_devel_version_no_content_versions():
-    ret = content.get_content_version({}, 'devel', [], None)
+    ret = content_version.get_content_version({}, 'devel', [], None)
     log.debug('ret=%s', ret)
 
     assert ret == 'master'
@@ -50,7 +51,7 @@ content_versions_147 = [
 def test_get_content_version_devel_version_not_in_content_versions():
     # FIXME: use pytest expect_exception stuff
     try:
-        ret = content.get_content_version({}, 'devel', content_versions_147, 'some_content_name')
+        ret = content_version.get_content_version({}, 'devel', content_versions_147, 'some_content_name')
         log.debug('ret=%s', ret)
     except exceptions.GalaxyError as e:
         log.exception(e)
@@ -61,6 +62,6 @@ def test_get_content_version_devel_version_not_in_content_versions():
 
 def test_get_content_version_2_3_7_version_in_content_versions():
     # FIXME: use pytest expect_exception stuff
-    ret = content.get_content_version({}, '2.3.7', content_versions_147, 'some_content_name')
+    ret = content_version.get_content_version({}, '2.3.7', content_versions_147, 'some_content_name')
     log.debug('ret=%s', ret)
     assert ret == '2.3.7'

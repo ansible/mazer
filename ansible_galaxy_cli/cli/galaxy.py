@@ -33,12 +33,12 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 
 from ansible_galaxy_cli import cli
-from ansible_galaxy.config import defaults
 from ansible_galaxy.config import runtime
 from ansible_galaxy import exceptions
 from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.utils.text import to_text
+from ansible_galaxy.utils.yaml_parse import yaml_parse
 
 # FIXME: importing class, fix name collision later or use this style
 # TODO: replace flat_rest_api with a OO interface
@@ -319,7 +319,7 @@ class GalaxyCLI(cli.CLI):
             if gr.metadata:
                 role_info.update(gr.metadata)
 
-            role_spec = GalaxyContent.yaml_parse({'role': role})
+            role_spec = yaml_parse({'role': role})
             if role_spec:
                 role_info.update(role_spec)
 
@@ -377,9 +377,9 @@ class GalaxyCLI(cli.CLI):
         # roles were specified directly, so we'll just go out grab them
         # (and their dependencies, unless the user doesn't want us to).
         for content in self.args:
-            galaxy_content = GalaxyContent.yaml_parse(content.strip())
+            galaxy_content = yaml_parse(content.strip())
             galaxy_content["type"] = self.options.content_type
-            self.log.debug('content install galaxy_content: %s', galaxy_content)
+            self.log.info('content install galaxy_content: %s', galaxy_content)
             content_left.append(GalaxyContent(self.galaxy, **galaxy_content))
 
         for content in content_left:
@@ -436,7 +436,7 @@ class GalaxyCLI(cli.CLI):
                         role_dependencies = content.metadata.get('dependencies') or []
                         for dep in role_dependencies:
                             log.debug('Installing dep %s', dep)
-                            dep_info = GalaxyContent.yaml_parse(dep)
+                            dep_info = yaml_parse(dep)
                             dep_role = GalaxyContent(self.galaxy, **dep_info)
                             if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
                                 # we know we can skip this, as it's not going to
@@ -490,7 +490,7 @@ class GalaxyCLI(cli.CLI):
 
                     for role in required_roles:
                         if "include" not in role:
-                            role = GalaxyContent.yaml_parse(role)
+                            role = yaml_parse(role)
                             log.info("found role %s in yaml file", str(role))
                             if "name" not in role and "scm" not in role:
                                 raise cli_exceptions.GalaxyCliError("Must specify name or src for role")
@@ -500,7 +500,7 @@ class GalaxyCLI(cli.CLI):
                                 try:
                                     roles_left += [
                                         GalaxyContent(self.galaxy, **r) for r in
-                                        (GalaxyContent.yaml_parse(i) for i in yaml.safe_load(f_include))
+                                        (yaml_parse(i) for i in yaml.safe_load(f_include))
                                     ]
                                 except Exception as e:
                                     msg = "Unable to load data from the include requirements file: %s %s"
@@ -512,7 +512,7 @@ class GalaxyCLI(cli.CLI):
                         if rline.startswith("#") or rline.strip() == '':
                             continue
                         log.debug('found role %s in text file', str(rline))
-                        role = GalaxyContent.yaml_parse(rline.strip())
+                        role = yaml_parse(rline.strip())
                         roles_left.append(GalaxyContent(self.galaxy, **role))
                 f.close()
             except (IOError, OSError) as e:
@@ -521,7 +521,7 @@ class GalaxyCLI(cli.CLI):
             # roles were specified directly, so we'll just go out grab them
             # (and their dependencies, unless the user doesn't want us to).
             for rname in self.args:
-                role = GalaxyContent.yaml_parse(rname.strip())
+                role = yaml_parse(rname.strip())
                 roles_left.append(GalaxyContent(self.galaxy, **role))
 
         for role in roles_left:
@@ -565,7 +565,7 @@ class GalaxyCLI(cli.CLI):
                     role_dependencies = role.metadata.get('dependencies') or []
                     for dep in role_dependencies:
                         log.debug('Installing dep %s', dep)
-                        dep_info = GalaxyContent.yaml_parse(dep)
+                        dep_info = yaml_parse(dep)
                         dep_role = GalaxyContent(self.galaxy, **dep_info)
                         if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
                             # we know we can skip this, as it's not going to
