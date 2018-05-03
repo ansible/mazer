@@ -15,7 +15,7 @@ Verify first that your issue/request is not already reported on GitHub.
  - Documentation Report
 
 ##### GALAXY CLI VERSION
-<!--- Paste, BELOW THIS COMMENT, verbatim output from "ansible-galaxy --version" between quotes below -->
+<!--- Paste, BELOW THIS COMMENT, verbatim output from "ansible-galaxy version" between quotes below -->
 ```
 
 ```
