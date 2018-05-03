@@ -44,8 +44,8 @@ log = logging.getLogger(__name__)
 #   self.galaxy_metadata[content] # General processing
 
 
-def load_content_repository(data):
-    content_repository = yaml.safe_load(data)
+def load(data_or_file_object):
+    content_repository = yaml.safe_load(data_or_file_object)
     return content_repository
 
 

@@ -26,7 +26,6 @@ __metaclass__ = type
 import datetime
 import errno
 import fnmatch
-import json
 import logging
 import os
 from shutil import rmtree
@@ -40,6 +39,7 @@ from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import CONTENT_PLUGIN_TYPES, CONTENT_TYPES
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.models import content
+from ansible_galaxy.models import content_repository
 from ansible_galaxy.models import content_version
 from ansible_galaxy.utils.yaml_parse import yaml_parse
 from ansible_galaxy.utils.content_name import parse_content_name
@@ -110,7 +110,7 @@ class GalaxyContent(object):
 
         self._metadata = None
         # TODO: replace with empty ContentRepository instance?
-        self._galaxy_metadata = []
+        self._galaxy_metadata = {}
         self._install_info = None
         self._validate_certs = not galaxy.options.ignore_certs
 
@@ -813,7 +813,7 @@ class GalaxyContent(object):
                     try:
                         if galaxy_file:
                             # Let the galaxy_file take precedence
-                            self._galaxy_metadata = yaml.safe_load(content_tar_file.extractfile(galaxy_file))
+                            self._galaxy_metadata = content_repository.load(content_tar_file.extractfile(galaxy_file))
                         elif meta_file:
                             self._metadata = yaml.safe_load(content_tar_file.extractfile(meta_file))
                         # else:
