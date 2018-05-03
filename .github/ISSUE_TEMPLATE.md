@@ -1,9 +1,3 @@
----
-name: Bug report
-about: Create a report to help us improve
-
----
-
 <!---
 Verify first that your issue/request is not already reported on GitHub.
  -->
