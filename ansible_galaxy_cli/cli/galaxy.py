@@ -23,7 +23,7 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import logging
-import os.path
+import os
 import re
 import shutil
 import sys
@@ -33,6 +33,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 
 from ansible_galaxy_cli import cli
+from ansible_galaxy_cli import __version__ as galaxy_cli_version
 from ansible_galaxy.config import runtime
 from ansible_galaxy import exceptions
 from ansible_galaxy_cli import exceptions as cli_exceptions
@@ -58,7 +59,7 @@ class GalaxyCLI(cli.CLI):
     '''command to manage Ansible roles in shared repostories, the default of which is Ansible Galaxy *https://galaxy.ansible.com*.'''
 
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
-    VALID_ACTIONS = ("delete", "import", "info", "init", "install", "content-install", "list", "login", "remove", "search", "setup")
+    VALID_ACTIONS = ("delete", "import", "info", "init", "install", "content-install", "list", "login", "remove", "search", "setup", "version")
 
     def __init__(self, args):
         self.api = None
@@ -130,12 +131,14 @@ class GalaxyCLI(cli.CLI):
             self.parser.add_option('--remove', dest='remove_id', default=None,
                                    help='Remove the integration matching the provided ID value. Use --list to see ID values.')
             self.parser.add_option('--list', dest="setup_list", action='store_true', default=False, help='List all of your integrations.')
+        elif self.action == "version":
+            self.parser.set_usage("usage: %prog version")
 
         # options that apply to more than one action
         if self.action in ['init', 'info']:
             self.parser.add_option('--offline', dest='offline', default=False, action='store_true', help="Don't query the galaxy API when creating roles")
 
-        if self.action not in ("delete", "import", "init", "login", "setup"):
+        if self.action not in ("delete", "import", "init", "login", "setup", "version"):
             # NOTE: while the option type=str, the default is a list, and the
             # callback will set the value to a list.
             self.parser.add_option('-p', '--roles-path', dest='roles_path', action="append", default=[],
@@ -894,4 +897,14 @@ class GalaxyCLI(cli.CLI):
 
         self.display(resp['status'])
 
+        return True
+
+    def execute_version(self):
+        self.display('Ansible Galaxy CLI, version', galaxy_cli_version)
+        self.display(', '.join(os.uname()))
+        self.display(sys.version, sys.executable)
+        if runtime.CONFIG_FILE:
+            self.display(u"Using %s as config file", to_text(runtime.CONFIG_FILE))
+        else:
+            self.display(u"No config file found; using defaults")
         return True
