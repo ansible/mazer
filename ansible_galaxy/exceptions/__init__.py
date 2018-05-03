@@ -16,3 +16,9 @@ class GalaxyClientError(GalaxyError):
 class ParserError(GalaxyError):
     """Base exception raised for errors while parsing galaxy content"""
     pass
+
+
+# TODO: attrs for http code, url, msg or just reuse http exception from elsewhere
+class GalaxyDownloadError(GalaxyError):
+    '''Raise when there is an error downloading galaxy content'''
+    pass
