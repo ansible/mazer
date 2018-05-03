@@ -1,0 +1,83 @@
+# ansible-galaxy.yml
+---
+meta_version: "0.1"  # metadata format version
+repo_name:
+namespace:
+
+roles:
+ - path: playbooks/roles/*
+ - path: not_playbooks/roleb/
+   dependencies:
+    - src: namespace.repo_name.module_name
+      type: module_utils
+    - src: ssh://git@github.com/acme/ansible-example.git
+      type: module
+      version: master
+      scm: git
+      path: /library/*
+    - src: namespace.repo_name.roleA
+      type: role
+
+modules:
+ - path: playbooks/modules/*
+ - path: modules/module_b
+   tags:
+    - foo
+    - bar
+   cloud_platforms:
+    - aws
+   dependencies:
+    - src: /module_utils
+ - path: modules/module_c.py
+   dependencies:
+    - src: namespace.repo_name.module_name
+      type: module_utils
+    - src: ssh://git@github.com/acme/ansible-example.git
+      type: module_utils
+      version: master
+      scm: git
+      path: common/utils/*
+    - src: namespace.repo_name.plugin_name
+      type: action_plugin
+
+module_utils:
+ - path: common/utils
+ - path: common/utils/*
+   dependencies:
+    - src: namespace.repo_name.module_name
+      type: module_utils
+    - src: ssh://git@github.com/acme/ansible-example.git
+      type: module_utils
+      version: master
+      scm: git
+      path: common/utils/*
+
+action_plugins:
+ - path: plugins/action/foo
+ - path: action_plugins/*
+   dependencies:
+    - src: namespace.repo_name.module_name
+      type: module_utils
+    - src: ssh://git@github.com/acme/ansible-example.git
+      type: module_utils
+      version: master
+      scm: git
+      path: common/utils/*
+    - src: namespace.repo_name.plugin_name
+      type: connection_plugin
+
+filter_plugins:
+ - path: plugins/filter/foo
+ - path: filter_plugins/*
+   dependencies:
+    - src: namespace.repo_name.module_name
+      type: module_utils
+    - src: ssh://git@github.com/acme/ansible-example.git
+      type: module_utils
+      version: master
+      scm: git
+      path: common/utils/*
+ - src: namespace.repo_name.plugin_name
+   type: filter_plugin
+ - src: namespace.repo_name.roleB
+   type: role
