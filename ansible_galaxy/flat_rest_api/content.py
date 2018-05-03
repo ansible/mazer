@@ -134,8 +134,8 @@ class GalaxyContent(object):
 
         self._set_type(content_type)
 
-        if self.content_type not in CONTENT_TYPES and self.content_type != "all":
-            raise exceptions.GalaxyClientError("%s is not a valid Galaxy Content Type" % self.content_type)
+        if content_type not in CONTENT_TYPES and content_type != "all":
+            raise exceptions.GalaxyClientError("%s is not a valid Galaxy Content Type" % content_type)
 
         # Set original path, needed to determine what action to take in order to
         # maintain backwards compat with legacy roles
@@ -336,16 +336,18 @@ class GalaxyContent(object):
         """
         Returns Galaxy Content metadata, found in ansible-galaxy.info
         """
-        if self._galaxy_metadata is None:
-            gmeta_path = os.path.join(self.path, self.GALAXY_FILE)
-            if os.path.isfile(gmeta_path):
-                try:
-                    with open(gmeta_path, 'r') as f:
-                        self._galaxy_metadata = yaml.safe_load(f)
-                except Exception as e:
-                    self.log.exception(e)
-                    self.log.debug("Unable to load galaxy metadata for %s", self.content_meta.name)
-                    return False
+        if self._galaxy_metadata is not None:
+            return self._galaxy_metadata
+
+        gmeta_path = os.path.join(self.path, self.GALAXY_FILE)
+        if os.path.isfile(gmeta_path):
+            try:
+                with open(gmeta_path, 'r') as f:
+                    self._galaxy_metadata = yaml.safe_load(f)
+            except Exception as e:
+                self.log.exception(e)
+                self.log.debug("Unable to load galaxy metadata for %s", self.content_meta.name)
+                return False
 
         return self._galaxy_metadata
 
@@ -875,45 +877,6 @@ class GalaxyContent(object):
                             #         all content types defined in the ansible-galaxy.yml file
 
                             for _content in self.galaxy_metadata:
-                                # The galaxy_metadata will contain a dict that defines
-                                # a section for each content type to be installed
-                                # and then a list of types with their deps and src
-                                #
-                                # FIXME - Link to permanent public spec once it exists
-                                #
-                                # https://github.com/ansible/galaxy/issues/245
-                                # https://etherpad.net/p/Galaxy_Metadata
-                                #
-                                # Example to install modules with module_utils deps:
-                                ########
-                                # meta_version: '0.1'  #metadata format version
-                                # modules:
-                                # - path: playbooks/modules/*
-                                # - path: modules/module_b
-                                #   dependencies:
-                                #     - src: /module_utils
-                                # - path: modules/module_c.py
-                                #   dependencies:
-                                #     - src: namespace.repo_name.module_name
-                                #       type: module_utils
-                                #     - src: ssh://git@github.com/acme/ansible-example.git
-                                #       type: module_utils
-                                #       version: master
-                                #       scm: git
-                                #       path: common/utils/*
-                                # - src: namespace.repo_name.plugin_name
-                                #       type: action_plugin
-                                #######
-                                #
-                                #
-                                # Handle "modules" for MVP, add more types later
-                                #
-                                # A more generic way would be to do this, but we're
-                                # not "there yet"
-                                #   if content == self.type_dir:
-                                #
-                                #   self.galaxy_metadata[content] # General processing
-
                                 # FIXME: suppose this is basically options for setting up a deserializer
                                 # FIXME: def should be elsewhere, likely some serializer class
                                 if _content == "meta_version":
