@@ -19,7 +19,9 @@ test_requirements = ['pytest', ]
 
 entry_points = {
     # name collision with ansible-galaxy from ansible/ansible atm
-    'console_scripts': ['ansible-galaxy = ansible_galaxy_cli.__main__:main']
+    'console_scripts': ['ansible-galaxy-cli = ansible_galaxy_cli.__main__:main',
+                        # collides with ansible/ansible
+                        'ansible-galaxy = ansible_galaxy_cli.__main__:main']
 }
 
 setup(

@@ -34,8 +34,6 @@ import tarfile
 import tempfile
 import yaml
 
-from distutils.version import LooseVersion
-
 from ansible_galaxy.flat_rest_api.api import GalaxyAPI
 from ansible_galaxy.config import defaults
 from ansible_galaxy import exceptions
@@ -124,7 +122,7 @@ class GalaxyContent(object):
         self.galaxy = galaxy
 
         self.content_meta = content.GalaxyContentMeta(name=name, src=src, version=version,
-                                                 scm=scm, path=path, content_type=content_type)
+                                                      scm=scm, path=path, content_type=content_type)
 
         # TODO: remove this when the data constructors are split
         # This is a marker needed to make certain decisions about single
@@ -263,7 +261,7 @@ class GalaxyContent(object):
             # singular of type between the contants vars read in from the config
             # file and the subdirectories
             if new_content_type != "all":
-                self.log.debug('ctdm: %s', json.dumps(CONTENT_TYPE_DIR_MAP, indent=4))
+                # self.log.debug('ctdm: %s', json.dumps(CONTENT_TYPE_DIR_MAP, indent=4))
                 galaxy_content_paths = [os.path.join(os.path.expanduser(p),
                                                      CONTENT_TYPE_DIR_MAP[new_content_type]) for p in defaults.DEFAULT_CONTENT_PATH]
             else:
@@ -848,18 +846,21 @@ class GalaxyContent(object):
                                     # using --force, remove the old path
                                     # FIXME: this is ~10 indent levels deep in the 'install' method which is a weird place to do a remove
                                     if not self.remove():
-                                        raise exceptions.GalaxyClientError("%s doesn't appear to contain a role.\n  please remove this directory manually if you really "
-                                                        "want to put the role here." % self.path)
+                                        msg = "%s doesn't appear to contain a role.\n"
+                                        "iplease remove this directory manually if you really "
+                                        "want to put the role here" % self.content_meta.path
+                                        raise exceptions.GalaxyClientError(msg)
                             else:
                                 os.makedirs(self.path)
 
                             # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
                             #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
                             tar_file_members = content_tar_file.getmembers()
-                            member_matches = [tar_file_member for tar_file_member in tar_file_members if tar_info_content_name_match(tar_file_member, self.content_meta.name)]
+                            member_matches = [tar_member for tar_member in tar_file_members
+                                              if tar_info_content_name_match(tar_member, self.content_meta.name)]
                             # self.log.debug('member_matches: %s' % member_matches)
                             self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
-                                                        extract_to_path=self.content_meta.path)
+                                                       extract_to_path=self.content_meta.path)
 
                             # self._write_archived_files(content_tar_file, archive_parent_dir)
 
@@ -873,7 +874,7 @@ class GalaxyContent(object):
                             # FIXME - need to handle the scenario where we want
                             #         all content types defined in the ansible-galaxy.yml file
 
-                            for content in self.galaxy_metadata:
+                            for _content in self.galaxy_metadata:
                                 # The galaxy_metadata will contain a dict that defines
                                 # a section for each content type to be installed
                                 # and then a list of types with their deps and src
@@ -885,8 +886,8 @@ class GalaxyContent(object):
                                 #
                                 # Example to install modules with module_utils deps:
                                 ########
-                                #meta_version: '0.1'  #metadata format version
-                                #modules:
+                                # meta_version: '0.1'  #metadata format version
+                                # modules:
                                 # - path: playbooks/modules/*
                                 # - path: modules/module_b
                                 #   dependencies:
@@ -900,7 +901,7 @@ class GalaxyContent(object):
                                 #       version: master
                                 #       scm: git
                                 #       path: common/utils/*
-                                #- src: namespace.repo_name.plugin_name
+                                # - src: namespace.repo_name.plugin_name
                                 #       type: action_plugin
                                 #######
                                 #
@@ -915,12 +916,12 @@ class GalaxyContent(object):
 
                                 # FIXME: suppose this is basically options for setting up a deserializer
                                 # FIXME: def should be elsewhere, likely some serializer class
-                                if content == "meta_version":
+                                if _content == "meta_version":
                                     continue
-                                elif content == "modules":
+                                elif _content == "modules":
                                     self._set_type("module")
                                     self._set_content_paths()
-                                    for module in self.galaxy_metadata[content]:
+                                    for module in self.galaxy_metadata[_content]:
                                         if len(module["path"].split(os.sep)) > 1:
                                             if module["path"].split(os.sep)[-1] in ['/', '*']:
                                                 # Handle the glob or designation of entire directory install
@@ -994,7 +995,8 @@ class GalaxyContent(object):
 
                                 # tar info for each file, so we can filter on filename match and file type
                                 tar_file_members = content_tar_file.getmembers()
-                                member_matches = [tar_file_member for tar_file_member in tar_file_members if tar_info_content_name_match(tar_file_member, content_name)]
+                                member_matches = [tar_file_member for tar_file_member in tar_file_members
+                                                  if tar_info_content_name_match(tar_file_member, self.content_meta.name)]
                                 self.log.debug('member_matches: %s' % member_matches)
                                 self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
                                                            extract_to_path=self.content_meta.path)
@@ -1015,9 +1017,9 @@ class GalaxyContent(object):
                                 #
                                 plugin_subdirs = [
                                     os.path.join(m.name.split(os.sep)[1:])[0]
-                                        for m in members
-                                            if len(os.path.join(m.name.split(os.sep)[1:])) > 1
-                                            and os.path.join(m.name.split(os.sep)[1:])[0] in CONTENT_TYPE_DIR_MAP.values()
+                                    for m in members
+                                    if len(os.path.join(m.name.split(os.sep)[1:])) > 1
+                                    and os.path.join(m.name.split(os.sep)[1:])[0] in CONTENT_TYPE_DIR_MAP.values()
                                 ]
 
                                 if plugin_subdirs:

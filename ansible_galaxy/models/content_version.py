@@ -15,10 +15,6 @@ def get_content_version(content_data, version, content_versions, content_content
     version is the currently set version?
     content_versions is ?
     '''
-    log.debug('content_data: %s', content_data)
-    log.debug('version: %s', version)
-    log.debug('content_versions: %s', content_versions)
-    log.debug('content_content_name: %s', content_content_name)
 
     if version and version != 'master':
         if content_versions and str(version) not in [a.get('name', None) for a in content_versions]:
