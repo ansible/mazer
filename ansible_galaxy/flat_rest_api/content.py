@@ -109,7 +109,8 @@ class GalaxyContent(object):
         content_type = type
 
         self._metadata = None
-        self._galaxy_metadata = None
+        # TODO: replace with empty ContentRepository instance?
+        self._galaxy_metadata = []
         self._install_info = None
         self._validate_certs = not galaxy.options.ignore_certs
 
@@ -340,14 +341,16 @@ class GalaxyContent(object):
             return self._galaxy_metadata
 
         gmeta_path = os.path.join(self.path, self.GALAXY_FILE)
-        if os.path.isfile(gmeta_path):
-            try:
-                with open(gmeta_path, 'r') as f:
-                    self._galaxy_metadata = yaml.safe_load(f)
-            except Exception as e:
-                self.log.exception(e)
-                self.log.debug("Unable to load galaxy metadata for %s", self.content_meta.name)
-                return False
+        if not os.path.isfile(gmeta_path):
+            # NOTE: could still be None at this pont
+            return self._galaxy_metadata
+
+        try:
+            with open(gmeta_path, 'r') as f:
+                self._galaxy_metadata = yaml.safe_load(f)
+        except Exception as e:
+            self.log.exception(e)
+            self.log.debug("Unable to load galaxy metadata for %s", self.content_meta.name)
 
         return self._galaxy_metadata
 
