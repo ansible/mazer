@@ -1,14 +1,24 @@
-#!/bin/bash -e
+#!/bin/bash -evux
 
-# install a signle module
-ansible-galaxy content-install -t module atestuseraccount.testing-content.elasticsearch_plugin.py
-[  -n ~/.ansible/content/roles/alikins.testing-content ]
 
 # install role
+rm -rf ~/.ansible/content
 ansible-galaxy install alikins.awx
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles/alikins.awx ]
 
 # install a role from a multi-content repo
+rm -rf ~/.ansible/content
 ansible-galaxy content-install -t role alikins.testing-content
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles ]
+
+
+# install a signle module
+# ansible-galaxy content-install -t module atestuseraccount.testing-content.elasticsearch_plugin.py
+# tree ~/.ansible/content
+# [ -d ~/.ansible/content/library/alikins.testing-content ]
+
 
 # TODO: start converting to a test script
 ls -lart ~/.ansible/content/roles/alikins.testing-content
@@ -99,6 +109,7 @@ ansible-galaxy content-install git+https://github.com/geerlingguy/ansible-role-a
 
 
 ansible-galaxy content-install -t role alikins.testing-content
+RC=$?
 
 # TODO: start converting to a test script
 ls -lart ~/.ansible/content/roles/alikins.testing-content
