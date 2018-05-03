@@ -76,7 +76,8 @@ def tar_info_content_name_match(tar_info, content_name, content_path=None):
     return False
 
 
-
+# FIXME: really just three methods here, install, remove, fetch. install -> save, fetch -> load
+#       remove -> delete
 class GalaxyContent(object):
 
     SUPPORTED_SCMS = set(['git', 'hg'])
@@ -122,7 +123,7 @@ class GalaxyContent(object):
         self.options = galaxy.options
         self.galaxy = galaxy
 
-        self.content = content.GalaxyContentMeta(name=name, src=src, version=version,
+        self.content_meta = content.GalaxyContentMeta(name=name, src=src, version=version,
                                                  scm=scm, path=path, content_type=content_type)
 
         # TODO: remove this when the data constructors are split
@@ -159,12 +160,12 @@ class GalaxyContent(object):
         Returns "content_name content_type" otherwise
         """
         if self.version:
-            return "%s (%s) %s" % (self.content.name, self.version, self.content_type)
+            return "%s (%s) %s" % (self.content_meta.name, self.version, self.content_type)
         else:
-            return "%s %s" % (self.content.name, self.content_type)
+            return "%s %s" % (self.content_meta.name, self.content_type)
 
     def __eq__(self, other):
-        return self.content.name == other.content.name
+        return self.content_meta.name == other.content_meta.name
 
     def _set_type(self, new_type):
         """
@@ -188,21 +189,22 @@ class GalaxyContent(object):
         # for some types
         self.type_dir = "%ss" % new_type
 
+    # FIXME: just build a new GalaxyContentMeta and replace
     def _set_content_paths(self, path=None):
         """
         Conditionally set content path based on content type
         """
         new_path_info = self._get_content_paths(path, content_type=self.content_type,
-                                                content_name=self.content.name,
+                                                content_name=self.content_meta.name,
                                                 galaxy_content_paths=self.galaxy.content_paths[:],
                                                 install_all_content=self._install_all_content)
         self.log.debug('XXXXXXXXXXXXXXX new_path_info=%s', new_path_info)
         # FIXME: remove all the internal state tweaking
-        # self.path is a property that returns self.content.path
-        self.content.path = new_path_info['content_path']
+        # self.path is a property that returns self.content_meta.path
+        self.content_meta.path = new_path_info['content_path']
         self.paths = new_path_info['content_paths']
-        # FIXME: what is the diff between self.path and self.content.path ?
-        self.content.path = new_path_info['content_content_path']
+        # FIXME: what is the diff between self.path and self.content_meta.path ?
+        self.content_meta.path = new_path_info['content_content_path']
         self.galaxy.content_paths = new_path_info['galaxy_content_paths']
         self.content_type = new_path_info['content_type']
         self._install_all_content = new_path_info['install_all_content']
@@ -286,27 +288,27 @@ class GalaxyContent(object):
     # FIXME: update calling code instead?
     @property
     def name(self):
-        return self.content.name
+        return self.content_meta.name
 
     @property
     def version(self):
-        return self.content.version
+        return self.content_meta.version
 
     @property
     def src(self):
-        return self.content.src
+        return self.content_meta.src
 
     @property
     def scm(self):
-        return self.content.scm
+        return self.content_meta.scm
 
     @property
     def content_dir(self):
-        return self.content.content_dir
+        return self.content_meta.content_dir
 
     @property
     def path(self):
-        return self.content.path
+        return self.content_meta.path
 
     @property
     def metadata(self):
@@ -315,14 +317,14 @@ class GalaxyContent(object):
         """
         if self.content_type in ["role", "all"]:
             if self._metadata is None:
-                meta_path = os.path.join(self.content.path, self.META_MAIN)
+                meta_path = os.path.join(self.content_meta.path, self.META_MAIN)
                 if os.path.isfile(meta_path):
                     try:
                         f = open(meta_path, 'r')
                         self._metadata = yaml.safe_load(f)
                     except Exception as e:
                         self.log.exception(e)
-                        self.log.debug("Unable to load metadata for %s", self.content.name)
+                        self.log.debug("Unable to load metadata for %s", self.content_meta.name)
                         return False
                     finally:
                         f.close()
@@ -344,7 +346,7 @@ class GalaxyContent(object):
                         self._galaxy_metadata = yaml.safe_load(f)
                 except Exception as e:
                     self.log.exception(e)
-                    self.log.debug("Unable to load galaxy metadata for %s", self.content.name)
+                    self.log.debug("Unable to load galaxy metadata for %s", self.content_meta.name)
                     return False
 
         return self._galaxy_metadata
@@ -365,7 +367,7 @@ class GalaxyContent(object):
                     self._install_info = yaml.safe_load(f)
                 except Exception as e:
                     self.log.exception(e)
-                    self.debug("Unable to load Galaxy install info for %s", self.content.name)
+                    self.debug("Unable to load Galaxy install info for %s", self.content_meta.name)
                     return False
                 finally:
                     f.close()
@@ -438,7 +440,7 @@ class GalaxyContent(object):
             # file
             orig_name = member.name
             # self.log.debug('member.name=%s', member.name)
-            #self.log.debug('member=%s, orig_name=%s, member.isreg()=%s member.issym()=%s',
+            # self.log.debug('member=%s, orig_name=%s, member.isreg()=%s member.issym()=%s',
             #               member, orig_name, member.isreg(), member.issym())
             # we only extract files, and remove any relative path
             # bits that might be in the file for security purposes
@@ -463,9 +465,9 @@ class GalaxyContent(object):
                         # ansible-galaxy.yml file. If that matches the member.name
                         # then we've found our match.
                         if member.name == os.path.join(parent_dir, file_name):
-                            # lstrip self.content.name because that's going to be the
+                            # lstrip self.content_meta.name because that's going to be the
                             # archive directory name and we don't need/want that
-                            plugin_found = parent_dir.lstrip(self.content.name)
+                            plugin_found = parent_dir.lstrip(self.content_meta.name)
 
                     elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP[self.content_type]:
                         plugin_found = CONTENT_TYPE_DIR_MAP[self.content_type]
@@ -509,7 +511,7 @@ class GalaxyContent(object):
                 if self.content_type in CONTENT_PLUGIN_TYPES:
                     self.display_callback(
                         "-- extracting %s %s from %s into %s" %
-                        (self.content_type, member.name, self.content.name, os.path.join(path, member.name))
+                        (self.content_type, member.name, self.content_meta.name, os.path.join(path, member.name))
                     )
                 if os.path.exists(os.path.join(path, member.name)) and not getattr(self.options, "force", False):
                     if self.content_type in CONTENT_PLUGIN_TYPES:
@@ -523,7 +525,7 @@ class GalaxyContent(object):
                         else:
                             raise exceptions.GalaxyClientError(" ".join(message))
                     else:
-                        message = "the specified role %s appears to already exist. Use --force to replace it." % self.content.name
+                        message = "the specified role %s appears to already exist. Use --force to replace it." % self.content_meta.name
                         if self._install_all_content:
                             # FIXME - Probably a better way to handle this
                             self.display_callback(message, level='warning')
@@ -541,7 +543,7 @@ class GalaxyContent(object):
 
         if self.content_type != "role" and self.content_type not in self.NO_META:
             if not plugin_found:
-                raise exceptions.GalaxyClientError("Required subdirectory not found in Galaxy Content archive for %s" % self.content.name)
+                raise exceptions.GalaxyClientError("Required subdirectory not found in Galaxy Content archive for %s" % self.content_meta.name)
 
     def remove(self):
         """
@@ -668,7 +670,7 @@ class GalaxyContent(object):
                 if content_data.get('role_type') == 'APP':
                     # Container Role
                     self.display_callback("%s is a Container App role, and should only be installed using Ansible "
-                                          "Container" % self.content.name, level='warning')
+                                          "Container" % self.content_meta.name, level='warning')
 
                 # FIXME - Need to update our API calls once Galaxy has them implemented
                 related = content_data.get('related', {})
@@ -680,10 +682,10 @@ class GalaxyContent(object):
                 _content_version = content_version. get_content_version(content_data,
                                                                         version=self.version,
                                                                         content_versions=content_versions,
-                                                                        content_content_name=self.content.name)
+                                                                        content_content_name=self.content_meta.name)
 
                 # FIXME: stop munging state
-                self.content.version = _content_version
+                self.content_meta.version = _content_version
 
                 related_repo_url = related.get('repository', None)
                 content_repo = None
@@ -739,7 +741,7 @@ class GalaxyContent(object):
                             else:
                                 meta_file = member
                         else:
-                            #self.log.debug('meta_parent_dir: %s archive_parent_dir: %s len(m): %s len(a): %s member.name: %s',
+                            # self.log.debug('meta_parent_dir: %s archive_parent_dir: %s len(m): %s len(a): %s member.name: %s',
                             #               meta_parent_dir, archive_parent_dir,
                             #               len(meta_parent_dir),
                             #               len(archive_parent_dir),
@@ -826,9 +828,9 @@ class GalaxyContent(object):
                 # FIXME: get rid of the while loop or continue if nothing catches
                 while not installed:
                     if self.content_type != "all":
-                        self.display_callback("- extracting %s %s to %s" % (self.content_type, self.content.name, self.path))
+                        self.display_callback("- extracting %s %s to %s" % (self.content_type, self.content_meta.name, self.path))
                     else:
-                        self.display_callback("- extracting all content in %s to content directories" % self.content.name)
+                        self.display_callback("- extracting all content in %s to content directories" % self.content_meta.name)
 
                     # FIXME: a few pages of code in a try block, extract to own method/class
                     try:
@@ -840,7 +842,7 @@ class GalaxyContent(object):
                                 if not os.path.isdir(self.path):
                                     raise exceptions.GalaxyClientError("the specified roles path exists and is not a directory.")
                                 elif not getattr(self.options, "force", False):
-                                    msg = "the specified role %s appears to already exist. Use --force to replace it." % self.content.name
+                                    msg = "the specified role %s appears to already exist. Use --force to replace it." % self.content_meta.name
                                     raise exceptions.GalaxyClientError(msg)
                                 else:
                                     # using --force, remove the old path
@@ -854,10 +856,10 @@ class GalaxyContent(object):
                             # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
                             #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
                             tar_file_members = content_tar_file.getmembers()
-                            member_matches = [tar_file_member for tar_file_member in tar_file_members if tar_info_content_name_match(tar_file_member, content_name)]
+                            member_matches = [tar_file_member for tar_file_member in tar_file_members if tar_info_content_name_match(tar_file_member, self.content_meta.name)]
                             # self.log.debug('member_matches: %s' % member_matches)
                             self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
-                                                        extract_to_path=self.content.path)
+                                                        extract_to_path=self.content_meta.path)
 
                             # self._write_archived_files(content_tar_file, archive_parent_dir)
 
@@ -995,7 +997,7 @@ class GalaxyContent(object):
                                 member_matches = [tar_file_member for tar_file_member in tar_file_members if tar_info_content_name_match(tar_file_member, content_name)]
                                 self.log.debug('member_matches: %s' % member_matches)
                                 self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
-                                                           extract_to_path=self.content.path)
+                                                           extract_to_path=self.content_meta.path)
                                 installed = True
                             else:
                                 # FIXME: extract and test, build a map of the name transforms first, then apply, then install
@@ -1003,7 +1005,7 @@ class GalaxyContent(object):
                                 #
                                 # This list comprehension will iterate every member entry in
                                 # the tarfile, split it's name by os.sep and drop the top most
-                                # parent dir, which will be self.content.name (we don't want it as it's
+                                # parent dir, which will be self.content_meta.name (we don't want it as it's
                                 # not needed for plugin types. First make sure the length of
                                 # that split and drop of parent dir is length > 1 and verify
                                 # that the subdir is infact in CONTENT_TYPE_DIR_MAP.values()
@@ -1073,5 +1075,4 @@ class GalaxyContent(object):
            'name': 'repo'
         }
         """
-        return dict(scm=self.scm, src=self.src, version=self.version, name=self.content.name)
-
+        return dict(scm=self.scm, src=self.src, version=self.version, name=self.content_meta.name)

@@ -43,3 +43,13 @@ class GalaxyContentMeta(object):
                 self.content_type, self.content_dir, self.path) == \
             (other.name, other.version, other.src, other.scm,
              other.content_type, other.content_dir, other.path)
+
+
+class GalaxyContent(object):
+    def __init__(self):
+        # need class for obj for ansible-galaxy.yml metadata file
+        self.galaxy_metadata = {}
+        # or instance of some InstallInfo class
+        self.install_info = {}
+        # or instance of GalaxyContentMeta
+        self.content_meta = {}
