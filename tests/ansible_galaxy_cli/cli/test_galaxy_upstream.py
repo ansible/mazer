@@ -319,7 +319,9 @@ class ValidRoleTests(object):
 
         log.debug('skeleton_path arg: %s', skeleton_path)
 
-        # FIXME: mo
+        # TODO: mock out role_skeleton path instead of always testing
+        #       with --role-skeleton path to avoid issues like
+        #       https://github.com/ansible/galaxy-cli/issues/20
         cls.role_skeleton_path = skeleton_path
         if '--role-skeleton' not in galaxy_args:
             galaxy_args += ['--role-skeleton', skeleton_path]

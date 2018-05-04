@@ -247,7 +247,7 @@ class GalaxyCLI(cli.CLI):
             this_dir, this_filename = os.path.split(__file__)
 
             type_path = getattr(self.options, 'role_type', "default")
-            role_skeleton_path = os.path.join(this_dir, '../', 'data/role_skelton', type_path)
+            role_skeleton_path = os.path.join(this_dir, '../', 'data/role_skeleton', type_path)
 
             self.log.debug('role_skeleton_path: %s', role_skeleton_path)
 
