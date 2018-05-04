@@ -611,35 +611,6 @@ class GalaxyContent(object):
 
     # TODO: split this up, it's pretty gnarly
     def install(self):
-
-        # ContentArchive
-        #   path: None
-        #   scm_info: ScmInfo()
-        #   galaxy_content:
-        #     username
-        #     namespace
-        #     repo_name
-        #     content_name
-        #     versions: []
-        #     repository:
-        #       external_url:
-        #     scm_branch: ?
-        #     archive_url:
-        #   contents:
-        #    - name: content1
-        #      meta_file:
-        #        role_name:
-        #        version:
-        #        deps:
-        #      galaxy_metadata:
-        #        whichever_data:
-        #        other_ansible_galaxy_yml_data:
-        #      path_in_archive:
-        #      path_to_install_to:
-        #      content_type:
-        #    - name: content2
-        #      <..>
-        #
         # TODO: some useful exceptions for 'cant find', 'cant read', 'cant write'
         fetch_method = choose_content_fetch_method(scm_url=self.scm, src=self.src)
 
@@ -667,332 +638,330 @@ class GalaxyContent(object):
             content_archive = fetcher.fetch()
             self.log.debug('content_archive=%s', content_archive)
 
-            # FIXME: rm
-            tmp_file = content_archive
-
         if not content_archive:
             raise exceptions.GalaxyClientError('No valid content data found for %s', self.src)
 
         # FIXME: the 'fetch', persist locally,  and 'install' steps should not be combined here
         # FIXME: mv to own method[s], unindent
-        if tmp_file:
+        # if content_archive:
 
-            self.log.debug("installing from %s", tmp_file)
+        self.log.debug("installing from %s", content_archive)
 
-            # FIXME: unindent the non error else here
-            if not tarfile.is_tarfile(tmp_file):
-                raise exceptions.GalaxyClientError("the file downloaded was not a tar.gz")
-            else:
-                if tmp_file.endswith('.gz'):
-                    content_tar_file = tarfile.open(tmp_file, "r:gz")
-                else:
-                    content_tar_file = tarfile.open(tmp_file, "r")
-                # verify the role's meta file
+        # FIXME: unindent the non error else here
+        if not tarfile.is_tarfile(content_archive):
+            raise exceptions.GalaxyClientError("the file downloaded was not a tar.gz")
 
-                meta_file = None
-                galaxy_file = None
-                archive_parent_dir = None
-                members = content_tar_file.getmembers()
-                # import pprint
-                # self.log.debug('tmp_file (%s) members: %s', tmp_file, pprint.pformat(members))
-                # next find the metadata file
+        if content_archive.endswith('.gz'):
+            content_tar_file = tarfile.open(content_archive, "r:gz")
+        else:
+            content_tar_file = tarfile.open(content_archive, "r")
+        # verify the role's meta file
 
-                # FIXME: mv to method or ditch entirely and drive from a iterable of files to extract and save
-                # FIXME: this is role specific logic so could move elsewhere
-                for member in members:
-                    if self.META_MAIN in member.name or self.GALAXY_FILE in member.name:
-                        # Look for parent of meta/main.yml
-                        # Due to possibility of sub roles each containing meta/main.yml
-                        # look for shortest length parent
-                        meta_parent_dir = os.path.dirname(os.path.dirname(member.name))
-                        if not meta_file:
-                            archive_parent_dir = meta_parent_dir
-                            if self.GALAXY_FILE in member.name:
-                                galaxy_file = member
-                            else:
-                                meta_file = member
-                        else:
-                            # self.log.debug('meta_parent_dir: %s archive_parent_dir: %s len(m): %s len(a): %s member.name: %s',
-                            #               meta_parent_dir, archive_parent_dir,
-                            #               len(meta_parent_dir),
-                            #               len(archive_parent_dir),
-                            #               member.name)
-                            if len(meta_parent_dir) < len(archive_parent_dir):
-                                archive_parent_dir = meta_parent_dir
-                                meta_file = member
-                                if self.GALAXY_FILE in member.name:
-                                    galaxy_file = member
-                                else:
-                                    meta_file = member
+        meta_file = None
+        galaxy_file = None
+        archive_parent_dir = None
+        members = content_tar_file.getmembers()
 
-                # self.log.debug('self.content_type: %s', self.content_type)
+        # import pprint
+        # self.log.debug('content_archive (%s) members: %s', content_archive, pprint.pformat(members))
+        # next find the metadata file
 
-                # content types like 'module' shouldn't care about meta_file elsewhere
-                if self.content_type in self.NO_META:
-                    meta_file = None
-
-                # FIXME: THIS IS A HACK
-                #
-                # We've determined that this is a legacy role, we're going to
-                # change state and re-eval paths for backwards compat with the
-                # legacy role type
-                if self.content_type == "all" and meta_file:
-                    self._set_type("role")
-                    self._set_content_paths(self._orig_path)
-                    self._install_all_content = False
-
-                # FIXME: mv to it's own method
-                if not archive_parent_dir:
-                    # archive_parent_dir wasn't found above when checking for metadata files
-                    parent_dir_found = False
-                    for member in members:
-                        # This is either a new-type Galaxy Content that doesn't have an
-                        # ansible-galaxy.yml file and the type desired is specified and
-                        # we check parent dir based on the correct subdir existing or
-                        # we need to just scan the subdirs heuristically and figure out
-                        # what to do
-                        if self.content_type != "all":
-                            if self.type_dir in member.name:
-                                archive_parent_dir = os.path.dirname(member.name)
-                                parent_dir_found = True
-                                break
-                        else:
-                            for plugin_dir in CONTENT_TYPE_DIR_MAP.values():
-                                if plugin_dir in member.name:
-                                    archive_parent_dir = os.path.dirname(member.name)
-                                    parent_dir_found = True
-                                    break
-                            if parent_dir_found:
-                                break
-
-                    if not parent_dir_found:
-                        if self.content_type in CONTENT_PLUGIN_TYPES:
-                            msg = "No content metadata provided, nor content directories found for content_type: %s" % self.content_type
-                            raise exceptions.GalaxyClientError(msg)
-
-                self.log.debug("meta_file: %s galaxy_file: %s self.content_type: %s", meta_file, galaxy_file, self.content_type)
-                # self.log.debug("archive_parent_dir: %s", archive_parent_dir)
-                # self.log.debug("meta_parent_dir: %s", meta_parent_dir)
-                if not meta_file and not galaxy_file and self.content_type == "role":
-                    raise exceptions.GalaxyClientError("this role does not appear to have a meta/main.yml file or ansible-galaxy.yml.")
-                # FIXME: unindent
-                else:
-                    # FIXME: mv to AnsibleGalaxyMetadata
-                    try:
-                        if galaxy_file:
-                            # Let the galaxy_file take precedence
-                            self._galaxy_metadata = content_repository.load(content_tar_file.extractfile(galaxy_file))
-                        elif meta_file:
-                            self._metadata = yaml.safe_load(content_tar_file.extractfile(meta_file))
-                        # else:
-                        # FIXME - Need to handle the scenario where we "walk the dirs" and place things where they should be
-                    except Exception as e:
-                        self.warn('unable to extract and yaml load galaxy_file=%s meta_file=%s tmpfile=%s', galaxy_file, meta_file, tmp_file)
-                        self.log.exception(e)
-                        raise exceptions.GalaxyClientError("this role does not appear to have a valid meta/main.yml or ansible-galaxy.yml file.")
-
-                # we strip off any higher-level directories for all of the files contained within
-                # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other
-                # hand, does not have a parent directory at all.
-
-                installed = False
-                # FIXME: get rid of the while loop or continue if nothing catches
-                while not installed:
-                    if self.content_type != "all":
-                        self.display_callback("- extracting %s %s to %s" % (self.content_type, self.content_meta.name, self.path))
+        # FIXME: mv to method or ditch entirely and drive from a iterable of files to extract and save
+        # FIXME: this is role specific logic so could move elsewhere
+        for member in members:
+            if self.META_MAIN in member.name or self.GALAXY_FILE in member.name:
+                # Look for parent of meta/main.yml
+                # Due to possibility of sub roles each containing meta/main.yml
+                # look for shortest length parent
+                meta_parent_dir = os.path.dirname(os.path.dirname(member.name))
+                if not meta_file:
+                    archive_parent_dir = meta_parent_dir
+                    if self.GALAXY_FILE in member.name:
+                        galaxy_file = member
                     else:
-                        self.display_callback("- extracting all content in %s to content directories" % self.content_meta.name)
-
-                    # FIXME: a few pages of code in a try block, extract to own method/class
-                    try:
-                        # FIXME: figure out what the 'case' is first, then branch to implementations and mv the impls
-                        if self.content_type == "role" and meta_file and not galaxy_file:
-                            # This is an old-style role
-                            # FIXME: should likely be responsibilty of the Content or RoleContent serializer
-                            if os.path.exists(self.path):
-                                if not os.path.isdir(self.path):
-                                    raise exceptions.GalaxyClientError("the specified roles path exists and is not a directory.")
-                                elif not getattr(self.options, "force", False):
-                                    msg = "the specified role %s appears to already exist. Use --force to replace it." % self.content_meta.name
-                                    raise exceptions.GalaxyClientError(msg)
-                                else:
-                                    # using --force, remove the old path
-                                    # FIXME: this is ~10 indent levels deep in the 'install' method which is a weird place to do a remove
-                                    if not self.remove():
-                                        msg = "%s doesn't appear to contain a role.\n"
-                                        "iplease remove this directory manually if you really "
-                                        "want to put the role here" % self.content_meta.path
-                                        raise exceptions.GalaxyClientError(msg)
-                            else:
-                                os.makedirs(self.path)
-
-                            # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
-                            #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
-                            tar_file_members = content_tar_file.getmembers()
-                            member_matches = [tar_member for tar_member in tar_file_members
-                                              if tar_info_content_name_match(tar_member, self.content_meta.name)]
-                            # self.log.debug('member_matches: %s' % member_matches)
-                            self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
-                                                       extract_to_path=self.content_meta.path)
-
-                            # self._write_archived_files(content_tar_file, archive_parent_dir)
-
-                            # write out the install info file for later use
-                            self._write_galaxy_install_info()
-                            installed = True
-                        elif galaxy_file:
-                            # Parse the ansible-galaxy.yml file and install things
-                            # as necessary
-
-                            # FIXME - need to handle the scenario where we want
-                            #         all content types defined in the ansible-galaxy.yml file
-
-                            for _content in self.galaxy_metadata:
-                                # FIXME: suppose this is basically options for setting up a deserializer
-                                # FIXME: def should be elsewhere, likely some serializer class
-                                if _content == "meta_version":
-                                    continue
-                                elif _content == "modules":
-                                    self._set_type("module")
-                                    self._set_content_paths()
-                                    for module in self.galaxy_metadata[_content]:
-                                        if len(module["path"].split(os.sep)) > 1:
-                                            if module["path"].split(os.sep)[-1] in ['/', '*']:
-                                                # Handle the glob or designation of entire directory install
-                                                self._write_archived_files(content_tar_file, os.path.join(archive_parent_dir, module['path']))
-                                                installed = True
-                                            else:
-                                                self._write_archived_files(
-                                                    content_tar_file,
-                                                    os.path.join(archive_parent_dir, os.path.dirname(module['path'])),
-                                                    file_name=module['path'].split(os.sep)[-1]
-                                                )
-                                                installed = True
-
-                                        # FIXME: on a general level, having content that only sometimes has dep info seems like a problem
-                                        if 'dependencies' in module:
-                                            for dep in module['dependencies']:
-                                                if 'src' not in dep:
-                                                    raise exceptions.GalaxyClientError("ansible-galaxy.yml dependencies must provide a src")
-
-                                                dep_content_info = yaml_parse(dep['src'])
-                                                # FIXME - Should we assume this to be true for module deps?
-                                                dep_content_info["type"] = "module_util"
-
-                                                self.display_callback('- processing dependency: %s' % dep_content_info["src"])
-
-                                                # This is an external dep, treat it as such
-                                                if dep_content_info["scm"]:
-                                                    dep_content = GalaxyContent(self.galaxy, **dep_content_info)
-                                                    try:
-                                                        installed = dep_content.install()
-                                                    except exceptions.GalaxyClientError as e:
-                                                        self.display_callback("- dependency %s was NOT installed successfully: %s " %
-                                                                              (dep_content.name, str(e)), level='warning')
-                                                        continue
-                                                else:
-                                                    # Local dep, just install it
-                                                    self._set_type("module_util")
-                                                    self._set_content_paths()
-                                                    if len(dep["src"].split(os.sep)) > 1:
-                                                        if dep["src"].split(os.sep)[-1] in ['/', '*']:
-                                                            # Handle the glob or designation of entire directory install
-                                                            self._write_archived_files(content_tar_file, os.path.join(archive_parent_dir, dep['src']))
-                                                            installed = True
-                                                        else:
-                                                            self._write_archived_files(
-                                                                content_tar_file,
-                                                                os.path.join(archive_parent_dir, os.path.dirname(dep['src'])),
-                                                                file_name=dep['src'].split(os.sep)[-1]
-                                                            )
-                                                            installed = True
-
-                                else:
-                                    # FIXME - add more types other than module here
-                                    raise exceptions.GalaxyClientError("ansible-galaxy.yml install not yet supported for content_type %s" % self.content_type)
-
-                        elif not meta_file and not galaxy_file:
-                            # No meta/main.yml found so it's not a legacy role
-                            # and no galaxyfile found, so assume it's a new
-                            # galaxy content type and attempt to install it by
-                            # heuristically walking the directories and install
-                            # the appropriate things in the appropriate places
-
-                            # FIXME: this is basically a big switch to decide what serializer to use
-                            if self.content_type != "all":
-                                # TODO: based on content_name, need to find/build the full path to that in the
-                                #       tar archive so we can extract it.
-                                #       ie, alikins.testing-content.elastic_search.py
-                                #       full path would be:
-                                #         ansible-testing-content-master/library/database/misc/elasticsearch_plugin.py
-                                #       Then we pass that into _write_archive_files as file_name arg
-
-                                # tar info for each file, so we can filter on filename match and file type
-                                tar_file_members = content_tar_file.getmembers()
-                                member_matches = [tar_file_member for tar_file_member in tar_file_members
-                                                  if tar_info_content_name_match(tar_file_member, self.content_meta.name)]
-                                self.log.debug('member_matches: %s' % member_matches)
-                                self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
-                                                           extract_to_path=self.content_meta.path)
-                                installed = True
-                            else:
-                                # FIXME: extract and test, build a map of the name transforms first, then apply, then install
-                                # Find out what plugin type subdirs exist in this repo
-                                #
-                                # This list comprehension will iterate every member entry in
-                                # the tarfile, split it's name by os.sep and drop the top most
-                                # parent dir, which will be self.content_meta.name (we don't want it as it's
-                                # not needed for plugin types. First make sure the length of
-                                # that split and drop of parent dir is length > 1 and verify
-                                # that the subdir is infact in CONTENT_TYPE_DIR_MAP.values()
-                                #
-                                # This should give us a list of valid content type subdirs
-                                # found heuristically within this Galaxy Content repo
-                                #
-                                plugin_subdirs = [
-                                    os.path.join(m.name.split(os.sep)[1:])[0]
-                                    for m in members
-                                    if len(os.path.join(m.name.split(os.sep)[1:])) > 1
-                                    and os.path.join(m.name.split(os.sep)[1:])[0] in CONTENT_TYPE_DIR_MAP.values()
-                                ]
-
-                                if plugin_subdirs:
-                                    # FIXME: stop munging state
-                                    self._install_all_content = True
-                                    for plugin_subdir in plugin_subdirs:
-                                        # Set the type, this is neccesary for processing extraction of
-                                        # the tarball content
-                                        #
-                                        # rstrip the letter 's' from the plugin type subdir, this should
-                                        # be the type
-                                        self._set_type(plugin_subdir.rstrip('s'))
-                                        self._set_content_paths(None)
-                                        self._write_archived_files(content_tar_file, archive_parent_dir)
-                                        installed = True
-                                else:
-                                    raise exceptions.GalaxyClientError("This Galaxy Content does not contain valid content subdirectories, expected any of: %s "
-                                                                       % CONTENT_TYPES)
+                        meta_file = member
+                else:
+                    # self.log.debug('meta_parent_dir: %s archive_parent_dir: %s len(m): %s len(a): %s member.name: %s',
+                    #               meta_parent_dir, archive_parent_dir,
+                    #               len(meta_parent_dir),
+                    #               len(archive_parent_dir),
+                    #               member.name)
+                    if len(meta_parent_dir) < len(archive_parent_dir):
+                        archive_parent_dir = meta_parent_dir
+                        meta_file = member
+                        if self.GALAXY_FILE in member.name:
+                            galaxy_file = member
                         else:
-                            raise exceptions.GalaxyClientError('Cant figure out what install method to use')
+                            meta_file = member
 
-                    except OSError as e:
-                        error = True
-                        # FIXME: what is this doing? walking down dir tree ?
-                        if e.errno == errno.EACCES and len(self.paths) > 1:
-                            current = self.paths.index(self.path)
-                            if len(self.paths) > current:
-                                self.path = self.paths[current + 1]
-                                error = False
-                        if error:
-                            raise exceptions.GalaxyClientError("Could not update files in %s: %s" % (self.path, str(e)))
+        # self.log.debug('self.content_type: %s', self.content_type)
 
-                # return the parsed yaml metadata
-                self.display_callback("- %s was installed successfully" % str(self))
+        # content types like 'module' shouldn't care about meta_file elsewhere
+        if self.content_type in self.NO_META:
+            meta_file = None
 
-                # rm any temp files created when getting the content archive
-                fetcher.cleanup()
+        # FIXME: THIS IS A HACK
+        #
+        # We've determined that this is a legacy role, we're going to
+        # change state and re-eval paths for backwards compat with the
+        # legacy role type
+        if self.content_type == "all" and meta_file:
+            self._set_type("role")
+            self._set_content_paths(self._orig_path)
+            self._install_all_content = False
 
-                return True
+        # FIXME: mv to it's own method
+        if not archive_parent_dir:
+            # archive_parent_dir wasn't found above when checking for metadata files
+            parent_dir_found = False
+            for member in members:
+                # This is either a new-type Galaxy Content that doesn't have an
+                # ansible-galaxy.yml file and the type desired is specified and
+                # we check parent dir based on the correct subdir existing or
+                # we need to just scan the subdirs heuristically and figure out
+                # what to do
+                if self.content_type != "all":
+                    if self.type_dir in member.name:
+                        archive_parent_dir = os.path.dirname(member.name)
+                        parent_dir_found = True
+                        break
+                else:
+                    for plugin_dir in CONTENT_TYPE_DIR_MAP.values():
+                        if plugin_dir in member.name:
+                            archive_parent_dir = os.path.dirname(member.name)
+                            parent_dir_found = True
+                            break
+                    if parent_dir_found:
+                        break
+
+            if not parent_dir_found:
+                if self.content_type in CONTENT_PLUGIN_TYPES:
+                    msg = "No content metadata provided, nor content directories found for content_type: %s" % self.content_type
+                    raise exceptions.GalaxyClientError(msg)
+
+        self.log.debug("meta_file: %s galaxy_file: %s self.content_type: %s", meta_file, galaxy_file, self.content_type)
+        # self.log.debug("archive_parent_dir: %s", archive_parent_dir)
+        # self.log.debug("meta_parent_dir: %s", meta_parent_dir)
+        if not meta_file and not galaxy_file and self.content_type == "role":
+            raise exceptions.GalaxyClientError("this role does not appear to have a meta/main.yml file or ansible-galaxy.yml.")
+        # FIXME: unindent
+        else:
+            # FIXME: mv to AnsibleGalaxyMetadata
+            try:
+                if galaxy_file:
+                    # Let the galaxy_file take precedence
+                    self._galaxy_metadata = content_repository.load(content_tar_file.extractfile(galaxy_file))
+                elif meta_file:
+                    self._metadata = yaml.safe_load(content_tar_file.extractfile(meta_file))
+                # else:
+                # FIXME - Need to handle the scenario where we "walk the dirs" and place things where they should be
+            except Exception as e:
+                self.warn('unable to extract and yaml load galaxy_file=%s meta_file=%s tmpfile=%s', galaxy_file, meta_file, content_archive)
+                self.log.exception(e)
+                raise exceptions.GalaxyClientError("this role does not appear to have a valid meta/main.yml or ansible-galaxy.yml file.")
+
+        # we strip off any higher-level directories for all of the files contained within
+        # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other
+        # hand, does not have a parent directory at all.
+
+        installed = False
+        # FIXME: get rid of the while loop or continue if nothing catches
+        while not installed:
+            if self.content_type != "all":
+                self.display_callback("- extracting %s %s to %s" % (self.content_type, self.content_meta.name, self.path))
+            else:
+                self.display_callback("- extracting all content in %s to content directories" % self.content_meta.name)
+
+            # FIXME: a few pages of code in a try block, extract to own method/class
+            try:
+                # FIXME: figure out what the 'case' is first, then branch to implementations and mv the impls
+                if self.content_type == "role" and meta_file and not galaxy_file:
+                    # This is an old-style role
+                    # FIXME: should likely be responsibilty of the Content or RoleContent serializer
+                    if os.path.exists(self.path):
+                        if not os.path.isdir(self.path):
+                            raise exceptions.GalaxyClientError("the specified roles path exists and is not a directory.")
+                        elif not getattr(self.options, "force", False):
+                            msg = "the specified role %s appears to already exist. Use --force to replace it." % self.content_meta.name
+                            raise exceptions.GalaxyClientError(msg)
+                        else:
+                            # using --force, remove the old path
+                            # FIXME: this is ~10 indent levels deep in the 'install' method which is a weird place to do a remove
+                            if not self.remove():
+                                msg = "%s doesn't appear to contain a role.\n"
+                                "iplease remove this directory manually if you really "
+                                "want to put the role here" % self.content_meta.path
+                                raise exceptions.GalaxyClientError(msg)
+                    else:
+                        os.makedirs(self.path)
+
+                    # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
+                    #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
+                    tar_file_members = content_tar_file.getmembers()
+                    member_matches = [tar_member for tar_member in tar_file_members
+                                      if tar_info_content_name_match(tar_member, self.content_meta.name)]
+                    # self.log.debug('member_matches: %s' % member_matches)
+                    self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
+                                               extract_to_path=self.content_meta.path)
+
+                    # self._write_archived_files(content_tar_file, archive_parent_dir)
+
+                    # write out the install info file for later use
+                    self._write_galaxy_install_info()
+                    installed = True
+                elif galaxy_file:
+                    # Parse the ansible-galaxy.yml file and install things
+                    # as necessary
+
+                    # FIXME - need to handle the scenario where we want
+                    #         all content types defined in the ansible-galaxy.yml file
+
+                    for _content in self.galaxy_metadata:
+                        # FIXME: suppose this is basically options for setting up a deserializer
+                        # FIXME: def should be elsewhere, likely some serializer class
+                        if _content == "meta_version":
+                            continue
+                        elif _content == "modules":
+                            self._set_type("module")
+                            self._set_content_paths()
+                            for module in self.galaxy_metadata[_content]:
+                                if len(module["path"].split(os.sep)) > 1:
+                                    if module["path"].split(os.sep)[-1] in ['/', '*']:
+                                        # Handle the glob or designation of entire directory install
+                                        self._write_archived_files(content_tar_file, os.path.join(archive_parent_dir, module['path']))
+                                        installed = True
+                                    else:
+                                        self._write_archived_files(
+                                            content_tar_file,
+                                            os.path.join(archive_parent_dir, os.path.dirname(module['path'])),
+                                            file_name=module['path'].split(os.sep)[-1]
+                                        )
+                                        installed = True
+
+                                # FIXME: on a general level, having content that only sometimes has dep info seems like a problem
+                                if 'dependencies' in module:
+                                    for dep in module['dependencies']:
+                                        if 'src' not in dep:
+                                            raise exceptions.GalaxyClientError("ansible-galaxy.yml dependencies must provide a src")
+
+                                        dep_content_info = yaml_parse(dep['src'])
+                                        # FIXME - Should we assume this to be true for module deps?
+                                        dep_content_info["type"] = "module_util"
+
+                                        self.display_callback('- processing dependency: %s' % dep_content_info["src"])
+
+                                        # This is an external dep, treat it as such
+                                        if dep_content_info["scm"]:
+                                            dep_content = GalaxyContent(self.galaxy, **dep_content_info)
+                                            try:
+                                                installed = dep_content.install()
+                                            except exceptions.GalaxyClientError as e:
+                                                self.display_callback("- dependency %s was NOT installed successfully: %s " %
+                                                                      (dep_content.name, str(e)), level='warning')
+                                                continue
+                                        else:
+                                            # Local dep, just install it
+                                            self._set_type("module_util")
+                                            self._set_content_paths()
+                                            if len(dep["src"].split(os.sep)) > 1:
+                                                if dep["src"].split(os.sep)[-1] in ['/', '*']:
+                                                    # Handle the glob or designation of entire directory install
+                                                    self._write_archived_files(content_tar_file, os.path.join(archive_parent_dir, dep['src']))
+                                                    installed = True
+                                                else:
+                                                    self._write_archived_files(
+                                                        content_tar_file,
+                                                        os.path.join(archive_parent_dir, os.path.dirname(dep['src'])),
+                                                        file_name=dep['src'].split(os.sep)[-1]
+                                                    )
+                                                    installed = True
+
+                        else:
+                            # FIXME - add more types other than module here
+                            raise exceptions.GalaxyClientError("ansible-galaxy.yml install not yet supported for content_type %s" % self.content_type)
+
+                elif not meta_file and not galaxy_file:
+                    # No meta/main.yml found so it's not a legacy role
+                    # and no galaxyfile found, so assume it's a new
+                    # galaxy content type and attempt to install it by
+                    # heuristically walking the directories and install
+                    # the appropriate things in the appropriate places
+
+                    # FIXME: this is basically a big switch to decide what serializer to use
+                    if self.content_type != "all":
+                        # TODO: based on content_name, need to find/build the full path to that in the
+                        #       tar archive so we can extract it.
+                        #       ie, alikins.testing-content.elastic_search.py
+                        #       full path would be:
+                        #         ansible-testing-content-master/library/database/misc/elasticsearch_plugin.py
+                        #       Then we pass that into _write_archive_files as file_name arg
+
+                        # tar info for each file, so we can filter on filename match and file type
+                        tar_file_members = content_tar_file.getmembers()
+                        member_matches = [tar_file_member for tar_file_member in tar_file_members
+                                          if tar_info_content_name_match(tar_file_member, self.content_meta.name)]
+                        self.log.debug('member_matches: %s' % member_matches)
+                        self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
+                                                   extract_to_path=self.content_meta.path)
+                        installed = True
+                    else:
+                        # FIXME: extract and test, build a map of the name transforms first, then apply, then install
+                        # Find out what plugin type subdirs exist in this repo
+                        #
+                        # This list comprehension will iterate every member entry in
+                        # the tarfile, split it's name by os.sep and drop the top most
+                        # parent dir, which will be self.content_meta.name (we don't want it as it's
+                        # not needed for plugin types. First make sure the length of
+                        # that split and drop of parent dir is length > 1 and verify
+                        # that the subdir is infact in CONTENT_TYPE_DIR_MAP.values()
+                        #
+                        # This should give us a list of valid content type subdirs
+                        # found heuristically within this Galaxy Content repo
+                        #
+                        plugin_subdirs = [
+                            os.path.join(m.name.split(os.sep)[1:])[0]
+                            for m in members
+                            if len(os.path.join(m.name.split(os.sep)[1:])) > 1
+                            and os.path.join(m.name.split(os.sep)[1:])[0] in CONTENT_TYPE_DIR_MAP.values()
+                        ]
+
+                        if plugin_subdirs:
+                            # FIXME: stop munging state
+                            self._install_all_content = True
+                            for plugin_subdir in plugin_subdirs:
+                                # Set the type, this is neccesary for processing extraction of
+                                # the tarball content
+                                #
+                                # rstrip the letter 's' from the plugin type subdir, this should
+                                # be the type
+                                self._set_type(plugin_subdir.rstrip('s'))
+                                self._set_content_paths(None)
+                                self._write_archived_files(content_tar_file, archive_parent_dir)
+                                installed = True
+                        else:
+                            raise exceptions.GalaxyClientError("This Galaxy Content does not contain valid content subdirectories, expected any of: %s "
+                                                               % CONTENT_TYPES)
+                else:
+                    raise exceptions.GalaxyClientError('Cant figure out what install method to use')
+
+            except OSError as e:
+                error = True
+                # FIXME: what is this doing? walking down dir tree ?
+                if e.errno == errno.EACCES and len(self.paths) > 1:
+                    current = self.paths.index(self.path)
+                    if len(self.paths) > current:
+                        self.path = self.paths[current + 1]
+                        error = False
+                if error:
+                    raise exceptions.GalaxyClientError("Could not update files in %s: %s" % (self.path, str(e)))
+
+            # return the parsed yaml metadata
+            self.display_callback("- %s was installed successfully" % str(self))
+
+            # rm any temp files created when getting the content archive
+            fetcher.cleanup()
+
+            return True
 
         return False
 
