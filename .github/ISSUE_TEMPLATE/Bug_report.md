@@ -1,12 +1,14 @@
+---
+name: 🐛 Bug Report
+about: If something isn't working as expected 🤔.
+
+---
+
 <!---
 Verify first that your issue/request is not already reported on GitHub.
  -->
 
-##### ISSUE TYPE
-<!--- Pick one below and delete the rest -->
- - Bug Report
- - Feature Idea
- - Documentation Report
+## Bug Report 
 
 ##### GALAXY CLI VERSION
 <!--- Paste, BELOW THIS COMMENT, verbatim output from "ansible-galaxy version" between quotes below -->
