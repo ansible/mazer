@@ -30,16 +30,20 @@ def default_display_callback(*args, **kwargs):
 #        change it's 'name' attribute after loading/opening a TarFile() but before extract()
 #        Since it's mutating the TarFile object, have to be careful if anything will use the object
 #        after it was changed
+# TODO: figure out content_type_requires_meta up a layer?
+#          content_type != "role" and content_type not in self.NO_META:
 def extract_archive_members(self,
                             tar_file_obj,
                             parent_dir,
+                            content_meta,
                             file_name=None,
                             files_to_extract=None,
                             extract_to_path=None,
                             content_type=None,
                             display_callback=None,
                             install_all_content=False,
-                            force_role_overwrite=False):
+                            force_role_overwrite=False,
+                            content_type_requires_meta=True):
     """
     Extract and write out files from the archive, this is a common operation
     needed for both old-roles and new-style galaxy content, the main
@@ -55,6 +59,8 @@ def extract_archive_members(self,
 
     display_callback = display_callback or default_display_callback
     files_to_extract = files_to_extract or []
+
+    # if content_type != "role" and content_type not in self.NO_META:
 
     plugin_found = None
 
@@ -98,9 +104,9 @@ def extract_archive_members(self,
                     # ansible-galaxy.yml file. If that matches the member.name
                     # then we've found our match.
                     if member.name == os.path.join(parent_dir, file_name):
-                        # lstrip self.content_meta.name because that's going to be the
+                        # lstrip content_meta.name because that's going to be the
                         # archive directory name and we don't need/want that
-                        plugin_found = parent_dir.lstrip(self.content_meta.name)
+                        plugin_found = parent_dir.lstrip(content_meta.name)
 
                 elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP[content_type]:
                     plugin_found = CONTENT_TYPE_DIR_MAP[content_type]
@@ -145,7 +151,7 @@ def extract_archive_members(self,
             if content_type in CONTENT_PLUGIN_TYPES:
                 display_callback(
                     "-- extracting %s %s from %s into %s" %
-                    (content_type, member.name, self.content_meta.name, os.path.join(path, member.name))
+                    (content_type, member.name, content_meta.name, os.path.join(path, member.name))
                 )
             if os.path.exists(os.path.join(path, member.name)) and not force_role_overwrite:
                 if content_type in CONTENT_PLUGIN_TYPES:
@@ -159,7 +165,7 @@ def extract_archive_members(self,
                     else:
                         raise exceptions.GalaxyClientError(" ".join(message))
                 else:
-                    message = "the specified role %s appears to already exist. Use --force to replace it." % self.content_meta.name
+                    message = "the specified role %s appears to already exist. Use --force to replace it." % content_meta.name
                     if install_all_content:
                         # FIXME - Probably a better way to handle this
                         display_callback(message, level='warning')
@@ -175,6 +181,6 @@ def extract_archive_members(self,
             # in an ansible-galaxy.yml file
             member.name = orig_name
 
-    if content_type != "role" and content_type not in self.NO_META:
+    if content_type_requires_meta:
         if not plugin_found:
-            raise exceptions.GalaxyClientError("Required subdirectory not found in Galaxy Content archive for %s" % self.content_meta.name)
+            raise exceptions.GalaxyClientError("Required subdirectory not found in Galaxy Content archive for %s" % content_meta.name)
