@@ -1,5 +1,34 @@
 #!/bin/bash -evux
 
+# install strategy plugins from a plugin only  repo
+rm -rf ~/.ansible/content
+ansible-galaxy content-install -t strategy_plugin alikins.content-just-strategy-plugins
+tree ~/.ansible/content
+[ -d ~/.ansible/content/strategy_plugins ]
+
+# install 'all' from a multi-content repo
+rm -rf ~/.ansible/content
+ansible-galaxy content-install alikins.testing-content
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles ]
+
+
+# install modules from a multi-content repo
+rm -rf ~/.ansible/content
+ansible-galaxy content-install -t module alikins.testing-content
+tree ~/.ansible/content
+# [ -d ~/.ansible/content/library ]
+
+# install strategy plugins from a multi-content repo
+rm -rf ~/.ansible/content
+ansible-galaxy content-install -t strategy_plugin alikins.testing-content
+tree ~/.ansible/content
+[ -d ~/.ansible/content/strategy_plugins ]
+
+# install a signle module
+ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
+tree ~/.ansible/content
+[ -d ~/.ansible/content/library/elasticsearch_plugin.py ]
 
 # install role
 rm -rf ~/.ansible/content

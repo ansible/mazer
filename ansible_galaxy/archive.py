@@ -45,8 +45,7 @@ def extract_by_role_name(archive_file, role_name):
 #        after it was changed
 # TODO: figure out content_type_requires_meta up a layer?
 #          content_type != "role" and content_type not in self.NO_META:
-def extract_by_content_type(self,
-                            tar_file_obj,
+def extract_by_content_type(tar_file_obj,
                             parent_dir,
                             content_meta,
                             file_name=None,
@@ -81,9 +80,9 @@ def extract_by_content_type(self,
         files_to_extract.append(file_name)
     # log.debug('files_to_extract: %s', files_to_extract)
 
-    path = extract_to_path or self.path
+    path = extract_to_path
     log.debug('path=%s', path)
-
+    log.debug('files_to_extract=%s', files_to_extract)
     # do we need to drive this from tar_file members if we have file_names_to_extract?
     # for member in tar_file.getmembers():
     for member in files_to_extract:
@@ -116,8 +115,8 @@ def extract_by_content_type(self,
                     plugin_found = parent_dir.lstrip(content_meta.name)
 
             # secondary dir (roles/, callback_plugins/) is a match for the content_type
-            elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP[content_type]:
-                plugin_found = CONTENT_TYPE_DIR_MAP[content_type]
+            elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP[content_meta.content_type]:
+                plugin_found = CONTENT_TYPE_DIR_MAP[content_meta.content_type]
 
             # log.debug('plugin_found1: %s', plugin_found)
             if not plugin_found:
@@ -159,7 +158,7 @@ def extract_by_content_type(self,
 
             display_callback(
                 "-- extracting %s %s from %s into %s" %
-                (content_type, member.name, content_meta.name, os.path.join(path, member.name))
+                (content_meta.content_type, member.name, content_meta.name, os.path.join(path, member.name))
             )
 
             if os.path.exists(os.path.join(path, member.name)) and not force_overwrite:

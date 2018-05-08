@@ -34,6 +34,7 @@ import yaml
 
 from ansible_galaxy.config import defaults
 from ansible_galaxy import exceptions
+from ansible_galaxy import archive
 from ansible_galaxy.fetch.scm_url import ScmUrlFetch
 from ansible_galaxy.fetch.local_file import LocalFileFetch
 from ansible_galaxy.fetch.remote_url import RemoteUrlFetch
@@ -54,6 +55,8 @@ log = logging.getLogger(__name__)
 
 
 def tar_info_content_name_match(tar_info, content_name, content_path=None):
+    log.debug('tar_info=%s, content_name=%s, content_path=%s',
+              tar_info, content_name, content_path)
     # only reg files or symlinks can match
     if not tar_info.isreg() and not tar_info.islnk():
         return False
@@ -65,6 +68,7 @@ def tar_info_content_name_match(tar_info, content_name, content_path=None):
     if content_path:
         match_pattern = '*/%s/%s*' % (content_path, content_name)
 
+    log.debug('match_pattern=%s', match_pattern)
     # FIXME: would be better as two predicates both apply by comprehension
     if fnmatch.fnmatch(tar_info.name, match_pattern):
         return True
@@ -112,7 +116,7 @@ class GalaxyContent(object):
     GALAXY_FILE = os.path.join('ansible-galaxy.yml')
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
     ROLE_DIRS = ('defaults', 'files', 'handlers', 'meta', 'tasks', 'templates', 'vars', 'tests')
-    NO_META = ('module', 'plugin')
+    NO_META = ('module', 'strategy_plugin')
 
     # FIXME(alikins): Not a fan of vars/args with names like 'type', but leave it for now
     def __init__(self, galaxy, name,
@@ -458,6 +462,10 @@ class GalaxyContent(object):
         # now we do the actual extraction to the path
         self.log.debug('tar_file=%s, parent_dir=%s, file_name=%s', tar_file, parent_dir, file_name)
         self.log.debug('extract_to_path=%s', extract_to_path)
+
+        import traceback
+        traceback.print_stack()
+
         files_to_extract = files_to_extract or []
         plugin_found = None
 
@@ -905,10 +913,23 @@ class GalaxyContent(object):
                         # tar info for each file, so we can filter on filename match and file type
                         tar_file_members = content_tar_file.getmembers()
                         member_matches = [tar_file_member for tar_file_member in tar_file_members
-                                          if tar_info_content_name_match(tar_file_member, self.content_meta.name)]
+                                          if tar_info_content_name_match(tar_file_member,
+                                                                         "",
+                                                                         # self.content_meta.name,
+                                                                         content_path=CONTENT_TYPE_DIR_MAP[self.content_meta.content_type])]
+                        res = archive.extract_by_content_type(content_tar_file,
+                                                              archive_parent_dir,
+                                                              self.content_meta,
+                                                              files_to_extract=member_matches,
+                                                              # content_type=self.content_meta.content_type,
+                                                              extract_to_path=self.content_meta.path,
+                                                              content_type_requires_meta=False)
+                        self.log.debug('res: %s', res)
                         # self.log.debug('member_matches: %s' % member_matches)
-                        self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
-                                                   extract_to_path=self.content_meta.path)
+                        # self._write_archived_files(content_tar_file,
+                        #                           archive_parent_dir,
+                        #                           files_to_extract=member_matches,
+                        #                           extract_to_path=self.content_meta.path)
                         installed = True
                     else:
                         # FIXME: extract and test, build a map of the name transforms first, then apply, then install
@@ -931,6 +952,7 @@ class GalaxyContent(object):
                             and os.path.join(m.name.split(os.sep)[1:])[0] in CONTENT_TYPE_DIR_MAP.values()
                         ]
 
+                        self.log.debug('plugin_subdirs: %s', plugin_subdirs)
                         if plugin_subdirs:
                             # FIXME: stop munging state
                             self._install_all_content = True
@@ -948,6 +970,7 @@ class GalaxyContent(object):
                             raise exceptions.GalaxyClientError("This Galaxy Content does not contain valid content subdirectories, expected any of: %s "
                                                                % CONTENT_TYPES)
                 else:
+                    self.log.debug('failed for content_meta=%s self.content_type=%s', self.content_meta, self.content_type)
                     raise exceptions.GalaxyClientError('Cant figure out what install method to use')
 
             except OSError as e:
