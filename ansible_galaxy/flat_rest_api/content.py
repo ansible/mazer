@@ -222,6 +222,7 @@ class GalaxyContent(object):
         """
         Conditionally set content path based on content type
         """
+        self.log.debug('content_meta before: %s', self.content_meta)
         new_path_info = self._get_content_paths(path, content_type=self.content_type,
                                                 content_name=self.content_meta.name,
                                                 galaxy_content_paths=self.galaxy.content_paths[:],
@@ -236,6 +237,7 @@ class GalaxyContent(object):
         self.galaxy.content_paths = new_path_info['galaxy_content_paths']
         self.content_type = new_path_info['content_type']
         self._install_all_content = new_path_info['install_all_content']
+        self.log.debug('content_meta after: %s', self.content_meta)
 
     def _get_content_paths(self, path=None, content_name=None, content_type=None,
                            galaxy_content_paths=None,
@@ -455,6 +457,7 @@ class GalaxyContent(object):
         """
         # now we do the actual extraction to the path
         self.log.debug('tar_file=%s, parent_dir=%s, file_name=%s', tar_file, parent_dir, file_name)
+        self.log.debug('extract_to_path=%s', extract_to_path)
         files_to_extract = files_to_extract or []
         plugin_found = None
 
@@ -463,6 +466,7 @@ class GalaxyContent(object):
         # self.log.debug('files_to_extract: %s', files_to_extract)
 
         path = extract_to_path or self.path
+        self.log.debug('path=%s', path)
 
         # do we need to drive this from tar_file members if we have file_names_to_extract?
         # for member in tar_file.getmembers():
@@ -508,6 +512,7 @@ class GalaxyContent(object):
                     if not plugin_found:
                         continue
 
+                # self.log.debug('parts_list: %s', parts_list)
                 # self.log.debug('plugin_found2: %s', plugin_found)
                 if plugin_found:
                     # If this is not a role, we don't expect it to be installed
@@ -517,28 +522,28 @@ class GalaxyContent(object):
                     # FIXME - are galaxy content types namespaced? if so,
                     #         how do we want to express their path and/or
                     #         filename upon install?
-                    if plugin_found == 'library':
-                        # subdir_index = parts_list.index(plugin_found)
-                        parts = [parts_list[-1]]
+                    if plugin_found in parts_list:
+                        # subdir_index = parts_list.index(plugin_found) + 1
+                        subdir_index = parts_list.index(plugin_found) + 1
+                        # self.log.debug('subdir_index: %s parts_list[subdir_index:]=%s', subdir_index, parts_list[subdir_index:])
+                        parts = parts_list[subdir_index:]
                     else:
-                        if plugin_found in parts_list:
-                            subdir_index = parts_list.index(plugin_found) + 1
-                            parts = parts_list[subdir_index:]
-                        else:
-                            # The desired subdir has been identified but the
-                            # current member belongs to another subdir so just
-                            # skip it
-                            continue
+                        # The desired subdir has been identified but the
+                        # current member belongs to another subdir so just
+                        # skip it
+                        continue
                 else:
                     parts = member.name.replace(parent_dir, "", 1).split(os.sep)
                     # self.log.debug('plugin_found falsey, building parts: %s', parts)
 
+                # self.log.debug('parts: %s', parts)
                 final_parts = []
                 for part in parts:
                     if part != '..' and '~' not in part and '$' not in part:
                         final_parts.append(part)
                 member.name = os.path.join(*final_parts)
                 # self.log.debug('final_parts: %s', final_parts)
+                self.log.debug('member.name: %s', member.name)
 
                 if self.content_type in CONTENT_PLUGIN_TYPES:
                     self.display_callback(
@@ -565,7 +570,7 @@ class GalaxyContent(object):
                             raise exceptions.GalaxyClientError(message)
 
                 # Alright, *now* actually write the file
-                # self.log.debug('Extracting member=%s, path=%s', member, path)
+                self.log.debug('Extracting member=%s, path=%s', member, path)
                 tar_file.extract(member, path)
 
                 # Reset the name so we're on equal playing field for the sake of
@@ -801,6 +806,7 @@ class GalaxyContent(object):
                     member_matches = [tar_member for tar_member in tar_file_members
                                       if tar_info_content_name_match(tar_member, self.content_meta.name)]
                     # self.log.debug('member_matches: %s' % member_matches)
+                    self.log.debug('content_meta: %s', self.content_meta)
                     self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
                                                extract_to_path=self.content_meta.path)
 
@@ -900,7 +906,7 @@ class GalaxyContent(object):
                         tar_file_members = content_tar_file.getmembers()
                         member_matches = [tar_file_member for tar_file_member in tar_file_members
                                           if tar_info_content_name_match(tar_file_member, self.content_meta.name)]
-                        self.log.debug('member_matches: %s' % member_matches)
+                        # self.log.debug('member_matches: %s' % member_matches)
                         self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
                                                    extract_to_path=self.content_meta.path)
                         installed = True

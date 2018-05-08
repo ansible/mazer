@@ -7,6 +7,13 @@ ansible-galaxy install alikins.awx
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles/alikins.awx ]
 
+
+# content-install role
+rm -rf ~/.ansible/content
+ansible-galaxy content-install alikins.awx
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles/alikins.awx ]
+
 # install a role from a multi-content repo
 rm -rf ~/.ansible/content
 ansible-galaxy content-install -t role alikins.testing-content
@@ -25,12 +32,23 @@ ls -lart ~/.ansible/content/roles/alikins.testing-content
 # grep role_name ~/.ansible/content/roles/alikins.testing-content/meta/main.yml
 # ~/.ansible/content/roles/.galaxy_install_info
 
+# install 'all' from a multi-content repo
+rm -rf ~/.ansible/content
+ansible-galaxy content-install alikins.testing-content
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles ]
 
-exit 0
+# content-install all from a scm url
+rm -rf ~/.ansible/content
+ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git
+
 
 # content-install all modules
 ansible-galaxy content-install -t module atestuseraccount.testing-content
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles ]
 
+exit 0
 
 # content-install all from a scm url
 ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git

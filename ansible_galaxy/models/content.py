@@ -44,6 +44,10 @@ class GalaxyContentMeta(object):
             (other.name, other.version, other.src, other.scm,
              other.content_type, other.content_dir, other.path)
 
+    def __repr__(self):
+        return 'GalaxyContentMeta(name=%s, version=%s, src=%s, scm=%s, content_type=%s, content_dir=%s, path=%s)' \
+            % (self.name, self.version, self.src, self.scm, self.content_type, self.content_dir, self.path)
+
 
 class GalaxyContent(object):
     def __init__(self):
