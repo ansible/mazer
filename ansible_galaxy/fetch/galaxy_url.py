@@ -1,10 +1,10 @@
 
 import logging
-import os
 
 # mv details of this here
 from ansible_galaxy import exceptions
 from ansible_galaxy import download
+from ansible_galaxy.fetch import base
 from ansible_galaxy.flat_rest_api.api import GalaxyAPI
 from ansible_galaxy.models import content_version
 from ansible_galaxy.utils.content_name import parse_content_name
@@ -18,11 +18,13 @@ def _build_download_url(external_url=None, version=None):
         return archive_url
 
 
-class GalaxyUrlFetch(object):
+class GalaxyUrlFetch(base.BaseFetch):
     fetch_method = 'galaxy_url'
 
     def __init__(self, content_spec, content_version,
                  galaxy_context, validate_certs=None):
+        super(GalaxyUrlFetch, self).__init__()
+
         # self.galaxy_url = galaxy_url
         self.content_spec = content_spec
         self.content_version = content_version
@@ -32,17 +34,13 @@ class GalaxyUrlFetch(object):
         if validate_certs is None:
             self.validate_certs = True
 
-        self.local_path = None
-
-        self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
-
     def fetch(self):
         api = GalaxyAPI(self.galaxy_context)
 
         # FIXME - Need to update our API calls once Galaxy has them implemented
         content_username, repo_name, content_name = parse_content_name(self.content_spec)
 
-        self.log.debug('content_username=%s, repo_name=%s content_name=%s', content_username, repo_name, content_name)
+        log.debug('content_username=%s, repo_name=%s content_name=%s', content_username, repo_name, content_name)
 
         # TODO: extract parsing of cli content sorta-url thing and add better tests
         repo_name = repo_name or content_name
@@ -66,13 +64,13 @@ class GalaxyUrlFetch(object):
         # FIXME: exception handling
         content_versions = api.fetch_content_related(related_versions_url)
 
-        self.log.debug('content_versions: %s', content_versions)
+        log.debug('content_versions: %s', content_versions)
 
         related_repo_url = related.get('repository', None)
         content_repo = None
         if related_repo_url:
             content_repo = api.fetch_content_related(related_repo_url)
-        # self.log.debug('content_repo: %s', content_repo)
+        # log.debug('content_repo: %s', content_repo)
         # FIXME: mv to it's own method
         # FIXME: pass these to fetch() if it really needs it
         _content_version = content_version.get_content_version(content_data,
@@ -90,13 +88,13 @@ class GalaxyUrlFetch(object):
 
         download_url = _build_download_url(external_url=external_url, version=_content_version)
 
-        self.log.debug('content_spec=%s download_url=%s', self.content_spec, download_url)
+        log.debug('content_spec=%s download_url=%s', self.content_spec, download_url)
 
         try:
             content_archive_path = download.fetch_url(download_url,
                                                       validate_certs=self.validate_certs)
         except exceptions.GalaxyDownloadError as e:
-            self.log.exception(e)
+            log.exception(e)
             self.display_callback("failed to download the file: %s" % str(e))
             return None
 
@@ -105,11 +103,3 @@ class GalaxyUrlFetch(object):
         log.debug('content_archive_path=%s', content_archive_path)
 
         return content_archive_path
-
-    def cleanup(self):
-        log.debug("Removing the tmp file %s fetched from galaxy_context=%s",
-                  self.local_path, self.galaxy_context)
-        try:
-            os.unlink(self.local_path)
-        except (OSError, IOError) as e:
-            log.warn('Unable to remove tmp file (%s): %s' % (self.local_path, str(e)))

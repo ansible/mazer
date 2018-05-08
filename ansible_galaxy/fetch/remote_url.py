@@ -1,18 +1,19 @@
 
 import logging
-import os
 
 from ansible_galaxy import download
+from ansible_galaxy.fetch import base
 
 log = logging.getLogger(__name__)
 
 
-class RemoteUrlFetch(object):
+class RemoteUrlFetch(base.BaseFetch):
     fetch_method = 'remote_url'
 
     def __init__(self, remote_url, validate_certs=True):
+        super(RemoteUrlFetch, self).__init__()
+
         self.remote_url = remote_url
-        self.local_path = None
         self.validate_certs = validate_certs
 
     def fetch(self):
@@ -27,11 +28,3 @@ class RemoteUrlFetch(object):
         log.debug('content_archive_path=%s', content_archive_path)
 
         return content_archive_path
-
-    def cleanup(self):
-        log.debug("Removing the tmp file %s fetched from remote_url=%s",
-                  self.local_path, self.remote_url)
-        try:
-            os.unlink(self.local_path)
-        except (OSError, IOError) as e:
-            log.warn('Unable to remove tmp file (%s): %s' % (self.local_path, str(e)))
