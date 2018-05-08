@@ -34,6 +34,8 @@ class GalaxyUrlFetch(base.BaseFetch):
         if validate_certs is None:
             self.validate_certs = True
 
+        self.remote_resource = content_spec
+
     def fetch(self):
         api = GalaxyAPI(self.galaxy_context)
 

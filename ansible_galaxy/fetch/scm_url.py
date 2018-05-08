@@ -17,6 +17,8 @@ class ScmUrlFetch(base.BaseFetch):
         self.scm_url = scm_url
         self.scm_spec = scm_spec
 
+        self.remote_resource = scm_url
+
     def fetch(self):
         content_archive_path = scm_archive.scm_archive_content(**self.scm_spec)
         self.local_path = content_archive_path

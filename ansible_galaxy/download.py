@@ -19,7 +19,11 @@ def fetch_url(archive_url, validate_certs=True):
     # WHEN: if we change the underlying http client impl at least
     try:
         url_file = open_url(archive_url, validate_certs=validate_certs)
-        temp_file = tempfile.NamedTemporaryFile(delete=False)
+
+        temp_file = tempfile.NamedTemporaryFile(delete=False,
+                                                prefix='tmp-ansible-galaxy-content-archive-',
+                                                suffix='.tar.gz')
+
         data = url_file.read()
         while data:
             temp_file.write(data)

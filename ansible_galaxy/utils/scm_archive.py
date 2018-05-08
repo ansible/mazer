@@ -39,7 +39,9 @@ def scm_archive_content(src, scm='git', name=None, version='HEAD'):
         if rc != 0:
             raise exceptions.GalaxyClientError("- command %s failed in directory %s (rc=%s)" % (' '.join(checkout_cmd), tempdir, rc))
 
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.tar')
+    temp_file = tempfile.NamedTemporaryFile(delete=False,
+                                            prefix='tmp-ansible-galaxy-content-archive-',
+                                            suffix='.tar')
     if scm == 'hg':
         archive_cmd = ['hg', 'archive', '--prefix', "%s/" % name]
         if version:

@@ -16,6 +16,8 @@ class RemoteUrlFetch(base.BaseFetch):
         self.remote_url = remote_url
         self.validate_certs = validate_certs
 
+        self.remote_resource = remote_url
+
     def fetch(self):
         '''Download the remote_url to a temp file
 
