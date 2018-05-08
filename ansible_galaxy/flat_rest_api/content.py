@@ -956,7 +956,7 @@ class GalaxyContent(object):
                     raise exceptions.GalaxyClientError("Could not update files in %s: %s" % (self.path, str(e)))
 
             # return the parsed yaml metadata
-            self.display_callback("- %s was installed successfully" % str(self))
+            self.display_callback("- %s was installed successfully to %s" % (str(self), self.path))
 
             # rm any temp files created when getting the content archive
             fetcher.cleanup()
