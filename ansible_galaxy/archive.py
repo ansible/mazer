@@ -22,6 +22,19 @@ def default_display_callback(*args, **kwargs):
 
     print(args, kwargs)
 
+# for plugins and everything except roles
+# extract_content_by_content_type(content_type, base_path=None)
+
+# for roles
+# extract_content_by_role_name(role_name)
+
+# def content_type_match(content_type, member_path):
+
+
+# TODO:
+def extract_by_role_name(archive_file, role_name):
+    pass
+
 
 # FIXME: persisting of content archives or subsets thereof
 # FIXME: currently does way too much, could be split into generic and special case classes
@@ -32,7 +45,7 @@ def default_display_callback(*args, **kwargs):
 #        after it was changed
 # TODO: figure out content_type_requires_meta up a layer?
 #          content_type != "role" and content_type not in self.NO_META:
-def extract_archive_members(self,
+def extract_by_content_type(self,
                             tar_file_obj,
                             parent_dir,
                             content_meta,
@@ -42,7 +55,7 @@ def extract_archive_members(self,
                             content_type=None,
                             display_callback=None,
                             install_all_content=False,
-                            force_role_overwrite=False,
+                            force_overwrite=False,
                             content_type_requires_meta=True):
     """
     Extract and write out files from the archive, this is a common operation
@@ -89,15 +102,10 @@ def extract_archive_members(self,
         if member.isreg() or member.issym():
             parts_list = member.name.split(os.sep)
 
-            # log.debug('content_type: %s', content_type)
             # filter subdirs if provided
             if content_type != "role":
                 # Check if the member name (path), minus the tar
                 # archive baseir starts with a subdir we're checking
-                # for
-                # log.debug('parts_list: %s', parts_list)
-                # log.debug('parts_list[1]: %s', parts_list[1])
-                # log.debug('CONTENT_TYPE_DIR_MAP[content_type]: %s', CONTENT_TYPE_DIR_MAP[content_type])
                 if file_name:
                     # The parent_dir passed in when a file name is specified
                     # should be the full path to the file_name as defined in the
@@ -108,6 +116,7 @@ def extract_archive_members(self,
                         # archive directory name and we don't need/want that
                         plugin_found = parent_dir.lstrip(content_meta.name)
 
+                # secondary dir (roles/, callback_plugins/) is a match for the content_type
                 elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP[content_type]:
                     plugin_found = CONTENT_TYPE_DIR_MAP[content_type]
 
@@ -145,32 +154,21 @@ def extract_archive_members(self,
                 if part != '..' and '~' not in part and '$' not in part:
                     final_parts.append(part)
             member.name = os.path.join(*final_parts)
+
             # log.debug('final_parts: %s', final_parts)
             log.debug('member.name: %s', member.name)
 
-            if content_type in CONTENT_PLUGIN_TYPES:
-                display_callback(
-                    "-- extracting %s %s from %s into %s" %
-                    (content_type, member.name, content_meta.name, os.path.join(path, member.name))
+            display_callback(
+                "-- extracting %s %s from %s into %s" %
+                (content_type, member.name, content_meta.name, os.path.join(path, member.name))
+            )
+
+            if os.path.exists(os.path.join(path, member.name)) and not force_overwrite:
+                message = (
+                    "the specified Galaxy Content %s appears to already exist." % os.path.join(path, member.name),
+                    "Use of --force for non-role Galaxy Content Type is not yet supported"
                 )
-            if os.path.exists(os.path.join(path, member.name)) and not force_role_overwrite:
-                if content_type in CONTENT_PLUGIN_TYPES:
-                    message = (
-                        "the specified Galaxy Content %s appears to already exist." % os.path.join(path, member.name),
-                        "Use of --force for non-role Galaxy Content Type is not yet supported"
-                    )
-                    if install_all_content:
-                        # FIXME - Probably a better way to handle this
-                        display_callback(" ".join(message), level='warning')
-                    else:
-                        raise exceptions.GalaxyClientError(" ".join(message))
-                else:
-                    message = "the specified role %s appears to already exist. Use --force to replace it." % content_meta.name
-                    if install_all_content:
-                        # FIXME - Probably a better way to handle this
-                        display_callback(message, level='warning')
-                    else:
-                        raise exceptions.GalaxyClientError(message)
+                raise exceptions.GalaxyClientError(" ".join(message))
 
             # Alright, *now* actually write the file
             log.debug('Extracting member=%s, path=%s', member, path)
