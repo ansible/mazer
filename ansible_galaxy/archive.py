@@ -3,6 +3,7 @@
 # would like a easy way to extract a subdir of a tar archive to
 # a directory on local fs while using relative paths
 
+import fnmatch
 import logging
 import os
 
@@ -32,9 +33,48 @@ def default_display_callback(*args, **kwargs):
 
 
 # TODO:
-def extract_by_role_name(archive_file, role_name):
-    pass
 
+def tar_info_content_name_match(tar_info, content_name, content_path=None):
+    log.debug('tar_info=%s, content_name=%s, content_path=%s',
+              tar_info, content_name, content_path)
+    # only reg files or symlinks can match
+    if not tar_info.isreg() and not tar_info.islnk():
+        return False
+
+    content_path = content_path or ""
+
+    # TODO: test cases for patterns
+    match_pattern = '*%s*' % content_name
+    if content_path:
+        match_pattern = '*/%s/%s*' % (content_path, content_name)
+
+    log.debug('match_pattern=%s', match_pattern)
+    # FIXME: would be better as two predicates both apply by comprehension
+    if fnmatch.fnmatch(tar_info.name, match_pattern):
+        return True
+
+    return False
+
+
+def filter_members_by_content_type(tar_file_obj,
+                                   content_meta):
+    if not content_meta:
+        log.debug('no content_meta info')
+        return []
+
+    content_type = content_meta.content_type
+
+    tar_file_members = tar_file_obj.getmembers()
+
+    member_matches = [tar_file_member for tar_file_member in tar_file_members
+                      if tar_info_content_name_match(tar_file_member,
+                                                     "",
+                                                     # self.content_meta.name,
+                                                     content_path=CONTENT_TYPE_DIR_MAP[content_type])]
+
+    log.debug('member_matches=%s', member_matches)
+
+    return member_matches
 
 # FIXME: persisting of content archives or subsets thereof
 # FIXME: currently does way too much, could be split into generic and special case classes

@@ -54,26 +54,6 @@ log = logging.getLogger(__name__)
 # can provide a ContentInstallInfo
 
 
-def tar_info_content_name_match(tar_info, content_name, content_path=None):
-    log.debug('tar_info=%s, content_name=%s, content_path=%s',
-              tar_info, content_name, content_path)
-    # only reg files or symlinks can match
-    if not tar_info.isreg() and not tar_info.islnk():
-        return False
-
-    content_path = content_path or ""
-
-    # TODO: test cases for patterns
-    match_pattern = '*%s*' % content_name
-    if content_path:
-        match_pattern = '*/%s/%s*' % (content_path, content_name)
-
-    log.debug('match_pattern=%s', match_pattern)
-    # FIXME: would be better as two predicates both apply by comprehension
-    if fnmatch.fnmatch(tar_info.name, match_pattern):
-        return True
-
-    return False
 
 
 # FIXME: do we have an enum like class for py2.6? worth a dep?
@@ -810,9 +790,11 @@ class GalaxyContent(object):
 
                     # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
                     #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
-                    tar_file_members = content_tar_file.getmembers()
-                    member_matches = [tar_member for tar_member in tar_file_members
-                                      if tar_info_content_name_match(tar_member, self.content_meta.name)]
+                    member_matches = archive.filter_members_by_content_type(content_tar_file, self.content_meta)
+
+                    # tar_file_members = content_tar_file.getmembers()
+                    # member_matches = [tar_member for tar_member in tar_file_members
+                    #                  if tar_info_content_name_match(tar_member, self.content_meta.name)]
                     # self.log.debug('member_matches: %s' % member_matches)
                     self.log.debug('content_meta: %s', self.content_meta)
                     self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
@@ -911,12 +893,17 @@ class GalaxyContent(object):
                         #       Then we pass that into _write_archive_files as file_name arg
 
                         # tar info for each file, so we can filter on filename match and file type
-                        tar_file_members = content_tar_file.getmembers()
-                        member_matches = [tar_file_member for tar_file_member in tar_file_members
-                                          if tar_info_content_name_match(tar_file_member,
-                                                                         "",
-                                                                         # self.content_meta.name,
-                                                                         content_path=CONTENT_TYPE_DIR_MAP[self.content_meta.content_type])]
+                        # tar_file_members = content_tar_file.getmembers()
+
+                        member_matches = archive.filter_members_by_content_type(content_tar_file, self.content_meta)
+
+                        # match_by_content_type() ?
+                        # member_matches = [tar_file_member for tar_file_member in tar_file_members
+                        #                  if tar_info_content_name_match(tar_file_member,
+                        #                                                 "",
+                        #                                                 # self.content_meta.name,
+                        #                                                 content_path=CONTENT_TYPE_DIR_MAP[self.content_meta.content_type])]
+
                         res = archive.extract_by_content_type(content_tar_file,
                                                               archive_parent_dir,
                                                               self.content_meta,
