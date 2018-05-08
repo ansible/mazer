@@ -103,26 +103,25 @@ def extract_by_content_type(self,
             parts_list = member.name.split(os.sep)
 
             # filter subdirs if provided
-            if content_type != "role":
-                # Check if the member name (path), minus the tar
-                # archive baseir starts with a subdir we're checking
-                if file_name:
-                    # The parent_dir passed in when a file name is specified
-                    # should be the full path to the file_name as defined in the
-                    # ansible-galaxy.yml file. If that matches the member.name
-                    # then we've found our match.
-                    if member.name == os.path.join(parent_dir, file_name):
-                        # lstrip content_meta.name because that's going to be the
-                        # archive directory name and we don't need/want that
-                        plugin_found = parent_dir.lstrip(content_meta.name)
+            # Check if the member name (path), minus the tar
+            # archive baseir starts with a subdir we're checking
+            if file_name:
+                # The parent_dir passed in when a file name is specified
+                # should be the full path to the file_name as defined in the
+                # ansible-galaxy.yml file. If that matches the member.name
+                # then we've found our match.
+                if member.name == os.path.join(parent_dir, file_name):
+                    # lstrip content_meta.name because that's going to be the
+                    # archive directory name and we don't need/want that
+                    plugin_found = parent_dir.lstrip(content_meta.name)
 
-                # secondary dir (roles/, callback_plugins/) is a match for the content_type
-                elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP[content_type]:
-                    plugin_found = CONTENT_TYPE_DIR_MAP[content_type]
+            # secondary dir (roles/, callback_plugins/) is a match for the content_type
+            elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP[content_type]:
+                plugin_found = CONTENT_TYPE_DIR_MAP[content_type]
 
-                # log.debug('plugin_found1: %s', plugin_found)
-                if not plugin_found:
-                    continue
+            # log.debug('plugin_found1: %s', plugin_found)
+            if not plugin_found:
+                continue
 
             # log.debug('parts_list: %s', parts_list)
             # log.debug('plugin_found2: %s', plugin_found)
