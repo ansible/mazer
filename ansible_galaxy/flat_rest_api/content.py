@@ -612,6 +612,58 @@ class GalaxyContent(object):
 
         return archive_url
 
+    # FIXME: can remove, dont think it is used
+    def _install_all_old_way(self,
+                             content_tar_file,
+                             archive_parent_dir,
+                             members,
+                             install_all_content):
+
+        installed = False
+        # FIXME: extract and test, build a map of the name transforms first, then apply, then install
+        # Find out what plugin type subdirs exist in this repo
+        #
+        # This list comprehension will iterate every member entry in
+        # the tarfile, split it's name by os.sep and drop the top most
+        # parent dir, which will be self.content_meta.name (we don't want it as it's
+        # not needed for plugin types. First make sure the length of
+        # that split and drop of parent dir is length > 1 and verify
+        # that the subdir is infact in CONTENT_TYPE_DIR_MAP.values()
+        #
+        # This should give us a list of valid content type subdirs
+        # found heuristically within this Galaxy Content repo
+        #
+        plugin_subdirs = [
+            os.path.join(m.name.split(os.sep)[1:])[0]
+            for m in members
+            if len(os.path.join(m.name.split(os.sep)[1:])) > 1
+            and os.path.join(m.name.split(os.sep)[1:])[0] in CONTENT_TYPE_DIR_MAP.values()
+        ]
+
+        self.log.debug('plugin_subdirs: %s', plugin_subdirs)
+        if plugin_subdirs:
+
+
+            # FIXME: stop munging state
+            self._install_all_content = True
+
+
+            for plugin_subdir in plugin_subdirs:
+                # Set the type, this is neccesary for processing extraction of
+                # the tarball content
+                #
+                # rstrip the letter 's' from the plugin type subdir, this should
+                # be the type
+                self._set_type(plugin_subdir.rstrip('s'))
+                self._set_content_paths(None)
+                self._write_archived_files(content_tar_file, archive_parent_dir)
+                installed = True
+        else:
+            raise exceptions.GalaxyClientError("This Galaxy Content does not contain valid content subdirectories, expected any of: %s "
+                                               % CONTENT_TYPES)
+
+        return installed
+
     def _install_all(self, content_tar_file, archive_parent_dir):
         # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
         #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
@@ -633,6 +685,26 @@ class GalaxyContent(object):
 
         installed = True
         return installed
+
+# install
+# - fetch the content_archive
+# - open the content archive
+# - search for any 'meta/main.yml' files in archive
+#   - and figure out 'archive_parent_dir'
+# - hack to mutate content_path state
+# - try to find archive_parent_dir even harder
+#   - for the 'no ansible-galaxy.yml' case
+# - lookup for meta/main.yml again
+#   - and/or lookup for ansible-galaxy.yml and load it
+# - while loop around a handful of ways to figure out what/where to install
+#  - handle content_type='all'
+#  - handle old style role content (meta/main.yml, no ansible-galaxy.yml)
+#  - or - do ansible-galaxy.yml stuff
+#  - or for no meta/main.yml and no ansible-galaxy.yml
+#     - for not 'all' or specific content_types, do an extract
+#     - unused way to handle 'all' content type based on path munging
+#     - if something 'installed', break
+#     - else wraise install method error
 
     # TODO: split this up, it's pretty gnarly
     def install(self):
@@ -767,6 +839,7 @@ class GalaxyContent(object):
         self.log.debug("meta_file: %s galaxy_file: %s self.content_type: %s", meta_file, galaxy_file, self.content_type)
         # self.log.debug("archive_parent_dir: %s", archive_parent_dir)
         # self.log.debug("meta_parent_dir: %s", meta_parent_dir)
+
         if not meta_file and not galaxy_file and self.content_type == "role":
             raise exceptions.GalaxyClientError("this role does not appear to have a meta/main.yml file or ansible-galaxy.yml.")
         # FIXME: unindent
@@ -790,7 +863,9 @@ class GalaxyContent(object):
         # hand, does not have a parent directory at all.
 
         installed = False
+
         # FIXME: get rid of the while loop or continue if nothing catches
+        # TODO: need an install state machine real bad
         while not installed:
             if self.content_type != "all":
                 self.display_callback("- extracting %s %s to %s" % (self.content_type, self.content_meta.name, self.path))
@@ -829,12 +904,8 @@ class GalaxyContent(object):
                         os.makedirs(self.path)
 
                     # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
-                    #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
                     member_matches = archive.filter_members_by_content_type(content_tar_file, self.content_meta)
 
-                    # tar_file_members = content_tar_file.getmembers()
-                    # member_matches = [tar_member for tar_member in tar_file_members
-                    #                  if tar_info_content_name_match(tar_member, self.content_meta.name)]
                     # self.log.debug('member_matches: %s' % member_matches)
                     self.log.debug('content_meta: %s', self.content_meta)
                     self.log.info('about to extract %s to %s', self.content_meta.name, self.content_meta.path)
@@ -845,11 +916,6 @@ class GalaxyContent(object):
                                                     files_to_extract=member_matches,
                                                     extract_to_path=self.content_meta.path,
                                                     content_type_requires_meta=True)
-
-                    # self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
-                    #                           extract_to_path=self.content_meta.path)
-
-                    # self._write_archived_files(content_tar_file, archive_parent_dir)
 
                     # write out the install info file for later use
                     # self._write_galaxy_install_info()
@@ -973,43 +1039,10 @@ class GalaxyContent(object):
                         installed = True
                     else:
                         self.log.debug('No meta/main, no galaxy file, not ct="all"? XXXXXXXXXXXXXX')
-                        # FIXME: extract and test, build a map of the name transforms first, then apply, then install
-                        # Find out what plugin type subdirs exist in this repo
-                        #
-                        # This list comprehension will iterate every member entry in
-                        # the tarfile, split it's name by os.sep and drop the top most
-                        # parent dir, which will be self.content_meta.name (we don't want it as it's
-                        # not needed for plugin types. First make sure the length of
-                        # that split and drop of parent dir is length > 1 and verify
-                        # that the subdir is infact in CONTENT_TYPE_DIR_MAP.values()
-                        #
-                        # This should give us a list of valid content type subdirs
-                        # found heuristically within this Galaxy Content repo
-                        #
-                        plugin_subdirs = [
-                            os.path.join(m.name.split(os.sep)[1:])[0]
-                            for m in members
-                            if len(os.path.join(m.name.split(os.sep)[1:])) > 1
-                            and os.path.join(m.name.split(os.sep)[1:])[0] in CONTENT_TYPE_DIR_MAP.values()
-                        ]
-
-                        self.log.debug('plugin_subdirs: %s', plugin_subdirs)
-                        if plugin_subdirs:
-                            # FIXME: stop munging state
-                            self._install_all_content = True
-                            for plugin_subdir in plugin_subdirs:
-                                # Set the type, this is neccesary for processing extraction of
-                                # the tarball content
-                                #
-                                # rstrip the letter 's' from the plugin type subdir, this should
-                                # be the type
-                                self._set_type(plugin_subdir.rstrip('s'))
-                                self._set_content_paths(None)
-                                self._write_archived_files(content_tar_file, archive_parent_dir)
-                                installed = True
-                        else:
-                            raise exceptions.GalaxyClientError("This Galaxy Content does not contain valid content subdirectories, expected any of: %s "
-                                                               % CONTENT_TYPES)
+                        installed = self._install_all_old_way(content_tar_file,
+                                                              archive_parent_dir,
+                                                              members,
+                                                              self._install_all_content)
                 elif installed:
                     self.log.debug('installed=%s  breaking out of while', installed)
                     break
