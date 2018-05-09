@@ -799,28 +799,6 @@ class GalaxyContent(object):
                 installed = self._install_all(content_tar_file, archive_parent_dir)
                 break
 
-            # FIXME: figure out what the 'case' is first, then branch to implementations and mv the impls
-            if self.content_meta.content_type == "role" and meta_file and not galaxy_file:
-                # This is an old-style role
-                # FIXME: should likely be responsibilty of the Content or RoleContent serializer
-                if os.path.exists(self.path):
-                    if not os.path.isdir(self.path):
-                        raise exceptions.GalaxyClientError("the specified roles path exists and is not a directory.")
-                    elif not getattr(self.options, "force", False):
-                        msg = "the specified role %s appears to already exist. Use --force to replace it." % self.content_meta.name
-                        raise exceptions.GalaxyClientError(msg)
-                    else:
-                        # using --force, remove the old path
-                        # FIXME: this is ~10 indent levels deep in the 'install' method which is a weird place to do a remove
-                        if not self.remove():
-                            msg = "%s doesn't appear to contain a role.\n"
-                            "iplease remove this directory manually if you really "
-                            "want to put the role here" % self.content_meta.path
-                            raise exceptions.GalaxyClientError(msg)
-                else:
-                    os.makedirs(self.path)
-
-                # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
                 member_matches = archive.filter_members_by_content_type(content_tar_file, self.content_meta)
 
                 # self.log.debug('member_matches: %s' % member_matches)
