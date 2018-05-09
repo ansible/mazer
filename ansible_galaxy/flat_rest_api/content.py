@@ -287,7 +287,7 @@ class GalaxyContent(object):
                 galaxy_content_paths = [os.path.join(os.path.expanduser(p),
                                                      CONTENT_TYPE_DIR_MAP[new_content_type]) for p in defaults.DEFAULT_CONTENT_PATH]
             else:
-                galaxy_content_paths = defaults.DEFAULT_CONTENT_PATH
+                galaxy_content_paths = [os.path.expanduser(p) for p in defaults.DEFAULT_CONTENT_PATH]
 
             # use the first path by default
             if new_content_type == "role":
@@ -862,6 +862,10 @@ class GalaxyContent(object):
         # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other
         # hand, does not have a parent directory at all.
 
+        if not os.path.isdir(self.content_meta.path):
+            self.log.debug('No content path (%s) found so creating it', self.content_meta.path)
+            os.makedirs(self.content_meta.path)
+
         installed = False
 
         # FIXME: get rid of the while loop or continue if nothing catches
@@ -881,6 +885,7 @@ class GalaxyContent(object):
 
                 if self.content_meta.content_type == 'all':
                     installed = self._install_all(content_tar_file, archive_parent_dir)
+                    break
 
                 # FIXME: figure out what the 'case' is first, then branch to implementations and mv the impls
                 if self.content_meta.content_type == "role" and meta_file and not galaxy_file:
@@ -1031,13 +1036,9 @@ class GalaxyContent(object):
                                                               extract_to_path=self.content_meta.path,
                                                               content_type_requires_meta=False)
                         self.log.debug('res: %s', res)
-                        # self.log.debug('member_matches: %s' % member_matches)
-                        # self._write_archived_files(content_tar_file,
-                        #                           archive_parent_dir,
-                        #                           files_to_extract=member_matches,
-                        #                           extract_to_path=self.content_meta.path)
                         installed = True
                     else:
+
                         self.log.debug('No meta/main, no galaxy file, not ct="all"? XXXXXXXXXXXXXX')
                         installed = self._install_all_old_way(content_tar_file,
                                                               archive_parent_dir,

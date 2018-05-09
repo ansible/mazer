@@ -7,6 +7,15 @@
 #[ -d ~/.ansible/content/strategy_plugins ]
 
 
+# install 'all' from a repo with plugins and modules but not roles or meta repo
+rm -rf ~/.ansible/content
+ansible-galaxy content-install alikins.content-no-meta
+tree ~/.ansible/content
+[ -d ~/.ansible/content/library ]
+[ -d ~/.ansible/content/callback_plugins ]
+[ -d ~/.ansible/content/action_plugins ]
+# not yet
+# [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
 # install modules from a multi-content repo
 rm -rf ~/.ansible/content
@@ -50,7 +59,7 @@ tree ~/.ansible/content
 [ -d ~/.ansible/content/roles/alikins.awx ]
 
 
-# install a signal module
+# install a single module
 rm -rf ~/.ansible/content
 ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
 tree ~/.ansible/content
