@@ -423,6 +423,16 @@ class GalaxyCLI(cli.CLI):
                 self.exit_without_ignore()
                 continue
 
+            if not installed:
+                log.warning("- %s was NOT installed successfully.", content.name)
+                self.exit_without_ignore()
+
+            if no_deps:
+                log.warning('- %s was installed but any deps will not be installed because of no_deps',
+                            content.name)
+
+            # oh dear god, a dep solver...
+
             # install dependencies, if we want them
             # FIXME - Galaxy Content Types handle dependencies in the GalaxyContent type itself because
             #         a content repo can contain many types and many of any single type and it's just
@@ -454,10 +464,6 @@ class GalaxyCLI(cli.CLI):
                                                 str(dep_role), content.name, dep_role.install_info['version'])
                                 else:
                                     self.display('- dependency %s is already installed, skipping.' % dep_role.name)
-
-            if not installed:
-                log.warning("- %s was NOT installed successfully.", content.name)
-                self.exit_without_ignore()
 
         return 0
 

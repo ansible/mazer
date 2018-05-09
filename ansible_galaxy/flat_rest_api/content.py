@@ -42,7 +42,6 @@ from ansible_galaxy.fetch.galaxy_url import GalaxyUrlFetch
 from ansible_galaxy.models.content import CONTENT_PLUGIN_TYPES, CONTENT_TYPES
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.models import content
-from ansible_galaxy.models import content_repository
 from ansible_galaxy.utils.yaml_parse import yaml_parse
 
 
@@ -132,7 +131,8 @@ class GalaxyContent(object):
         self.galaxy = galaxy
 
         self.content_meta = content.GalaxyContentMeta(name=name, src=src, version=version,
-                                                      scm=scm, path=path, content_type=content_type)
+                                                      scm=scm, path=path, content_type=content_type,
+                                                      content_dir=CONTENT_TYPE_DIR_MAP.get(content_type, None))
 
         # TODO: remove this when the data constructors are split
         # This is a marker needed to make certain decisions about single
@@ -757,54 +757,19 @@ class GalaxyContent(object):
 
         # FIXME: mv to it's own method
         if not archive_parent_dir:
-            # archive_parent_dir wasn't found above when checking for metadata files
-            parent_dir_found = False
-            for member in members:
-                # This is either a new-type Galaxy Content that doesn't have an
-                # ansible-galaxy.yml file and the type desired is specified and
-                # we check parent dir based on the correct subdir existing or
-                # we need to just scan the subdirs heuristically and figure out
-                # what to do
-                if self.content_type != "all":
-                    if self.type_dir in member.name:
-                        archive_parent_dir = os.path.dirname(member.name)
-                        parent_dir_found = True
-                        break
-                else:
-                    for plugin_dir in CONTENT_TYPE_DIR_MAP.values():
-                        if plugin_dir in member.name:
-                            archive_parent_dir = os.path.dirname(member.name)
-                            parent_dir_found = True
-                            break
-                    if parent_dir_found:
-                        break
-
-            if not parent_dir_found:
-                if self.content_type in CONTENT_PLUGIN_TYPES:
-                    msg = "No content metadata provided, nor content directories found for content_type: %s" % self.content_type
-                    raise exceptions.GalaxyClientError(msg)
+            archive_parent_dir = archive.find_archive_parent_dir(members, self.content_meta)
 
         self.log.debug("meta_file: %s galaxy_file: %s self.content_type: %s", meta_file, galaxy_file, self.content_type)
-        # self.log.debug("archive_parent_dir: %s", archive_parent_dir)
-        # self.log.debug("meta_parent_dir: %s", meta_parent_dir)
+        self.log.debug("archive_parent_dir: %s", archive_parent_dir)
+        self.log.debug("meta_parent_dir: %s", meta_parent_dir)
 
         if not meta_file and not galaxy_file and self.content_type == "role":
             raise exceptions.GalaxyClientError("this role does not appear to have a meta/main.yml file or ansible-galaxy.yml.")
-        # FIXME: unindent
-        else:
-            # FIXME: mv to AnsibleGalaxyMetadata
-            try:
-                if galaxy_file:
-                    # Let the galaxy_file take precedence
-                    self._galaxy_metadata = content_repository.load(content_tar_file.extractfile(galaxy_file))
-                elif meta_file:
-                    self._metadata = yaml.safe_load(content_tar_file.extractfile(meta_file))
-                # else:
-                # FIXME - Need to handle the scenario where we "walk the dirs" and place things where they should be
-            except Exception as e:
-                self.warn('unable to extract and yaml load galaxy_file=%s meta_file=%s tmpfile=%s', galaxy_file, meta_file, content_archive)
-                self.log.exception(e)
-                raise exceptions.GalaxyClientError("this role does not appear to have a valid meta/main.yml or ansible-galaxy.yml file.")
+
+        # FIXME: mv to AnsibleGalaxyMetadata
+        self._galaxy_metadata, self._metadata = archive.load_archive_metadata(content_tar_file,
+                                                                              galaxy_file,
+                                                                              meta_file)
 
         # we strip off any higher-level directories for all of the files contained within
         # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other

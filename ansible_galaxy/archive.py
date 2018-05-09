@@ -6,6 +6,7 @@
 import fnmatch
 import logging
 import os
+import yaml
 
 
 import pprint
@@ -14,6 +15,7 @@ import pprint
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP, CONTENT_PLUGIN_TYPES
+from ansible_galaxy.models import content_repository
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +45,15 @@ META_MAIN = os.path.join('meta', 'main.yml')
 GALAXY_FILE = 'ansible-galaxy.yml'
 
 
+# TODO/FIXME: try to make sense of this and find_archive_parent_dir
 def find_archive_metadata(archive_members):
+    '''Try to find the paths to the archives meta data files
+
+    Aka, meta/main.yml or ansible-galaxy.yml.
+
+    Also, while we are at it, try to find the archive parent
+    dir.'''
+
     meta_file = None
     galaxy_file = None
 
@@ -81,6 +91,57 @@ def find_archive_metadata(archive_members):
             meta_parent_dir,
             galaxy_file,
             archive_parent_dir)
+
+
+def find_archive_parent_dir(archive_members, content_meta):
+    # archive_parent_dir wasn't found when checking for metadata files
+    archive_parent_dir = None
+
+    for member in archive_members:
+        # This is either a new-type Galaxy Content that doesn't have an
+        # ansible-galaxy.yml file and the type desired is specified and
+        # we check parent dir based on the correct subdir existing or
+        # we need to just scan the subdirs heuristically and figure out
+        # what to do
+        if content_meta.content_type != "all":
+            if content_meta.content_dir in member.name:
+                archive_parent_dir = os.path.dirname(member.name)
+                return archive_parent_dir
+        else:
+            for plugin_dir in CONTENT_TYPE_DIR_MAP.values():
+                if plugin_dir in member.name:
+                    archive_parent_dir = os.path.dirname(member.name)
+                    return archive_parent_dir
+
+    if content_meta.content_type not in CONTENT_PLUGIN_TYPES:
+        return archive_parent_dir
+
+    # TODO: archive format exception?
+    msg = "No content metadata provided, nor content directories found for content_type: %s" % \
+        content_meta.content_type
+    raise exceptions.GalaxyClientError(msg)
+
+
+# FIXME: mv to AnsibleGalaxyMetadata
+def load_archive_metadata(tar_file_obj, galaxy_file, meta_file):
+    galaxy_metadata = None
+    metadata = None
+
+    try:
+        if galaxy_file:
+            # Let the galaxy_file take precedence
+            galaxy_metadata = content_repository.load(tar_file_obj.extractfile(galaxy_file))
+        elif meta_file:
+            metadata = yaml.safe_load(tar_file_obj.extractfile(meta_file))
+    except Exception as e:
+        log.warn('unable to extract and yaml load galaxy_file=%s meta_file=%s tar_file_obj=%s',
+                 galaxy_file, meta_file, tar_file_obj)
+        log.exception(e)
+
+        # TODO: some archive specific exception
+        raise exceptions.GalaxyClientError("this role does not appear to have a valid meta/main.yml or ansible-galaxy.yml file.")
+
+    return galaxy_metadata, metadata
 
 
 def tar_info_content_name_match(tar_info, content_name, content_path=None, match_pattern=None):
