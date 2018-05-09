@@ -34,9 +34,9 @@ def default_display_callback(*args, **kwargs):
 
 # TODO:
 
-def tar_info_content_name_match(tar_info, content_name, content_path=None):
-    log.debug('tar_info=%s, content_name=%s, content_path=%s',
-              tar_info, content_name, content_path)
+def tar_info_content_name_match(tar_info, content_name, content_path=None, match_pattern=None):
+    log.debug('tar_info=%s, content_name=%s, content_path=%s, match_pattern=%s',
+              tar_info, content_name, content_path, match_pattern)
     # only reg files or symlinks can match
     if not tar_info.isreg() and not tar_info.islnk():
         return False
@@ -44,9 +44,11 @@ def tar_info_content_name_match(tar_info, content_name, content_path=None):
     content_path = content_path or ""
 
     # TODO: test cases for patterns
-    match_pattern = '*%s*' % content_name
-    if content_path:
-        match_pattern = '*/%s/%s*' % (content_path, content_name)
+    if not match_pattern:
+        match_pattern = '*%s*' % content_name
+
+        if content_path:
+            match_pattern = '*/%s/%s*' % (content_path, content_name)
 
     log.debug('match_pattern=%s', match_pattern)
     # FIXME: would be better as two predicates both apply by comprehension
@@ -71,6 +73,10 @@ def filter_members_by_content_type(tar_file_obj,
                                                      "",
                                                      # self.content_meta.name,
                                                      content_path=CONTENT_TYPE_DIR_MAP[content_type])]
+
+    # everything for roles
+    if content_type == 'role':
+        member_matches = tar_file_members
 
     log.debug('member_matches=%s', member_matches)
 
@@ -158,9 +164,13 @@ def extract_by_content_type(tar_file_obj,
             elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP[content_meta.content_type]:
                 plugin_found = CONTENT_TYPE_DIR_MAP[content_meta.content_type]
 
+
+
             # log.debug('plugin_found1: %s', plugin_found)
-            if not plugin_found:
-                continue
+            # if not plugin_found:
+            #    continue
+
+
 
             # log.debug('parts_list: %s', parts_list)
             # log.debug('plugin_found2: %s', plugin_found)
@@ -219,4 +229,10 @@ def extract_by_content_type(tar_file_obj,
 
     if content_type_requires_meta:
         if not plugin_found:
-            raise exceptions.GalaxyClientError("Required subdirectory not found in Galaxy Content archive for %s" % content_meta.name)
+
+
+
+            log.warn('we dont think we found a meta/main.yml but we probably did, fixme')
+
+
+            # raise exceptions.GalaxyClientError("Required subdirectory not found in Galaxy Content archive for %s" % content_meta.name)

@@ -797,8 +797,16 @@ class GalaxyContent(object):
                     #                  if tar_info_content_name_match(tar_member, self.content_meta.name)]
                     # self.log.debug('member_matches: %s' % member_matches)
                     self.log.debug('content_meta: %s', self.content_meta)
-                    self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
-                                               extract_to_path=self.content_meta.path)
+
+                    archive.extract_by_content_type(content_tar_file,
+                                                    archive_parent_dir,
+                                                    self.content_meta,
+                                                    files_to_extract=member_matches,
+                                                    extract_to_path=self.content_meta.path,
+                                                    content_type_requires_meta=True)
+
+                    # self._write_archived_files(content_tar_file, archive_parent_dir, files_to_extract=member_matches,
+                    #                           extract_to_path=self.content_meta.path)
 
                     # self._write_archived_files(content_tar_file, archive_parent_dir)
 
