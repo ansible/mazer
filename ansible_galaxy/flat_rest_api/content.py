@@ -292,12 +292,16 @@ class GalaxyContent(object):
             content_paths = [x for x in galaxy_content_paths]
             content_paths = [os.path.join(x, content_name) for x in content_paths]
 
-        return {'content_path': content_path,
-                'content_paths': content_paths,
-                'galaxy_content_paths': galaxy_content_paths,
-                'content_type': new_content_type,
-                'install_all_content': install_all_content,
-                'content_content_path': content_content_path}
+        result = {'content_path': content_path,
+                  'content_paths': content_paths,
+                  'galaxy_content_paths': galaxy_content_paths,
+                  'content_type': new_content_type,
+                  'install_all_content': install_all_content,
+                  'content_content_path': content_content_path}
+
+        log.debug('get_content_path results=%s', result)
+
+        return result
 
     # FIXME: update calling code instead?
     @property
@@ -767,8 +771,34 @@ class GalaxyContent(object):
 
             # FIXME: a few pages of code in a try block, extract to own method/class
             try:
+                self.log.info('Installing content of type: %s', self.content_meta.content_type)
+                self.log.debug('self.content_type=%s, self.content_meta.content_type=%s, are_equal? %s',
+                               self.content_type, self.content_meta.content_type,
+                               self.content_type == self.content_meta.content_type)
+
+                if self.content_meta.content_type == 'all':
+                    # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
+                    #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
+                    member_matches = archive.filter_members_by_content_type(content_tar_file, self.content_meta)
+
+                    # tar_file_members = content_tar_file.getmembers()
+                    # member_matches = [tar_member for tar_member in tar_file_members
+                    #                  if tar_info_content_name_match(tar_member, self.content_meta.name)]
+                    # self.log.debug('member_matches: %s' % member_matches)
+                    self.log.debug('content_meta: %s', self.content_meta)
+                    self.log.info('about to extract %s to %s', self.content_meta.name, self.content_meta.path)
+
+                    archive.extract_by_content_type(content_tar_file,
+                                                    archive_parent_dir,
+                                                    self.content_meta,
+                                                    files_to_extract=member_matches,
+                                                    extract_to_path=self.content_meta.path,
+                                                    content_type_requires_meta=True)
+
+
+
                 # FIXME: figure out what the 'case' is first, then branch to implementations and mv the impls
-                if self.content_type == "role" and meta_file and not galaxy_file:
+                if self.content_meta.content_type == "role" and meta_file and not galaxy_file:
                     # This is an old-style role
                     # FIXME: should likely be responsibilty of the Content or RoleContent serializer
                     if os.path.exists(self.path):
@@ -797,6 +827,7 @@ class GalaxyContent(object):
                     #                  if tar_info_content_name_match(tar_member, self.content_meta.name)]
                     # self.log.debug('member_matches: %s' % member_matches)
                     self.log.debug('content_meta: %s', self.content_meta)
+                    self.log.info('about to extract %s to %s', self.content_meta.name, self.content_meta.path)
 
                     archive.extract_by_content_type(content_tar_file,
                                                     archive_parent_dir,
@@ -811,7 +842,7 @@ class GalaxyContent(object):
                     # self._write_archived_files(content_tar_file, archive_parent_dir)
 
                     # write out the install info file for later use
-                    self._write_galaxy_install_info()
+                    # self._write_galaxy_install_info()
                     installed = True
                 elif galaxy_file:
                     # Parse the ansible-galaxy.yml file and install things
@@ -891,6 +922,8 @@ class GalaxyContent(object):
                     # heuristically walking the directories and install
                     # the appropriate things in the appropriate places
 
+                    self.log.info('no meta/main.yml found and no ansible-galaxy.yml found')
+
                     # FIXME: this is basically a big switch to decide what serializer to use
                     if self.content_type != "all":
                         # TODO: based on content_name, need to find/build the full path to that in the
@@ -912,6 +945,8 @@ class GalaxyContent(object):
                         #                                                 # self.content_meta.name,
                         #                                                 content_path=CONTENT_TYPE_DIR_MAP[self.content_meta.content_type])]
 
+                        self.log.info('about to extract content_type=%s %s to %s',
+                                      self.content_meta.content_type, self.content_meta.name, self.content_meta.path)
                         res = archive.extract_by_content_type(content_tar_file,
                                                               archive_parent_dir,
                                                               self.content_meta,
@@ -927,6 +962,7 @@ class GalaxyContent(object):
                         #                           extract_to_path=self.content_meta.path)
                         installed = True
                     else:
+                        self.log.debug('No meta/main, no galaxy file, not ct="all"? XXXXXXXXXXXXXX')
                         # FIXME: extract and test, build a map of the name transforms first, then apply, then install
                         # Find out what plugin type subdirs exist in this repo
                         #

@@ -8,6 +8,10 @@ import logging
 import os
 
 
+import pprint
+
+
+
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP, CONTENT_PLUGIN_TYPES
 
@@ -19,9 +23,9 @@ log = logging.getLogger(__name__)
 
 
 def default_display_callback(*args, **kwargs):
-    log.debug('args=%s, kwargs=%s', args, kwargs)
+    # log.debug('args=%s, kwargs=%s', args, kwargs)
 
-    print(args, kwargs)
+    print(''.join(args))
 
 # for plugins and everything except roles
 # extract_content_by_content_type(content_type, base_path=None)
@@ -35,8 +39,8 @@ def default_display_callback(*args, **kwargs):
 # TODO:
 
 def tar_info_content_name_match(tar_info, content_name, content_path=None, match_pattern=None):
-    log.debug('tar_info=%s, content_name=%s, content_path=%s, match_pattern=%s',
-              tar_info, content_name, content_path, match_pattern)
+    # log.debug('tar_info=%s, content_name=%s, content_path=%s, match_pattern=%s',
+    #          tar_info, content_name, content_path, match_pattern)
     # only reg files or symlinks can match
     if not tar_info.isreg() and not tar_info.islnk():
         return False
@@ -50,7 +54,7 @@ def tar_info_content_name_match(tar_info, content_name, content_path=None, match
         if content_path:
             match_pattern = '*/%s/%s*' % (content_path, content_name)
 
-    log.debug('match_pattern=%s', match_pattern)
+    # log.debug('match_pattern=%s', match_pattern)
     # FIXME: would be better as two predicates both apply by comprehension
     if fnmatch.fnmatch(tar_info.name, match_pattern):
         return True
@@ -72,15 +76,16 @@ def filter_members_by_content_type(tar_file_obj,
                       if tar_info_content_name_match(tar_file_member,
                                                      "",
                                                      # self.content_meta.name,
-                                                     content_path=CONTENT_TYPE_DIR_MAP[content_type])]
+                                                     content_path=CONTENT_TYPE_DIR_MAP.get(content_type))]
 
     # everything for roles
     if content_type == 'role':
         member_matches = tar_file_members
 
-    log.debug('member_matches=%s', member_matches)
+    # log.debug('member_matches=%s', pprint.pformat([x.name for x in member_matches]))
 
     return member_matches
+
 
 # FIXME: persisting of content archives or subsets thereof
 # FIXME: currently does way too much, could be split into generic and special case classes
@@ -114,6 +119,7 @@ def extract_by_content_type(tar_file_obj,
     # now we do the actual extraction to the path
     log.debug('tar_file=%s, parent_dir=%s, file_name=%s', tar_file_obj, parent_dir, file_name)
     log.debug('extract_to_path=%s', extract_to_path)
+    log.debug('content_meta=%s', content_meta)
 
     display_callback = display_callback or default_display_callback
     files_to_extract = files_to_extract or []
@@ -127,8 +133,10 @@ def extract_by_content_type(tar_file_obj,
     # log.debug('files_to_extract: %s', files_to_extract)
 
     path = extract_to_path
+
     log.debug('path=%s', path)
-    log.debug('files_to_extract=%s', files_to_extract)
+    # log.debug('files_to_extract=%s', pprint.pformat(files_to_extract))
+
     # do we need to drive this from tar_file members if we have file_names_to_extract?
     # for member in tar_file.getmembers():
     for member in files_to_extract:
@@ -161,8 +169,8 @@ def extract_by_content_type(tar_file_obj,
                     plugin_found = parent_dir.lstrip(content_meta.name)
 
             # secondary dir (roles/, callback_plugins/) is a match for the content_type
-            elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP[content_meta.content_type]:
-                plugin_found = CONTENT_TYPE_DIR_MAP[content_meta.content_type]
+            elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP.get(content_meta.content_type):
+                plugin_found = CONTENT_TYPE_DIR_MAP.get(content_meta.content_type)
 
 
 
@@ -171,9 +179,19 @@ def extract_by_content_type(tar_file_obj,
             #    continue
 
 
+            # TODO: This next two stanzas are building up the rel path name a file will use
+            #       when it is extract (the 'extract_as' name). It is also updating the
+            #       TarInfo.name to the new extract_as name
+            #
+            # TODO: extract this to a method that takes a list of TarInfo objects and returns
+            #       a list of TarInfo objects with the member.name updated (and the orig name?).
+            #       Ideally that would be a copy of the list instead of modifying it in place.
+            #
 
             # log.debug('parts_list: %s', parts_list)
             # log.debug('plugin_found2: %s', plugin_found)
+
+            # TODO: if we are doing one content_type at a time, seems like we can flatten this some
             if plugin_found:
                 # If this is not a role, we don't expect it to be installed
                 # into a subdir under roles path but instead directly
@@ -203,17 +221,22 @@ def extract_by_content_type(tar_file_obj,
                     final_parts.append(part)
             member.name = os.path.join(*final_parts)
 
+            # TODO: build the list of TarInfo members to extract and return it
+            # TODO: The extract bits below move into sep method
             # log.debug('final_parts: %s', final_parts)
+            log.setLevel(logging.INFO)
             log.debug('member.name: %s', member.name)
 
+            dest_path = os.path.join(path, member.name)
+            log.debug('path=%s, member.name=%s, dest_path=%s', path, member.name, dest_path)
             display_callback(
                 "-- extracting %s %s from %s into %s" %
-                (content_meta.content_type, member.name, content_meta.name, os.path.join(path, member.name))
+                (content_meta.content_type, member.name, content_meta.name, dest_path)
             )
 
-            if os.path.exists(os.path.join(path, member.name)) and not force_overwrite:
+            if os.path.exists(dest_path) and not force_overwrite:
                 message = (
-                    "the specified Galaxy Content %s appears to already exist." % os.path.join(path, member.name),
+                    "the specified Galaxy Content %s appears to already exist." % dest_path,
                     "Use of --force for non-role Galaxy Content Type is not yet supported"
                 )
                 raise exceptions.GalaxyClientError(" ".join(message))
@@ -222,6 +245,7 @@ def extract_by_content_type(tar_file_obj,
             log.debug('Extracting member=%s, path=%s', member, path)
             tar_file_obj.extract(member, path)
 
+            log.setLevel(logging.DEBUG)
             # Reset the name so we're on equal playing field for the sake of
             # re-processing this TarFile object as we iterate through entries
             # in an ansible-galaxy.yml file

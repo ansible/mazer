@@ -1,34 +1,53 @@
 #!/bin/bash -evux
 
 # install strategy plugins from a plugin only  repo
-rm -rf ~/.ansible/content
-ansible-galaxy content-install -t strategy_plugin alikins.content-just-strategy-plugins
-tree ~/.ansible/content
-[ -d ~/.ansible/content/strategy_plugins ]
+#rm -rf ~/.ansible/content
+#ansible-galaxy content-install -t strategy_plugin alikins.content-just-strategy-plugins
+#tree ~/.ansible/content
+#[ -d ~/.ansible/content/strategy_plugins ]
 
 # install 'all' from a multi-content repo
 rm -rf ~/.ansible/content
 ansible-galaxy content-install alikins.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
+[ -d ~/.ansible/content/library ]
+[ -d ~/.ansible/content/strategy_plugins ]
+[ -d ~/.ansible/content/filter_plugins ]
+[ -d ~/.ansible/content/module_utils ]
+# not yet
+# [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
 
 # install modules from a multi-content repo
 rm -rf ~/.ansible/content
 ansible-galaxy content-install -t module alikins.testing-content
 tree ~/.ansible/content
-# [ -d ~/.ansible/content/library ]
+[ -d ~/.ansible/content/library ]
+# not all the modules, but at least more than one
+for module_file in elasticsearch_plugin.py kibana_plugin.py redis.py ;
+do
+    [ -f "${HOME}/.ansible/content/library/${module_file}" ]
+done
 
 # install strategy plugins from a multi-content repo
 rm -rf ~/.ansible/content
 ansible-galaxy content-install -t strategy_plugin alikins.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/strategy_plugins ]
+for strat_file in debug.py free.py linear.py ;
+do
+    [ -f "${HOME}/.ansible/content/strategy_plugins/${strat_file}" ]
+done
 
 # install a signle module
+rm -rf ~/.ansible/content
 ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
 tree ~/.ansible/content
-[ -d ~/.ansible/content/library/elasticsearch_plugin.py ]
+[ -d ~/.ansible/content/library/ ]
+[ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
+[ ! -e ~/.ansible/content/library/kibana_plugin.py ]
 
 # install role
 rm -rf ~/.ansible/content
