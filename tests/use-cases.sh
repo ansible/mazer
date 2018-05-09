@@ -99,6 +99,15 @@ tree ~/.ansible/content
 # tree ~/.ansible/content
 # [ -d ~/.ansible/content/library/alikins.testing-content ]
 
+# install from a repo with a ansible-galaxy.yml
+rm -rf ~/.ansible/content
+ansible-galaxy content-install alikins.test-galaxy-content-galaxyfile
+tree ~/.ansible/content
+[ -d ~/.ansible/content/library ]
+[ -f ~/.ansible/content/library/module_c.py ]
+[ -f ~/.ansible/content/library/galaxyfile_sample_module.py ]
+[ -f ~/.ansible/content/library/galaxyfile_playbook_sample_module.py ]
+[ ! -e ~/.ansible/content/README.md ]
 
 exit 'exit early'
 

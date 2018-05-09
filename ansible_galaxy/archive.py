@@ -168,6 +168,16 @@ def tar_info_content_name_match(tar_info, content_name, content_path=None, match
     return False
 
 
+# ansible-galaxy.yml is based on fnmatch style patterns
+def filter_members_by_fnmatch(tar_file_obj, match_pattern):
+    tar_file_members = tar_file_obj.getmembers()
+
+    member_matches = [tar_file_member for tar_file_member in tar_file_members
+                      if fnmatch.fnmatch(tar_file_member.name, match_pattern)]
+
+    return member_matches
+
+
 def filter_members_by_content_type(tar_file_obj,
                                    content_meta):
     if not content_meta:
@@ -240,7 +250,11 @@ def extract_by_content_type(tar_file_obj,
 
     path = extract_to_path
 
+    # append the content_dir if we have one
+    content_sub_path = os.path.join(path, content_meta.content_dir or '')
+
     log.debug('path=%s', path)
+    log.debug('conte_sub_path=%s', content_sub_path)
     # log.debug('files_to_extract=%s', pprint.pformat(files_to_extract))
 
     # do we need to drive this from tar_file members if we have file_names_to_extract?
@@ -330,10 +344,10 @@ def extract_by_content_type(tar_file_obj,
             # TODO: build the list of TarInfo members to extract and return it
             # TODO: The extract bits below move into sep method
             # log.debug('final_parts: %s', final_parts)
-            log.setLevel(logging.INFO)
+            # log.setLevel(logging.INFO)
             log.debug('member.name: %s', member.name)
 
-            dest_path = os.path.join(path, member.name)
+            dest_path = os.path.join(content_sub_path, member.name)
             log.debug('path=%s, member.name=%s, dest_path=%s', path, member.name, dest_path)
 
             # display_callback("-- extracting %s content %s from %s into %s" %
@@ -350,7 +364,7 @@ def extract_by_content_type(tar_file_obj,
             log.debug('Extracting member=%s, path=%s', member, path)
             tar_file_obj.extract(member, path)
 
-            log.setLevel(logging.DEBUG)
+            # log.setLevel(logging.DEBUG)
             # Reset the name so we're on equal playing field for the sake of
             # re-processing this TarFile object as we iterate through entries
             # in an ansible-galaxy.yml file
