@@ -52,12 +52,6 @@ tree ~/.ansible/content
 [ -d ~/.ansible/content/roles/alikins.awx/vars ]
 [ -f ~/.ansible/content/roles/alikins.awx/vars/RedHat.yml ]
 
-# install role
-rm -rf ~/.ansible/content
-ansible-galaxy install alikins.awx
-tree ~/.ansible/content
-[ -d ~/.ansible/content/roles/alikins.awx ]
-
 
 # install a single module
 rm -rf ~/.ansible/content
@@ -104,6 +98,16 @@ tree ~/.ansible/content
 # ansible-galaxy content-install -t module atestuseraccount.testing-content.elasticsearch_plugin.py
 # tree ~/.ansible/content
 # [ -d ~/.ansible/content/library/alikins.testing-content ]
+
+
+exit 'exit early'
+
+# install role
+rm -rf ~/.ansible/content
+ansible-galaxy install alikins.awx
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles/alikins.awx ]
+
 
 
 # TODO: start converting to a test script
