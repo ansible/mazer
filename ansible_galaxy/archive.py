@@ -38,6 +38,51 @@ def default_display_callback(*args, **kwargs):
 
 # TODO:
 
+# TODO: better place to define?
+META_MAIN = os.path.join('meta', 'main.yml')
+GALAXY_FILE = 'ansible-galaxy.yml'
+
+
+def find_archive_metadata(archive_members):
+    meta_file = None
+    galaxy_file = None
+
+    meta_parent_dir = None
+    archive_parent_dir = None
+
+    for member in archive_members:
+        if META_MAIN in member.name or GALAXY_FILE in member.name:
+            # Look for parent of meta/main.yml
+            # Due to possibility of sub roles each containing meta/main.yml
+            # look for shortest length parent
+            meta_parent_dir = os.path.dirname(os.path.dirname(member.name))
+            if not meta_file:
+                archive_parent_dir = meta_parent_dir
+                if GALAXY_FILE in member.name:
+                    galaxy_file = member
+                else:
+                    meta_file = member
+            else:
+                # self.log.debug('meta_parent_dir: %s archive_parent_dir: %s len(m): %s len(a): %s member.name: %s',
+                #               meta_parent_dir, archive_parent_dir,
+                #               len(meta_parent_dir),
+                #               len(archive_parent_dir),
+                #               member.name)
+                if len(meta_parent_dir) < len(archive_parent_dir):
+                    archive_parent_dir = meta_parent_dir
+                    meta_file = member
+                    if GALAXY_FILE in member.name:
+                        galaxy_file = member
+                    else:
+                        meta_file = member
+
+    # FIXME: return a real type/object for archive metadata
+    return (meta_file,
+            meta_parent_dir,
+            galaxy_file,
+            archive_parent_dir)
+
+
 def tar_info_content_name_match(tar_info, content_name, content_path=None, match_pattern=None):
     # log.debug('tar_info=%s, content_name=%s, content_path=%s, match_pattern=%s',
     #          tar_info, content_name, content_path, match_pattern)

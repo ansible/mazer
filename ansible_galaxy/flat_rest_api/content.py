@@ -54,8 +54,6 @@ log = logging.getLogger(__name__)
 # can provide a ContentInstallInfo
 
 
-
-
 # FIXME: do we have an enum like class for py2.6? worth a dep?
 class FetchMethods(object):
     SCM_URL = 'SCM_URL'
@@ -92,8 +90,6 @@ def choose_content_fetch_method(scm_url=None, src=None):
 class GalaxyContent(object):
 
     SUPPORTED_SCMS = set(['git', 'hg'])
-    META_MAIN = os.path.join('meta', 'main.yml')
-    GALAXY_FILE = os.path.join('ansible-galaxy.yml')
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
     ROLE_DIRS = ('defaults', 'files', 'handlers', 'meta', 'tasks', 'templates', 'vars', 'tests')
     NO_META = ('module', 'strategy_plugin')
@@ -356,28 +352,6 @@ class GalaxyContent(object):
             return self._metadata
         else:
             return {}
-
-    @property
-    def galaxy_metadata(self):
-        """
-        Returns Galaxy Content metadata, found in ansible-galaxy.info
-        """
-        if self._galaxy_metadata is not None:
-            return self._galaxy_metadata
-
-        gmeta_path = os.path.join(self.path, self.GALAXY_FILE)
-        if not os.path.isfile(gmeta_path):
-            # NOTE: could still be None at this pont
-            return self._galaxy_metadata
-
-        try:
-            with open(gmeta_path, 'r') as f:
-                self._galaxy_metadata = yaml.safe_load(f)
-        except Exception as e:
-            self.log.exception(e)
-            self.log.debug("Unable to load galaxy metadata for %s", self.content_meta.name)
-
-        return self._galaxy_metadata
 
     # TODO: class/module for ContentInstallInfo
     @property
@@ -752,9 +726,11 @@ class GalaxyContent(object):
         # verify the role's meta file
 
         meta_file = None
-        galaxy_file = None
         archive_parent_dir = None
         members = content_tar_file.getmembers()
+
+        (meta_file, meta_parent_dir, galaxy_file, archive_parent_dir) = \
+            archive.find_archive_metadata(members)
 
         # import pprint
         # self.log.debug('content_archive (%s) members: %s', content_archive, pprint.pformat(members))
@@ -762,31 +738,6 @@ class GalaxyContent(object):
 
         # FIXME: mv to method or ditch entirely and drive from a iterable of files to extract and save
         # FIXME: this is role specific logic so could move elsewhere
-        for member in members:
-            if self.META_MAIN in member.name or self.GALAXY_FILE in member.name:
-                # Look for parent of meta/main.yml
-                # Due to possibility of sub roles each containing meta/main.yml
-                # look for shortest length parent
-                meta_parent_dir = os.path.dirname(os.path.dirname(member.name))
-                if not meta_file:
-                    archive_parent_dir = meta_parent_dir
-                    if self.GALAXY_FILE in member.name:
-                        galaxy_file = member
-                    else:
-                        meta_file = member
-                else:
-                    # self.log.debug('meta_parent_dir: %s archive_parent_dir: %s len(m): %s len(a): %s member.name: %s',
-                    #               meta_parent_dir, archive_parent_dir,
-                    #               len(meta_parent_dir),
-                    #               len(archive_parent_dir),
-                    #               member.name)
-                    if len(meta_parent_dir) < len(archive_parent_dir):
-                        archive_parent_dir = meta_parent_dir
-                        meta_file = member
-                        if self.GALAXY_FILE in member.name:
-                            galaxy_file = member
-                        else:
-                            meta_file = member
 
         # self.log.debug('self.content_type: %s', self.content_type)
 
