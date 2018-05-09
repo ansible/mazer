@@ -229,10 +229,9 @@ def extract_by_content_type(tar_file_obj,
 
             dest_path = os.path.join(path, member.name)
             log.debug('path=%s, member.name=%s, dest_path=%s', path, member.name, dest_path)
-            display_callback(
-                "-- extracting %s %s from %s into %s" %
-                (content_meta.content_type, member.name, content_meta.name, dest_path)
-            )
+
+            # display_callback("-- extracting %s content %s from %s into %s" %
+            #                 (content_meta.content_type, member.name, content_meta.name, dest_path))
 
             if os.path.exists(dest_path) and not force_overwrite:
                 message = (

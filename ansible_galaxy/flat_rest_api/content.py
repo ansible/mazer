@@ -248,8 +248,14 @@ class GalaxyContent(object):
             # "we're going to install everything", however that comes with the
             # caveot of needing to inspect to find out if there's a meta/main.yml
             # and handling a legacy role type accordingly
+
+            self.log.debug('old path=%s', path)
+
             if content_name not in path and new_content_type in ["role", "all"]:
                 path = os.path.join(path, content_name)
+
+            self.log.debug('new path=%s', path)
+
             # self.path = path
             content_path = path
 
@@ -606,6 +612,28 @@ class GalaxyContent(object):
 
         return archive_url
 
+    def _install_all(self, content_tar_file, archive_parent_dir):
+        # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
+        #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
+        member_matches = archive.filter_members_by_content_type(content_tar_file, self.content_meta)
+
+        # tar_file_members = content_tar_file.getmembers()
+        # member_matches = [tar_member for tar_member in tar_file_members
+        #                  if tar_info_content_name_match(tar_member, self.content_meta.name)]
+        # self.log.debug('member_matches: %s' % member_matches)
+        self.log.debug('content_meta: %s', self.content_meta)
+        self.log.info('about to extract %s to %s', self.content_meta.name, self.content_meta.path)
+
+        archive.extract_by_content_type(content_tar_file,
+                                        archive_parent_dir,
+                                        self.content_meta,
+                                        files_to_extract=member_matches,
+                                        extract_to_path=self.content_meta.path,
+                                        content_type_requires_meta=True)
+
+        installed = True
+        return installed
+
     # TODO: split this up, it's pretty gnarly
     def install(self):
         # TODO: some useful exceptions for 'cant find', 'cant read', 'cant write'
@@ -777,25 +805,7 @@ class GalaxyContent(object):
                                self.content_type == self.content_meta.content_type)
 
                 if self.content_meta.content_type == 'all':
-                    # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
-                    #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
-                    member_matches = archive.filter_members_by_content_type(content_tar_file, self.content_meta)
-
-                    # tar_file_members = content_tar_file.getmembers()
-                    # member_matches = [tar_member for tar_member in tar_file_members
-                    #                  if tar_info_content_name_match(tar_member, self.content_meta.name)]
-                    # self.log.debug('member_matches: %s' % member_matches)
-                    self.log.debug('content_meta: %s', self.content_meta)
-                    self.log.info('about to extract %s to %s', self.content_meta.name, self.content_meta.path)
-
-                    archive.extract_by_content_type(content_tar_file,
-                                                    archive_parent_dir,
-                                                    self.content_meta,
-                                                    files_to_extract=member_matches,
-                                                    extract_to_path=self.content_meta.path,
-                                                    content_type_requires_meta=True)
-
-
+                    installed = self._install_all(content_tar_file, archive_parent_dir)
 
                 # FIXME: figure out what the 'case' is first, then branch to implementations and mv the impls
                 if self.content_meta.content_type == "role" and meta_file and not galaxy_file:
@@ -1000,7 +1010,11 @@ class GalaxyContent(object):
                         else:
                             raise exceptions.GalaxyClientError("This Galaxy Content does not contain valid content subdirectories, expected any of: %s "
                                                                % CONTENT_TYPES)
+                elif installed:
+                    self.log.debug('installed=%s  breaking out of while', installed)
+                    break
                 else:
+                    self.log.debug('installed=%s', installed)
                     self.log.debug('failed for content_meta=%s self.content_type=%s', self.content_meta, self.content_type)
                     raise exceptions.GalaxyClientError('Cant figure out what install method to use')
 
@@ -1023,7 +1037,8 @@ class GalaxyContent(object):
 
             return True
 
-        return False
+        return installed
+        # return False
 
     # TODO: property of GalaxyContentMeta ?
     @property
