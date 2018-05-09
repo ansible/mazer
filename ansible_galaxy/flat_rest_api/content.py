@@ -796,26 +796,20 @@ class GalaxyContent(object):
                            self.content_type == self.content_meta.content_type)
 
             if self.content_meta.content_type == 'all':
+                self.log.info('Installing %s as a content_type=%s', self.content_meta.name, self.content_meta.content_type)
+
                 installed = self._install_all(content_tar_file, archive_parent_dir)
-                break
-
-                member_matches = archive.filter_members_by_content_type(content_tar_file, self.content_meta)
-
-                # self.log.debug('member_matches: %s' % member_matches)
-                self.log.debug('content_meta: %s', self.content_meta)
-                self.log.info('about to extract %s to %s', self.content_meta.name, self.content_meta.path)
-
-                archive.extract_by_content_type(content_tar_file,
-                                                archive_parent_dir,
-                                                self.content_meta,
-                                                files_to_extract=member_matches,
-                                                extract_to_path=self.content_meta.path,
-                                                content_type_requires_meta=True)
 
                 # write out the install info file for later use
                 # self._write_galaxy_install_info()
-                installed = True
+
+                break
+
             elif galaxy_file:
+                self.log.info('Installing %s as a content_type=%s', self.content_meta.name, self.content_meta.content_type)
+
+                self.log.debug('galaxy_file=%s', galaxy_file)
+                self.log.debug('galaxy_metadata=%s', self.galaxy_metadata)
                 # Parse the ansible-galaxy.yml file and install things
                 # as necessary
 
@@ -887,6 +881,7 @@ class GalaxyContent(object):
                         raise exceptions.GalaxyClientError("ansible-galaxy.yml install not yet supported for content_type %s" % self.content_type)
 
             elif not meta_file and not galaxy_file:
+                self.log.info('Installing %s as a content_type=%s', self.content_meta.name, self.content_meta.content_type)
                 # No meta/main.yml found so it's not a legacy role
                 # and no galaxyfile found, so assume it's a new
                 # galaxy content type and attempt to install it by
