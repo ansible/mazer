@@ -6,18 +6,6 @@
 #tree ~/.ansible/content
 #[ -d ~/.ansible/content/strategy_plugins ]
 
-# install 'all' from a multi-content repo
-rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.testing-content
-tree ~/.ansible/content
-[ -d ~/.ansible/content/roles ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
-[ -d ~/.ansible/content/library ]
-[ -d ~/.ansible/content/strategy_plugins ]
-[ -d ~/.ansible/content/filter_plugins ]
-[ -d ~/.ansible/content/module_utils ]
-# not yet
-# [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
 
 # install modules from a multi-content repo
@@ -41,13 +29,19 @@ do
     [ -f "${HOME}/.ansible/content/strategy_plugins/${strat_file}" ]
 done
 
-# install a signle module
+
+# content-install role
 rm -rf ~/.ansible/content
-ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
+ansible-galaxy content-install alikins.awx
 tree ~/.ansible/content
-[ -d ~/.ansible/content/library/ ]
-[ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
-[ ! -e ~/.ansible/content/library/kibana_plugin.py ]
+[ -d ~/.ansible/content/roles ]
+[ -d ~/.ansible/content/roles/alikins.awx ]
+[ -d ~/.ansible/content/roles/alikins.awx/meta ]
+[ -f ~/.ansible/content/roles/alikins.awx/meta/main.yml ]
+[ -d ~/.ansible/content/roles/alikins.awx/tasks ]
+[ -f ~/.ansible/content/roles/alikins.awx/tasks/main.yml ]
+[ -d ~/.ansible/content/roles/alikins.awx/vars ]
+[ -f ~/.ansible/content/roles/alikins.awx/vars/RedHat.yml ]
 
 # install role
 rm -rf ~/.ansible/content
@@ -56,18 +50,46 @@ tree ~/.ansible/content
 [ -d ~/.ansible/content/roles/alikins.awx ]
 
 
-# content-install role
+# install a signal module
 rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.awx
+ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
 tree ~/.ansible/content
-[ -d ~/.ansible/content/roles/alikins.awx ]
+[ -d ~/.ansible/content/library/ ]
+[ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
+[ ! -e ~/.ansible/content/library/kibana_plugin.py ]
+
 
 # install a role from a multi-content repo
 rm -rf ~/.ansible/content
 ansible-galaxy content-install -t role alikins.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/meta" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-b/meta/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/vars" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/vars/main.yml" ]
+[ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
+# not yet
+# [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
+
+
+
+
+
+# install 'all' from a multi-content repo
+rm -rf ~/.ansible/content
+ansible-galaxy content-install alikins.testing-content
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
+[ -d ~/.ansible/content/library ]
+[ -d ~/.ansible/content/strategy_plugins ]
+[ -d ~/.ansible/content/filter_plugins ]
+[ -d ~/.ansible/content/module_utils ]
+# not yet
+# [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
 # install a signle module
 # ansible-galaxy content-install -t module atestuseraccount.testing-content.elasticsearch_plugin.py
