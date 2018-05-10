@@ -6,6 +6,13 @@
 #tree ~/.ansible/content
 #[ -d ~/.ansible/content/strategy_plugins ]
 
+# install a single module
+rm -rf ~/.ansible/content
+ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
+tree ~/.ansible/content
+[ -d ~/.ansible/content/library/ ]
+[ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
+# [ ! -e ~/.ansible/content/library/kibana_plugin.py ]
 
 # install 'all' from a repo with plugins and modules but not roles or meta repo
 rm -rf ~/.ansible/content
@@ -53,13 +60,6 @@ tree ~/.ansible/content
 [ -f ~/.ansible/content/roles/alikins.awx/vars/RedHat.yml ]
 
 
-# install a single module
-rm -rf ~/.ansible/content
-ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
-tree ~/.ansible/content
-[ -d ~/.ansible/content/library/ ]
-[ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
-[ ! -e ~/.ansible/content/library/kibana_plugin.py ]
 
 
 # install a role from a multi-content repo
