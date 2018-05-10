@@ -24,10 +24,9 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import datetime
-import errno
-import fnmatch
 import logging
 import os
+import pprint
 from shutil import rmtree
 import tarfile
 import yaml
@@ -35,6 +34,7 @@ import yaml
 from ansible_galaxy.config import defaults
 from ansible_galaxy import exceptions
 from ansible_galaxy import archive
+from ansible_galaxy.content_repo_galaxy_metadata import install_from_galaxy_metadata
 from ansible_galaxy.fetch.scm_url import ScmUrlFetch
 from ansible_galaxy.fetch.local_file import LocalFileFetch
 from ansible_galaxy.fetch.remote_url import RemoteUrlFetch
@@ -42,7 +42,6 @@ from ansible_galaxy.fetch.galaxy_url import GalaxyUrlFetch
 from ansible_galaxy.models.content import CONTENT_PLUGIN_TYPES, CONTENT_TYPES
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP, TYPE_DIR_CONTENT_TYPE_MAP
 from ansible_galaxy.models import content
-from ansible_galaxy.utils.yaml_parse import yaml_parse
 
 
 log = logging.getLogger(__name__)
@@ -617,10 +616,8 @@ class GalaxyContent(object):
         self.log.debug('plugin_subdirs: %s', plugin_subdirs)
         if plugin_subdirs:
 
-
             # FIXME: stop munging state
             self._install_all_content = True
-
 
             for plugin_subdir in plugin_subdirs:
                 # Set the type, this is neccesary for processing extraction of
@@ -638,90 +635,6 @@ class GalaxyContent(object):
 
         return installed
 
-    # FIXME: replace galaxy_metadata_section with a attr on GalaxyContentMeta
-    def _install_galaxy_metadata(self, content_tar_file, archive_parent_dir, content_meta, galaxy_metadata, galaxy_metadata_section):
-        installed = False
-
-        self.log.debug('galaxy_metadata_section=%s', galaxy_metadata_section)
-        if galaxy_metadata_section == 'meta_version':
-            return
-
-        # FIXME: suppose this is basically options for setting up a deserializer
-        # FIXME: def should be elsewhere, likely some serializer class
-        for content_stanza in galaxy_metadata[galaxy_metadata_section]:
-
-            self.log.debug('content_stanza=%s', content_stanza)
-            path_pattern = content_stanza['path']
-            self.log.debug('galaxy md modules content=%s', content_stanza)
-            self.log.debug('galaxy md modules path_pattern=%s', path_pattern)
-
-            # FIXME: os.sep seems wrong here, the yaml format shouldn't care?
-            member_matches = archive.filter_members_by_fnmatch(content_tar_file, '*/%s' % path_pattern)
-
-            import pprint
-            self.log.debug('member_matches=%s', pprint.pformat(member_matches))
-
-            self.log.info('about to extract content_type=%s %s to %s',
-                          content_meta.content_type, content_meta.name, content_meta.path)
-
-            res = archive.extract_by_content_type(content_tar_file,
-                                                  archive_parent_dir,
-                                                  content_meta,
-                                                  files_to_extract=member_matches,
-                                                  # content_type=self.content_meta.content_type,
-                                                  extract_to_path=content_meta.path,
-                                                  content_type_requires_meta=False)
-            self.log.debug('res: %s', res)
-
-            installed = True
-
-            break
-
-
-            # FIXME: on a general level, having content that only sometimes has dep info seems like a problem
-            if 'dependencies' in content_stanza:
-                for dep in content_stanza['dependencies']:
-                    if 'src' not in dep:
-                        raise exceptions.GalaxyClientError("ansible-galaxy.yml dependencies must provide a src")
-
-                    dep_content_info = yaml_parse(dep['src'])
-                    # FIXME - Should we assume this to be true for module deps?
-                    dep_content_info["type"] = "module_util"
-
-                    self.display_callback('- processing dependency: %s' % dep_content_info["src"])
-
-                    # This is an external dep, treat it as such
-                    if dep_content_info["scm"]:
-                        dep_content = GalaxyContent(self.galaxy, **dep_content_info)
-                        try:
-                            installed = dep_content.install()
-                        except exceptions.GalaxyClientError as e:
-                            self.display_callback("- dependency %s was NOT installed successfully: %s " %
-                                                  (dep_content.name, str(e)), level='warning')
-                            continue
-                    else:
-                        # Local dep, just install it
-                        self._set_type("module_util")
-                        self._set_content_paths()
-                        if len(dep["src"].split(os.sep)) > 1:
-                            if dep["src"].split(os.sep)[-1] in ['/', '*']:
-                                # Handle the glob or designation of entire directory install
-                                self._write_archived_files(content_tar_file, os.path.join(archive_parent_dir, dep['src']))
-                                installed = True
-                            else:
-                                self._write_archived_files(
-                                    content_tar_file,
-                                    os.path.join(archive_parent_dir, os.path.dirname(dep['src'])),
-                                    file_name=dep['src'].split(os.sep)[-1]
-                                )
-                                installed = True
-
-        else:
-            # FIXME - add more types other than module here
-            raise exceptions.GalaxyClientError("ansible-galaxy.yml install not yet supported for content_type %s" % self.content_type)
-
-        return installed
-
     def _install_all(self, content_tar_file, archive_parent_dir):
         # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
         #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
@@ -731,14 +644,14 @@ class GalaxyContent(object):
         self.log.debug('content_meta: %s', self.content_meta)
         self.log.info('about to extract %s to %s', self.content_meta.name, self.content_meta.path)
 
-        archive.extract_by_content_type(content_tar_file,
-                                        archive_parent_dir,
-                                        self.content_meta,
-                                        files_to_extract=member_matches,
-                                        extract_to_path=self.content_meta.path,
-                                        content_type_requires_meta=True)
+        installed_paths = archive.extract_by_content_type(content_tar_file,
+                                                          archive_parent_dir,
+                                                          self.content_meta,
+                                                          files_to_extract=member_matches,
+                                                          extract_to_path=self.content_meta.path,
+                                                          content_type_requires_meta=True)
 
-        installed = True
+        installed = [(self.content_meta, installed_paths)]
         return installed
 
 # install
@@ -763,6 +676,8 @@ class GalaxyContent(object):
 
     # TODO: split this up, it's pretty gnarly
     def install(self):
+        installed = []
+
         # TODO: some useful exceptions for 'cant find', 'cant read', 'cant write'
         fetch_method = choose_content_fetch_method(scm_url=self.scm, src=self.src)
 
@@ -863,8 +778,6 @@ class GalaxyContent(object):
             self.log.debug('No content path (%s) found so creating it', self.content_meta.path)
             os.makedirs(self.content_meta.path)
 
-        installed = False
-
         # FIXME: get rid of the while loop or continue if nothing catches
         # TODO: need an install state machine real bad
         while not installed:
@@ -885,48 +798,25 @@ class GalaxyContent(object):
 
                 self.log.debug('galaxy_file=%s', galaxy_file)
 
-                import pprint
                 self.log.debug('galaxy_metadata=%s', pprint.pformat(self._galaxy_metadata))
+
                 # Parse the ansible-galaxy.yml file and install things
                 # as necessary
+                installed_from_galaxy_metadata =  \
+                    install_from_galaxy_metadata(content_tar_file,
+                                                 archive_parent_dir,
+                                                 self._galaxy_metadata,
+                                                 self._content_meta,
+                                                 display_callback=self.display_callback)
 
-                # FIXME - need to handle the scenario where we want
-                #         all content types defined in the ansible-galaxy.yml file
-
-                for _content in self._galaxy_metadata:
-
-                    _content_dir = CONTENT_TYPE_DIR_MAP.get(_content, None)
-                    _content_type = _content
-
-                    if _content == 'modules':
-                        _content_dir = 'library'
-                        _content_type = 'module'
-
-                    _content_meta = content.GalaxyContentMeta(name=self.content_meta.name,
-                                                              src=self.content_meta.src,
-                                                              version=self.content_meta.version,
-                                                              scm=self.content_meta.scm,
-                                                              path=self.content_meta.path,
-                                                              content_type=_content_type,
-                                                              content_dir=_content_dir)
-
-                    res = self._install_galaxy_metadata(content_tar_file,
-                                                        archive_parent_dir,
-                                                        _content_meta,
-                                                        self._galaxy_metadata,
-                                                        _content)
-                    self.log.debug('res=%s', res)
-
-
-                # TODO: accumulate
-                installed = True
+                installed.extend(installed_from_galaxy_metadata)
                 break
 
             elif self.content_meta.content_type == 'all':
                 self.log.info('Installing %s as a content_type=%s', self.content_meta.name, self.content_meta.content_type)
 
-                installed = self._install_all(content_tar_file, archive_parent_dir)
-
+                installed_from_all = self._install_all(content_tar_file, archive_parent_dir)
+                installed.extend(installed_from_all)
                 # write out the install info file for later use
                 # self._write_galaxy_install_info()
 
@@ -972,15 +862,16 @@ class GalaxyContent(object):
                                                           # content_type=self.content_meta.content_type,
                                                           extract_to_path=self.content_meta.path,
                                                           content_type_requires_meta=False)
-                    self.log.debug('res: %s', res)
-                    installed = True
+                    self.log.debug('res:\n%s', pprint.pformat(res))
+                    installed.append((self.content_meta, res))
                 else:
 
                     self.log.debug('No meta/main, no galaxy file, not ct="all"? XXXXXXXXXXXXXX')
-                    installed = self._install_all_old_way(content_tar_file,
-                                                          archive_parent_dir,
-                                                          members,
-                                                          self._install_all_content)
+                    installed_from_old_way = self._install_all_old_way(content_tar_file,
+                                                                       archive_parent_dir,
+                                                                       members,
+                                                                       self._install_all_content)
+                    installed.extend(installed_from_old_way)
             elif installed:
                 self.log.debug('installed=%s  breaking out of while', installed)
                 break
@@ -995,8 +886,11 @@ class GalaxyContent(object):
             # rm any temp files created when getting the content archive
             fetcher.cleanup()
 
-            return True
+            # self.display_callback('Installed content: %s',
+            self.log.info('Installed:\n %s', pprint.pformat(installed))
+            return installed
 
+        self.log.info('Installed(nothing?) %s', pprint.pformat(installed))
         return installed
         # return False
 
