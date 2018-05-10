@@ -780,7 +780,11 @@ class GalaxyContent(object):
 
         # FIXME: get rid of the while loop or continue if nothing catches
         # TODO: need an install state machine real bad
-        while not installed:
+        count = 0
+        done = False
+        while not done:
+            count += 1
+            self.log.debug('WHILE COUNT: %s', count)
             if self.content_type != "all":
                 self.display_callback("- extracting %s %s to %s" % (self.content_type, self.content_meta.name, self.path))
             else:
@@ -806,7 +810,7 @@ class GalaxyContent(object):
                     install_from_galaxy_metadata(content_tar_file,
                                                  archive_parent_dir,
                                                  self._galaxy_metadata,
-                                                 self._content_meta,
+                                                 self.content_meta,
                                                  display_callback=self.display_callback)
 
                 installed.extend(installed_from_galaxy_metadata)
@@ -888,9 +892,10 @@ class GalaxyContent(object):
 
             # self.display_callback('Installed content: %s',
             self.log.info('Installed:\n %s', pprint.pformat(installed))
-            return installed
+            # return installed
+            done = True
 
-        self.log.info('Installed(nothing?) %s', pprint.pformat(installed))
+        self.log.info('Installed(nothing?):\n%s', pprint.pformat(installed))
         return installed
         # return False
 
