@@ -9,10 +9,6 @@ import os
 import yaml
 
 
-import pprint
-
-
-
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP, CONTENT_PLUGIN_TYPES
 from ansible_galaxy.models import content_repository
@@ -228,10 +224,15 @@ def extract_by_content_type(tar_file_obj,
     needed for both old-roles and new-style galaxy content, the main
     difference is parent directory
 
+    Returns a list of files that were installed.
+
     :param tar_file: tarfile, the local archive of the galaxy content files
     :param parent_dir: str, parent directory path to extract to
     :kwarg file_name: str, specific filename to extract from parent_dir in archive
     """
+
+    installed_paths = []
+
     # now we do the actual extraction to the path
     log.debug('tar_file=%s, parent_dir=%s, file_name=%s', tar_file_obj, parent_dir, file_name)
     log.debug('extract_to_path=%s', extract_to_path)
@@ -292,12 +293,9 @@ def extract_by_content_type(tar_file_obj,
             elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP.get(content_meta.content_type):
                 plugin_found = CONTENT_TYPE_DIR_MAP.get(content_meta.content_type)
 
-
-
             # log.debug('plugin_found1: %s', plugin_found)
             # if not plugin_found:
             #    continue
-
 
             # TODO: This next two stanzas are building up the rel path name a file will use
             #       when it is extract (the 'extract_as' name). It is also updating the
@@ -344,7 +342,7 @@ def extract_by_content_type(tar_file_obj,
             # TODO: build the list of TarInfo members to extract and return it
             # TODO: The extract bits below move into sep method
             # log.debug('final_parts: %s', final_parts)
-            # log.setLevel(logging.INFO)
+            log.setLevel(logging.INFO)
             log.debug('member.name: %s', member.name)
 
             dest_path = os.path.join(content_sub_path, member.name)
@@ -364,7 +362,9 @@ def extract_by_content_type(tar_file_obj,
             log.debug('Extracting member=%s, path=%s', member, path)
             tar_file_obj.extract(member, path)
 
-            # log.setLevel(logging.DEBUG)
+            installed_path = os.path.join(path, member.name)
+            installed_paths.append(installed_path)
+            log.setLevel(logging.DEBUG)
             # Reset the name so we're on equal playing field for the sake of
             # re-processing this TarFile object as we iterate through entries
             # in an ansible-galaxy.yml file
@@ -372,10 +372,8 @@ def extract_by_content_type(tar_file_obj,
 
     if content_type_requires_meta:
         if not plugin_found:
-
-
-
             log.warn('we dont think we found a meta/main.yml but we probably did, fixme')
-
-
             # raise exceptions.GalaxyClientError("Required subdirectory not found in Galaxy Content archive for %s" % content_meta.name)
+
+    log.debug('Installed paths: %s', installed_paths)
+    return installed_paths
