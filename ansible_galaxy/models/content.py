@@ -40,6 +40,8 @@ class GalaxyContentMeta(object):
         self.content_dir = content_dir
         self.path = path
 
+        self._data = {}
+
     def __eq__(self, other):
         return (self.name, self.version, self.src, self.scm,
                 self.content_type, self.content_dir, self.path) == \
@@ -49,6 +51,19 @@ class GalaxyContentMeta(object):
     def __repr__(self):
         return 'GalaxyContentMeta(name=%s, version=%s, src=%s, scm=%s, content_type=%s, content_dir=%s, path=%s)' \
             % (self.name, self.version, self.src, self.scm, self.content_type, self.content_dir, self.path)
+
+    def _as_dict(self):
+        return {'name': self.name,
+                'version': self.version,
+                'src': self.src,
+                'content_type': self.content_type,
+                'content_dir': self.content_dir,
+                'path': self.path}
+
+    @property
+    def data(self):
+        self._data.update(self._as_dict())
+        return self._data
 
 
 class GalaxyContent(object):
