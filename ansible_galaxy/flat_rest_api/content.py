@@ -610,14 +610,10 @@ class GalaxyContent(object):
         # This should give us a list of valid content type subdirs
         # found heuristically within this Galaxy Content repo
         #
-        plugin_subdirs = [
-            os.path.join(m.name.split(os.sep)[1:])[0]
-            for m in members
-            if len(os.path.join(m.name.split(os.sep)[1:])) > 1
-            and os.path.join(m.name.split(os.sep)[1:])[0] in CONTENT_TYPE_DIR_MAP.values()
-        ]
+        plugin_subdirs = archive.find_content_type_subdits(members)
 
         log.debug('plugin_subdirs: %s', plugin_subdirs)
+
         if plugin_subdirs:
 
             # FIXME: stop munging state
@@ -758,7 +754,6 @@ class GalaxyContent(object):
             self._set_content_paths(self._orig_path)
             self._install_all_content = False
 
-        # FIXME: mv to it's own method
         if not archive_parent_dir:
             archive_parent_dir = archive.find_archive_parent_dir(members, self.content_meta)
 
@@ -785,6 +780,12 @@ class GalaxyContent(object):
             os.makedirs(self.content_meta.path)
 
         # TODO: need an install state machine real bad
+
+        # content_to_install = []
+        # installed = self._install_content(self.content_meta, galaxy_file)
+
+    # def _install_content(self, content_meta, galaxy_file):
+
         if self.content_type != "all":
             self.display_callback("- extracting %s %s to %s" % (self.content_type, self.content_meta.name, self.path))
         else:
@@ -792,10 +793,14 @@ class GalaxyContent(object):
 
         # FIXME: a few pages of code in a try block, extract to own method/class
         log.info('Installing content of type: %s', self.content_meta.content_type)
-        log.debug('self.content_type=%s, self.content_meta.content_type=%s, are_equal? %s',
-                  self.content_type, self.content_meta.content_type,
-                  self.content_type == self.content_meta.content_type)
 
+        # TODO: 'galaxy_file' isnt really a type of content or a way to install, but it does determine
+        #        how the content is installed. So a step before the install that 'applies' the content repo meta data
+        #        to create an InstallableContent would be useful.
+        #        To a large degree that is true for 'all' as well, since that just determines what the list
+        #        of InstallableContent consists of.
+        #        Then all installs are of type 'not galaxy, not all, not an old style role'
+        #
         # TODO: truthiness of _galaxy_metadata may be better, since that means it was parsed and non empty
         if galaxy_file:
             log.info('Installing %s as a content_type=%s', self.content_meta.name, self.content_meta.content_type)

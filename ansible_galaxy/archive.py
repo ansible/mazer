@@ -140,6 +140,31 @@ def load_archive_metadata(tar_file_obj, galaxy_file, meta_file):
     return galaxy_metadata, metadata
 
 
+# suppose we could make this a generator if needed
+def find_content_type_subdirs(tar_file_members):
+    '''Return a list of content type subdirs found in tar_file_members
+
+    This list comprehension will iterate every member entry in
+    the tarfile, split it's name by os.sep and drop the top most
+    parent dir, which will be self.content_meta.name (we don't want it as it's
+    not needed for plugin types. First make sure the length of
+    that split and drop of parent dir is length > 1 and verify
+    that the subdir is infact in CONTENT_TYPE_DIR_MAP.values()
+
+    This should give us a list of valid content type subdirs
+    found heuristically within this Galaxy Content repo'''
+    plugin_subdirs = [
+        os.path.join(m.name.split(os.sep)[1:])[0]
+        for m in tar_file_members
+        if len(os.path.join(m.name.split(os.sep)[1:])) > 1
+        and os.path.join(m.name.split(os.sep)[1:])[0] in CONTENT_TYPE_DIR_MAP.values()
+    ]
+
+    # uniq and order
+    plugin_subdirs_set = set(plugin_subdirs)
+    return sorted(list(plugin_subdirs_set))
+
+
 def tar_info_content_name_match(tar_info, content_name, content_path=None, match_pattern=None):
     # log.debug('tar_info=%s, content_name=%s, content_path=%s, match_pattern=%s',
     #          tar_info, content_name, content_path, match_pattern)
