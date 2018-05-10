@@ -43,13 +43,13 @@ class GalaxyToken(object):
 
     def __open_config_for_read(self):
         if os.path.isfile(self.file):
-            self.log.info('Opened %s', self.file)
+            self.log.debug('Opened %s', self.file)
             return open(self.file, 'r')
         # config.yml not found, create and chomd u+rw
         f = open(self.file, 'w')
         f.close()
         os.chmod(self.file, S_IRUSR | S_IWUSR)  # owner has +rw
-        self.log.info('Created %s', self.file)
+        self.log.debug('Created %s', self.file)
         return open(self.file, 'r')
 
     def set(self, token):

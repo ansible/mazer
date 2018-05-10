@@ -6,9 +6,12 @@ import os
 
 LOG_FILE = os.path.expandvars(os.path.expanduser('~/.ansible/ansible-galaxy-cli.log')),
 
+DEFAULT_CONSOLE_LEVEL = os.getenv('GALAXY_CLI_LOG_LEVEL', 'WARNING').upper()
 DEFAULT_LEVEL = 'DEBUG'
+
 DEFAULT_DEBUG_FORMAT = '[%(asctime)s,%(msecs)03d %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)d - %(message)s'
 DEFAULT_HANDLERS = ['console', 'file']
+# DEFAULT_HANDLERS = ['file']
 
 DEFAULT_LOGGING_CONFIG = {
     'version': 1,
@@ -30,13 +33,13 @@ DEFAULT_LOGGING_CONFIG = {
 
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': DEFAULT_CONSOLE_LEVEL,
             'class': 'logging.StreamHandler',
             'formatter': 'console_verbose',
             'stream': 'ext://sys.stderr',
         },
         'file': {
-            'level': 'DEBUG',
+            'level': DEFAULT_LEVEL,
             'class': 'logging.handlers.WatchedFileHandler',
             'filename': os.path.expandvars(os.path.expanduser('~/.ansible/ansible-galaxy-cli.log')),
             'formatter': 'file_verbose',
@@ -46,11 +49,17 @@ DEFAULT_LOGGING_CONFIG = {
     'loggers': {
         'ansible_galaxy': {
             'handlers': DEFAULT_HANDLERS,
-            'level': DEFAULT_LEVEL,
+            'level': 'DEBUG',
+        },
+        'ansible_galaxy.flat_rest_api': {
+            'level': 'INFO',
+        },
+        'ansible_galaxy.flat_rest_api.content': {
+            'level': 'DEBUG'
         },
         'ansible_galaxy_cli': {
             'handlers': DEFAULT_HANDLERS,
-            'level': DEFAULT_LEVEL,
+            'level': 'DEBUG'
         },
     }
 }

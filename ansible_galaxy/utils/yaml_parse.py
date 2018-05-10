@@ -37,7 +37,8 @@ def parse_content_spec(content_spec_text):
             (scm, src) = src.split('+', 1)
 
     data = dict(name=name, src=src, scm=scm, version=version)
-    log.debug('parsed content_spec_text="%s" into: %s', content_spec_text, data)
+
+    # log.debug('parsed content_spec_text="%s" into: %s', content_spec_text, data)
     return data
 
 
@@ -62,7 +63,9 @@ def yaml_parse(content):
     if isinstance(content, six.string_types):
         log.debug('parsing content="%s" as a string', content)
         orig_content = copy.deepcopy(content)
-        return parse_content_spec(content)
+        res = parse_content_spec(content)
+        log.debug('parsed spec="%s" -> %s', content, res)
+        return res
 
     log.debug('content="%s" is not a string (it is a %s) so we are assuming it is a dict',
               content, type(content))

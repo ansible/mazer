@@ -342,11 +342,10 @@ def extract_by_content_type(tar_file_obj,
             # TODO: build the list of TarInfo members to extract and return it
             # TODO: The extract bits below move into sep method
             # log.debug('final_parts: %s', final_parts)
-            log.setLevel(logging.INFO)
-            log.debug('member.name: %s', member.name)
+            # log.debug('member.name: %s', member.name)
 
             dest_path = os.path.join(content_sub_path, member.name)
-            log.debug('path=%s, member.name=%s, dest_path=%s', path, member.name, dest_path)
+            # log.debug('path=%s, member.name=%s, dest_path=%s', path, member.name, dest_path)
 
             # display_callback("-- extracting %s content %s from %s into %s" %
             #                 (content_meta.content_type, member.name, content_meta.name, dest_path))
@@ -359,12 +358,11 @@ def extract_by_content_type(tar_file_obj,
                 raise exceptions.GalaxyClientError(" ".join(message))
 
             # Alright, *now* actually write the file
-            log.debug('Extracting member=%s, path=%s', member, path)
+            # log.debug('Extracting member=%s, path=%s', member, path)
             tar_file_obj.extract(member, path)
 
             installed_path = os.path.join(path, member.name)
             installed_paths.append(installed_path)
-            log.setLevel(logging.DEBUG)
             # Reset the name so we're on equal playing field for the sake of
             # re-processing this TarFile object as we iterate through entries
             # in an ansible-galaxy.yml file

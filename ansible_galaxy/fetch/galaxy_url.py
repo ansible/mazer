@@ -42,7 +42,9 @@ class GalaxyUrlFetch(base.BaseFetch):
         # FIXME - Need to update our API calls once Galaxy has them implemented
         content_username, repo_name, content_name = parse_content_name(self.content_spec)
 
-        log.debug('content_username=%s, repo_name=%s content_name=%s', content_username, repo_name, content_name)
+        log.debug('content_username=%s', content_username)
+        log.debug('repo_name=%s', repo_name)
+        log.debug('content_name=%s', content_name)
 
         # TODO: extract parsing of cli content sorta-url thing and add better tests
         repo_name = repo_name or content_name
@@ -90,7 +92,8 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         download_url = _build_download_url(external_url=external_url, version=_content_version)
 
-        log.debug('content_spec=%s download_url=%s', self.content_spec, download_url)
+        log.debug('content_spec=%s', self.content_spec)
+        log.debug('download_url=%s', download_url)
 
         try:
             content_archive_path = download.fetch_url(download_url,
