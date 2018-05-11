@@ -340,7 +340,7 @@ class GalaxyContent(object):
         """
         if self.content_type in ["role", "all"]:
             if self._metadata is None:
-                meta_path = os.path.join(self.content_meta.path, self.META_MAIN)
+                meta_path = os.path.join(self.content_meta.path, archive.META_MAIN)
                 if os.path.isfile(meta_path):
                     try:
                         f = open(meta_path, 'r')
