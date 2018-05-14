@@ -93,17 +93,23 @@ class GalaxyAPI(object):
             # self.log.debug('%s %s headers=%s', method, url, headers)
             resp = open_url(url, data=args, validate_certs=self._validate_certs, headers=headers, method=method,
                             timeout=20)
+
             self.log.debug('%s %s http_status=%s', method, url, resp.getcode())
+
             final_url = resp.geturl()
             if final_url != url:
                 self.log.debug('%s %s Redirected to: %s', method, url, resp.geturl())
+
             # self.log.debug('%s %s info:\n%s', method, url, resp.info())
+
             data = json.loads(to_text(resp.read(), errors='surrogate_or_strict'))
+
             # self.log.debug('%s %s data: \n%s', method, url, json.dumps(data, indent=2))
         except HTTPError as e:
             self.log.debug('Exception on %s %s', method, url)
             self.log.exception(e)
             res = json.loads(to_text(e.fp.read(), errors='surrogate_or_strict'))
+            log.debug('res: %s', res)
             raise exceptions.GalaxyClientError(res['detail'])
         return data
 
@@ -121,6 +127,8 @@ class GalaxyAPI(object):
         the API server is up and reachable.
         """
         url = '%s/api/' % self._api_server
+        self.log.debug('get_server_api url=%s', url)
+
         try:
             return_data = open_url(url, validate_certs=self._validate_certs)
         except Exception as e:
@@ -141,6 +149,8 @@ class GalaxyAPI(object):
         """
         Retrieve an authentication token
         """
+        self.log.debug('authenticate')
+
         url = '%s/tokens/' % self.baseurl
         args = urlencode({"github_token": github_token})
         resp = open_url(url, data=args, validate_certs=self._validate_certs, method="POST")
@@ -152,6 +162,12 @@ class GalaxyAPI(object):
         """
         Post an import request
         """
+
+        self.log.debug('github_user=%s', github_user)
+        self.log.debug('github_repo=%s', github_repo)
+        self.log.debug('reference=%s', reference)
+        self.log.debug('role_name=%s', role_name)
+
         url = '%s/imports/' % self.baseurl
         args = {
             "github_user": github_user,
@@ -172,6 +188,10 @@ class GalaxyAPI(object):
         """
         Check the status of an import task.
         """
+        self.log.debug('task_id=%s', task_id)
+        self.log.debug('github_user=%s', github_user)
+        self.log.debug('github_repo=%s', github_repo)
+
         url = '%s/imports/' % self.baseurl
         if task_id is not None:
             url = "%s?id=%d" % (url, task_id)
@@ -185,6 +205,8 @@ class GalaxyAPI(object):
 
     @g_connect
     def lookup_content_repo_by_name(self, namespace, name):
+        self.log.debug('user_name=%s', namespace)
+        self.log.debug('name=%s', name)
         namespace = urlquote(namespace)
         name = urlquote(name)
 
@@ -196,6 +218,12 @@ class GalaxyAPI(object):
 
     @g_connect
     def lookup_content_by_name(self, user_name, repo_name, content_name, content_type=None, notify=True):
+        self.log.debug('user_name=%s', user_name)
+        self.log.debug('repo_name=%s', repo_name)
+        self.log.debug('content_name=%s', content_name)
+        self.log.debug('content_type=%s', content_type)
+        self.log.debug('notify=%s', notify)
+
         content_name = urlquote(content_name)
         repo_name = urlquote(repo_name)
 
@@ -213,6 +241,7 @@ class GalaxyAPI(object):
         """
         Find a role by name.
         """
+        self.log.debug('role_name=%s', role_name)
         role_name = urlquote(role_name)
 
         try:
@@ -248,6 +277,7 @@ class GalaxyAPI(object):
         The url comes from the 'related' field of the role.
         """
         self.log.debug('related_url=%s', related_url)
+
         try:
             url = '%s%s?page_size=50' % (self._api_server, related_url)
             data = self.__call_galaxy(url)
@@ -272,6 +302,8 @@ class GalaxyAPI(object):
         """
         Fetch the list of items specified.
         """
+        self.log.debug('what=%s', what)
+
         try:
             url = '%s/%s/?page_size' % (self.baseurl, what)
             data = self.__call_galaxy(url)
@@ -293,9 +325,11 @@ class GalaxyAPI(object):
             raise exceptions.GalaxyClientError("Failed to download the %s list: %s" % (what, str(error)))
 
     @g_connect
-    def search_roles(self, search, **kwargs):
+    def search_content(self, search, **kwargs):
+        self.log.debug('search=%s', search)
+        self.log.debug('kwargs=%s', kwargs)
 
-        search_url = self.baseurl + '/search/roles/?'
+        search_url = self.baseurl + '/search/content/?'
 
         if search:
             search_url += '&autocomplete=' + urlquote(search)
@@ -307,6 +341,10 @@ class GalaxyAPI(object):
 
         if tags and isinstance(tags, six.string_types):
             tags = tags.split(',')
+
+            # TODO: the autocomplete search seems pretty vague...
+            #       maybe except a wildcard or option for exact match?
+            # searchs=' + '+'.join(tags)
             search_url += '&tags_autocomplete=' + '+'.join(tags)
 
         if platforms and isinstance(platforms, six.string_types):
@@ -319,7 +357,7 @@ class GalaxyAPI(object):
         if author:
             search_url += '&username_autocomplete=%s' % author
 
-        data = self.__call_galaxy(search_url)
+        data = self.__call_galaxy(search_url, method='GET')
         return data
 
     @g_connect
