@@ -57,27 +57,14 @@ def parse_content_spec(content_spec_text, valid_keywords=None):
     And return a dict with keys: 'name', 'src', 'scm', 'version'
     '''
 
-    # TODO: tokenizer?
-    #if ',' in content_spec_text:
-    #    if content_spec_text.count(',') == 1:
-    #        (src, version) = content_spec_text.strip().split(',', 1)
-    #    elif content_spec_text.count(',') == 2:
-    #        (src, version, name) = content_spec_text.strip().split(',', 2)
-    #    else:
-    #        raise exceptions.GalaxyClientError("Invalid content line (%s). Proper format is 'content_name[,version[,name]]'" % content_spec_text)
-    # else:
-    #    src = content_spec_text
-
     valid_keywords = valid_keywords or ('src', 'version', 'name', 'scm')
     data = {'src': None,
             'name': None,
             'version': None,
             'scm': None}
     split_data = split_content_spec(content_spec_text, valid_keywords)
-    print('split_data: %s' % split_data)
 
     data.update(split_data)
-    print('data: %s' % data)
 
     if data['name'] is None:
         scm_name = repo_url_to_repo_name(data['src'])
@@ -86,9 +73,6 @@ def parse_content_spec(content_spec_text, valid_keywords=None):
             (scm_url, scm_src) = data['src'].split('+', 1)
             data['scm'] = scm_url
             data['src'] = scm_src
-        print('predata: %s' % data)
-
-    # data = dict(name=name, src=src, scm=scm, version=version)
 
     # log.debug('parsed content_spec_text="%s" into: %s', content_spec_text, data)
     return data
@@ -158,25 +142,13 @@ def yaml_parse(content):
             new_data = parse_content_spec(data['src'], VALID_ROLE_SPEC_KEYS)
             log.debug('new_data: %s', new_data)
 
-            # del new_data['src']
-            # content.update(new_data)
             for key in new_data:
                 if not data.get(key, None):
                     data[key] = new_data[key]
-            #content['scm'] = new_data.get('scm')
-            #content['role'] = new_data.get('role')
 
             # New style: { src: 'galaxy.role,version,name', other_vars: "here" }
             if 'github.com' in content["src"] and 'http' in content["src"] and '+' not in content["src"] and not content["src"].endswith('.tar.gz'):
                 content["src"] = "git+" + content["src"]
-
-            #if '+' in content["src"]:
-            #    (scm, src) = content["src"].split('+')
-            #    content["scm"] = scm
-            #    content["src"] = src
-
-            #if 'name' not in content:
-            #    content["name"] = repo_url_to_content_name(content["src"])
 
         if 'version' not in content:
             content['version'] = ''

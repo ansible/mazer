@@ -56,7 +56,8 @@ class GalaxyUrlFetch(base.BaseFetch):
             raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.content_spec,
                                                                                      api.api_server))
 
-        #if repo_data.get('role_type') == 'APP#':
+        # FIXME: ?
+        # if repo_data.get('role_type') == 'APP#':
             # Container Role
         #    self.display_callback("%s is a Container App role, and should only be installed using Ansible "
         #                          "Container" % content_name, level='warning')
@@ -75,12 +76,12 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         # related_repo_url = related.get('repository', None)
         # log.debug('related_repo_url: %s', related_repo_url)
-        related_content_url = related.get('content', None)
-        log.debug('related_content_url: %s', related_content_url)
+        # related_content_url = related.get('content', None)
+        # log.debug('related_content_url: %s', related_content_url)
 
-        content_repo = None
-        if related_content_url:
-            content_repo = api.fetch_content_related(related_content_url)
+        # content_repo = None
+        # if related_content_url:
+        #     content_repo = api.fetch_content_related(related_content_url)
 
         # log.debug('content_repo: %s', content_repo)
         # FIXME: mv to it's own method
