@@ -1,7 +1,7 @@
 
 import logging
 
-from ansible_galaxy.utils.content_name import repo_url_to_content_name
+from ansible_galaxy.utils.content_name import repo_url_to_repo_name
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ def role_spec_parse(role_spec):
     if len(tokens) == 3:
         role_name = tokens[2]
     else:
-        role_name = repo_url_to_content_name(tokens[0])
+        role_name = repo_url_to_repo_name(tokens[0])
 
     if scm and not role_version:
         role_version = default_role_versions.get(scm, '')

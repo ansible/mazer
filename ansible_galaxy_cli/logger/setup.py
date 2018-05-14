@@ -52,7 +52,7 @@ DEFAULT_LOGGING_CONFIG = {
             'level': 'DEBUG',
         },
         'ansible_galaxy.flat_rest_api': {
-            'level': 'INFO',
+            'level': 'DEBUG',
         },
         'ansible_galaxy.flat_rest_api.content': {
             'level': 'DEBUG'

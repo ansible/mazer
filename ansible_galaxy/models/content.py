@@ -1,10 +1,10 @@
 
 VALID_ROLE_SPEC_KEYS = [
-    'name',
-    'role',
-    'scm',
     'src',
     'version',
+    'role',
+    'name',
+    'scm',
 ]
 
 # FIXME - need some stuff here
