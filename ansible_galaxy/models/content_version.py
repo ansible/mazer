@@ -1,3 +1,4 @@
+import json
 import logging
 
 from distutils.version import LooseVersion
@@ -16,11 +17,21 @@ def get_content_version(content_data, version, content_versions, content_content
     content_versions is ?
     '''
 
+    short_versions = [x['name'] for x in content_versions]
+    log.debug('%s want ver: %s', content_content_name, version)
+    log.debug('%s vers avail: %s',
+              content_content_name, json.dumps(short_versions, indent=2))
+
     if version and version != 'master':
         if content_versions and str(version) not in [a.get('name', None) for a in content_versions]:
             msg = "- the specified version (%s) of %s was not found in the list of available versions (%s)." % \
-                (version, content_content_name, content_versions)
+                (version, content_content_name, short_versions)
             raise exceptions.GalaxyError(msg)
+
+        # return the exact match version since it was available
+        log.debug('%s using requested ver: %s', content_content_name, version)
+        return version
+
     # and sort them to get the latest version. If there
     # are no versions in the list, we'll grab the head
     # of the master branch
@@ -40,4 +51,6 @@ def get_content_version(content_data, version, content_versions, content_content
         content_version = content_data['github_branch']
     else:
         content_version = 'master'
+
+    log.debug('%s using latest ver: %s', content_content_name, content_version)
     return content_version

@@ -204,13 +204,13 @@ class GalaxyAPI(object):
         return data['results']
 
     @g_connect
-    def lookup_content_repo_by_name(self, namespace, name):
+    def lookup_repo_by_name(self, namespace, name):
         self.log.debug('user_name=%s', namespace)
         self.log.debug('name=%s', name)
         namespace = urlquote(namespace)
         name = urlquote(name)
 
-        url = '%s/content/?repository__name=%s&namespace__name=%s' % (self.baseurl, name, namespace)
+        url = '%s/repositories/?name=%s&provider_namespace__name=%s' % (self.baseurl, name, namespace)
         data = self.__call_galaxy(url)
         if len(data["results"]) != 0:
             return data["results"][0]

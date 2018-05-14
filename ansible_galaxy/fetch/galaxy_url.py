@@ -50,45 +50,53 @@ class GalaxyUrlFetch(base.BaseFetch):
         repo_name = repo_name or content_name
 
         # FIXME: exception handling
-        content_data = api.lookup_content_repo_by_name(content_username, repo_name)
+        repo_data = api.lookup_repo_by_name(content_username, repo_name)
 
-        if not content_data:
+        if not repo_data:
             raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.content_spec,
                                                                                      api.api_server))
 
-        if content_data.get('role_type') == 'APP':
+        #if repo_data.get('role_type') == 'APP#':
             # Container Role
-            self.display_callback("%s is a Container App role, and should only be installed using Ansible "
-                                  "Container" % content_name, level='warning')
+        #    self.display_callback("%s is a Container App role, and should only be installed using Ansible "
+        #                          "Container" % content_name, level='warning')
 
         # FIXME - Need to update our API calls once Galaxy has them implemented
-        related = content_data.get('related', {})
-        related_versions_url = related.get('versions', None)
+        related = repo_data.get('related', {})
+
+        repo_versions_url = related.get('versions', None)
+
+        log.debug('related=%s', related)
 
         # FIXME: exception handling
-        content_versions = api.fetch_content_related(related_versions_url)
+        repo_versions = api.fetch_content_related(repo_versions_url)
 
-        log.debug('content_versions: %s', content_versions)
+        log.debug('repo_versions: %s', repo_versions)
 
-        related_repo_url = related.get('repository', None)
+        # related_repo_url = related.get('repository', None)
+        # log.debug('related_repo_url: %s', related_repo_url)
+        related_content_url = related.get('content', None)
+        log.debug('related_content_url: %s', related_content_url)
+
         content_repo = None
-        if related_repo_url:
-            content_repo = api.fetch_content_related(related_repo_url)
+        if related_content_url:
+            content_repo = api.fetch_content_related(related_content_url)
+
         # log.debug('content_repo: %s', content_repo)
         # FIXME: mv to it's own method
         # FIXME: pass these to fetch() if it really needs it
-        _content_version = content_version.get_content_version(content_data,
+        _content_version = content_version.get_content_version(repo_data,
                                                                version=self.content_version,
-                                                               content_versions=content_versions,
+                                                               content_versions=repo_versions,
                                                                content_content_name=content_name)
 
         # FIXME: stop munging state
         # self.content_meta.version = _content_version
 
-        external_url = content_repo.get('external_url', None)
+        external_url = repo_data.get('external_url', None)
         if not external_url:
             raise exceptions.GalaxyError('no external_url info on the Repository object from %s',
-                                         related_repo_url)
+                                         repo_name)
 
         download_url = _build_download_url(external_url=external_url, version=_content_version)
 
