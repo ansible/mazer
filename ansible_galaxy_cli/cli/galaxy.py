@@ -39,6 +39,7 @@ from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.utils.text import to_text
 from ansible_galaxy.utils.yaml_parse import yaml_parse
+from ansible_galaxy.utils.content_name import parse_content_name
 
 # FIXME: importing class, fix name collision later or use this style
 # TODO: replace flat_rest_api with a OO interface
@@ -172,6 +173,11 @@ class GalaxyCLI(cli.CLI):
         if not self.options.ignore_errors:
             raise cli_exceptions.GalaxyCliError('- you can use --ignore-errors to skip failed roles and finish processing the list.')
 
+    def _display_content_info(self, content_info):
+        log.debug('content_info: %s', content_info)
+        print(content_info)
+        return content_info
+
     # TODO: move to a repr for Role?
     def _display_role_info(self, role_info):
 
@@ -294,40 +300,54 @@ class GalaxyCLI(cli.CLI):
             # the user needs to specify a role
             raise cli_exceptions.CliOptionsError("- you must specify a user/role name")
 
-        roles_path = self.options.roles_path
+        content_path = self.options.roles_path
 
         data = ''
-        for role in self.args:
 
-            role_info = {'path': roles_path}
-            gr = GalaxyContent(self.galaxy, role)
+        log.debug('args=%s', self.args)
+
+        for content_spec in self.args:
+
+            content_username, repo_name, content_name = parse_content_name(content_spec)
+
+            log.debug('content_spec=%s', content_spec)
+            log.debug('content_username=%s', content_username)
+            log.debug('repo_name=%s', repo_name)
+            log.debug('content_name=%s', content_name)
+
+            repo_name = repo_name or content_name
+            log.debug('repo_name2=%s', repo_name)
+
+            content_info = {'path': content_path}
+            gr = GalaxyContent(self.galaxy, content_spec)
 
             install_info = gr.install_info
             if install_info:
                 if 'version' in install_info:
                     install_info['intalled_version'] = install_info['version']
                     del install_info['version']
-                role_info.update(install_info)
+                content_info.update(install_info)
 
             remote_data = False
             if not self.options.offline:
-                remote_data = self.api.lookup_role_by_name(role, False)
+                remote_data = self.api.lookup_content_repo_by_name(content_username, repo_name)
 
             if remote_data:
-                role_info.update(remote_data)
+                content_info.update(remote_data)
 
             if gr.metadata:
-                role_info.update(gr.metadata)
+                content_info.update(gr.metadata)
 
-            role_spec = yaml_parse({'role': role})
-            if role_spec:
-                role_info.update(role_spec)
+            # role_spec = yaml_parse({'role': role})
+            # if role_spec:
+            #     role_info.update(role_spec)
 
-            data = self._display_role_info(role_info)
+            data = self._display_content_info(content_info)
+            # data = self._display_role_info(content_info)
             # FIXME: This is broken in both 1.9 and 2.0 as
             # _display_role_info() always returns something
             if not data:
-                data = u"\n- the role %s was not found" % role
+                data = u"\n- the content %s was not found" % content_spec
 
         self.display(data)
 
@@ -650,7 +670,11 @@ class GalaxyCLI(cli.CLI):
                     raise cli_exceptions.CliOptionsError("- %s exists, but it is not a directory. Please specify a valid path with --roles-path" % role_path)
                 path_files = os.listdir(role_path)
                 for path_file in path_files:
-                    gr = GalaxyContent(self.galaxy, path_file)
+                    role_full_path = os.path.join(role_path, path_file)
+                    log.debug('role_full_path: %s', role_full_path)
+                    gr = GalaxyContent(self.galaxy, path_file, path=role_full_path)
+                    log.debug('gr: %s', gr)
+                    log.debug('gr.metadata: %s', gr.metadata)
                     if gr.metadata:
                         install_info = gr.install_info
                         version = None
@@ -675,30 +699,35 @@ class GalaxyCLI(cli.CLI):
         if not search and not self.options.platforms and not self.options.galaxy_tags and not self.options.author:
             raise cli_exceptions.GalaxyCliError("Invalid query. At least one search term, platform, galaxy tag or author must be provided.")
 
-        response = self.api.search_roles(search, platforms=self.options.platforms,
-                                         tags=self.options.galaxy_tags, author=self.options.author, page_size=page_size)
+        response = self.api.search_content(search, platforms=self.options.platforms,
+                                           tags=self.options.galaxy_tags, author=self.options.author, page_size=page_size)
 
         if response['count'] == 0:
-            self.display("No roles match your search.")
+            self.display("No content match your search.")
             return True
 
         data = [u'']
 
         if response['count'] > page_size:
-            data.append(u"Found %d roles matching your search. Showing first %s." % (response['count'], page_size))
+            data.append(u"Found %d content matching your search. Showing first %s." % (response['count'], page_size))
         else:
-            data.append(u"Found %d roles matching your search:" % response['count'])
+            data.append(u"Found %d content matching your search:" % response['count'])
 
         max_len = []
-        for role in response['results']:
-            max_len.append(len(role['username'] + '.' + role['name']))
+        for content in response['results']:
+            # FIXME: too many chained fields to trust, need obj
+            user_namespace = content['summary_fields']['namespace']['name']
+            max_len.append(len(user_namespace + '.' + content['name']))
         name_len = max(max_len)
+
         format_str = u" %%-%ds %%s" % name_len
         data.append(u'')
         data.append(format_str % (u"Name", u"Description"))
         data.append(format_str % (u"----", u"-----------"))
-        for role in response['results']:
-            data.append(format_str % (u'%s.%s' % (role['username'], role['name']), role['description']))
+        for content in response['results']:
+            user_namespace = content['summary_fields']['namespace']['name']
+            data.append(format_str % (u'%s.%s' % (user_namespace, content['name']),
+                                      content['description']))
 
         data = u'\n'.join(data)
         self.display(data)
