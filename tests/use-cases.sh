@@ -6,6 +6,30 @@
 #tree ~/.ansible/content
 #[ -d ~/.ansible/content/strategy_plugins ]
 
+
+# test 'init'
+rm -rf ~/.ansible/test-roles
+mkdir -p ~/.ansible/test-roles
+ansible-galaxy init --init-path ~/.ansible/test-roles some_role1
+tree ~/.ansible/test-roles
+ROLE_NAME="some_role1"
+[ -d ~/.ansible/test-roles/ ]
+[ -d ~/.ansible/test-roles/${ROLE_NAME} ]
+[ -f ~/.ansible/test-roles/${ROLE_NAME}/README.md ]
+[ -d ~/.ansible/test-roles/${ROLE_NAME}/meta ]
+[ -f ~/.ansible/test-roles/${ROLE_NAME}/meta/main.yml ]
+[ -d ~/.ansible/test-roles/${ROLE_NAME}/files ]
+[ -d ~/.ansible/test-roles/${ROLE_NAME}/tasks ]
+[ -f ~/.ansible/test-roles/${ROLE_NAME}/tasks/main.yml ]
+[ -d ~/.ansible/test-roles/${ROLE_NAME}/vars ]
+
+
+# ansible-galaxy list -p ~/.ansible/test-roles
+
+# ansible-galaxy search  --author=alikins
+
+# ansible-galaxy search  strategy
+
 # install a single module
 rm -rf ~/.ansible/content
 ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
@@ -108,6 +132,7 @@ tree ~/.ansible/content
 [ -f ~/.ansible/content/library/galaxyfile_sample_module.py ]
 [ -f ~/.ansible/content/library/galaxyfile_playbook_sample_module.py ]
 [ ! -e ~/.ansible/content/README.md ]
+
 
 exit 'exit early'
 
