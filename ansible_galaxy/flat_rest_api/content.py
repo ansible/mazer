@@ -430,9 +430,6 @@ class GalaxyContent(object):
         log.debug('tar_file=%s, parent_dir=%s, file_name=%s', tar_file, parent_dir, file_name)
         log.debug('extract_to_path=%s', extract_to_path)
 
-        import traceback
-        traceback.print_stack()
-
         files_to_extract = files_to_extract or []
         plugin_found = None
 
