@@ -725,7 +725,7 @@ class GalaxyContent(object):
         archive_parent_dir = None
         members = content_tar_file.getmembers()
 
-        (meta_file, meta_parent_dir, galaxy_file, archive_parent_dir) = \
+        (meta_file, meta_parent_dir, galaxy_file) = \
             archive.find_archive_metadata(members)
 
         # import pprint
@@ -800,7 +800,7 @@ class GalaxyContent(object):
         #
         # TODO: truthiness of _galaxy_metadata may be better, since that means it was parsed and non empty
         if galaxy_file:
-            log.info('Installing %s as a content_type=%s', self.content_meta.name, self.content_meta.content_type)
+            log.info('Installing %s as a content_type=%s (galaxy_file)', self.content_meta.name, self.content_meta.content_type)
 
             log.debug('galaxy_file=%s', galaxy_file)
 
@@ -818,7 +818,7 @@ class GalaxyContent(object):
             installed.extend(installed_from_galaxy_metadata)
 
         elif self.content_meta.content_type == 'all':
-            log.info('Installing %s as a content_type=%s', self.content_meta.name, self.content_meta.content_type)
+            log.info('Installing %s as a content_type=%s (all)', self.content_meta.name, self.content_meta.content_type)
 
             installed_from_all = self._install_all(content_tar_file, archive_parent_dir)
             installed.extend(installed_from_all)
@@ -826,7 +826,7 @@ class GalaxyContent(object):
             # self._write_galaxy_install_info()
 
         elif not meta_file and not galaxy_file:
-            log.info('Installing %s as a content_type=%s', self.content_meta.name, self.content_meta.content_type)
+            log.info('Installing %s as a content_type=%s (no meta, no galaxy)', self.content_meta.name, self.content_meta.content_type)
             # No meta/main.yml found so it's not a legacy role
             # and no galaxyfile found, so assume it's a new
             # galaxy content type and attempt to install it by

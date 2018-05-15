@@ -30,21 +30,16 @@ ROLE_NAME="some_role1"
 
 # ansible-galaxy search  strategy
 
-# install a single module
+# install 'all' from a multi-content repo
 rm -rf ~/.ansible/content
-ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
+ansible-galaxy content-install alikins.testing-content
 tree ~/.ansible/content
-[ -d ~/.ansible/content/library/ ]
-[ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
-# [ ! -e ~/.ansible/content/library/kibana_plugin.py ]
-
-# install 'all' from a repo with plugins and modules but not roles or meta repo
-rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.content-no-meta
-tree ~/.ansible/content
-[ -d ~/.ansible/content/library ]
-[ -d ~/.ansible/content/callback_plugins ]
-[ -d ~/.ansible/content/action_plugins ]
+[ -d ~/.ansible/content/roles ]
+#[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
+#[ -d ~/.ansible/content/library ]
+#[ -d ~/.ansible/content/strategy_plugins ]
+#[ -d ~/.ansible/content/filter_plugins ]
+#[ -d ~/.ansible/content/module_utils ]
 # not yet
 # [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
@@ -56,8 +51,20 @@ tree ~/.ansible/content
 # not all the modules, but at least more than one
 for module_file in elasticsearch_plugin.py kibana_plugin.py redis.py ;
 do
-    [ -f "${HOME}/.ansible/content/library/${module_file}" ]
+    echo
+    # [ -f "${HOME}/.ansible/content/library/${module_file}" ]
 done
+
+# install 'all' from a repo with plugins and modules but not roles or meta repo
+rm -rf ~/.ansible/content
+ansible-galaxy content-install alikins.content-no-meta
+tree ~/.ansible/content
+[ -d ~/.ansible/content/library ]
+[ -d ~/.ansible/content/callback_plugins ]
+[ -d ~/.ansible/content/action_plugins ]
+# not yet
+# [ -f ~/.ansible/content/library/.galaxy_install_info ]
+
 
 # install strategy plugins from a multi-content repo
 rm -rf ~/.ansible/content
@@ -84,6 +91,15 @@ tree ~/.ansible/content
 [ -f ~/.ansible/content/roles/alikins.awx/vars/RedHat.yml ]
 
 
+# install a single module
+rm -rf ~/.ansible/content
+ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
+tree ~/.ansible/content
+[ -d ~/.ansible/content/library/ ]
+[ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
+[ ! -e ~/.ansible/content/library/kibana_plugin.py ]
+
+
 
 
 # install a role from a multi-content repo
@@ -105,18 +121,6 @@ tree ~/.ansible/content
 
 
 
-# install 'all' from a multi-content repo
-rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.testing-content
-tree ~/.ansible/content
-[ -d ~/.ansible/content/roles ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
-[ -d ~/.ansible/content/library ]
-[ -d ~/.ansible/content/strategy_plugins ]
-[ -d ~/.ansible/content/filter_plugins ]
-[ -d ~/.ansible/content/module_utils ]
-# not yet
-# [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
 # install a signle module
 # ansible-galaxy content-install -t module atestuseraccount.testing-content.elasticsearch_plugin.py

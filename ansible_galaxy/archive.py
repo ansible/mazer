@@ -85,22 +85,29 @@ def find_archive_metadata(archive_members):
     # FIXME: return a real type/object for archive metadata
     return (meta_file,
             meta_parent_dir,
-            galaxy_file,
-            archive_parent_dir)
+            galaxy_file)
 
 
 def find_archive_parent_dir(archive_members, content_meta):
     # archive_parent_dir wasn't found when checking for metadata files
     archive_parent_dir = None
 
+    shortest_dir = None
     for member in archive_members:
         # This is either a new-type Galaxy Content that doesn't have an
         # ansible-galaxy.yml file and the type desired is specified and
         # we check parent dir based on the correct subdir existing or
         # we need to just scan the subdirs heuristically and figure out
         # what to do
+        member_dir = os.path.dirname(os.path.dirname(member.name))
+        shortest_dir = shortest_dir or member_dir
+        log.debug('shortest_dir: %s', shortest_dir)
+
+        if len(member_dir) < len(shortest_dir):
+            shortest_dir = member_dir
+
         if content_meta.content_type != "all":
-            if content_meta.content_dir in member.name:
+            if content_meta.content_dir and content_meta.content_dir in member.name:
                 archive_parent_dir = os.path.dirname(member.name)
                 return archive_parent_dir
         else:
@@ -110,11 +117,13 @@ def find_archive_parent_dir(archive_members, content_meta):
                     return archive_parent_dir
 
     if content_meta.content_type not in CONTENT_PLUGIN_TYPES:
-        return archive_parent_dir
+        log.debug('did not find a content_dir or plugin_dir, so using shortest_dir %s for archive_parent_dir', shortest_dir)
+        return shortest_dir
 
     # TODO: archive format exception?
     msg = "No content metadata provided, nor content directories found for content_type: %s" % \
         content_meta.content_type
+    log.debug('content_meta: %s', content_meta)
     raise exceptions.GalaxyClientError(msg)
 
 
@@ -356,22 +365,27 @@ def extract_by_content_type(tar_file_obj,
                     continue
             else:
                 parts = member.name.replace(parent_dir, "", 1).split(os.sep)
-                # log.debug('plugin_found falsey, building parts: %s', parts)
+                log.debug('plugin_found falsey, building parts: %s', parts)
 
             # log.debug('parts: %s', parts)
             final_parts = []
             for part in parts:
                 if part != '..' and '~' not in part and '$' not in part:
                     final_parts.append(part)
+
+            log.debug('final_parts: %s', final_parts)
+            log.debug('orig member.name: %s', member.name)
+
             member.name = os.path.join(*final_parts)
+
+            log.debug('new  member.name: %s', member.name)
 
             # TODO: build the list of TarInfo members to extract and return it
             # TODO: The extract bits below move into sep method
-            # log.debug('final_parts: %s', final_parts)
             # log.debug('member.name: %s', member.name)
 
             dest_path = os.path.join(content_sub_path, member.name)
-            # log.debug('path=%s, member.name=%s, dest_path=%s', path, member.name, dest_path)
+            log.debug('path=%s, member.name=%s, dest_path=%s', path, member.name, dest_path)
 
             # display_callback("-- extracting %s content %s from %s into %s" %
             #                 (content_meta.content_type, member.name, content_meta.name, dest_path))
@@ -384,7 +398,7 @@ def extract_by_content_type(tar_file_obj,
                 raise exceptions.GalaxyClientError(" ".join(message))
 
             # Alright, *now* actually write the file
-            # log.debug('Extracting member=%s, path=%s', member, path)
+            log.debug('Extracting member=%s, path=%s', member, path)
             tar_file_obj.extract(member, path)
 
             installed_path = os.path.join(path, member.name)
