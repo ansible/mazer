@@ -715,6 +715,9 @@ class GalaxyContent(object):
         meta_file = None
         archive_parent_dir = None
 
+        # FIXME: enum/constant/etc demagic
+        content_archive_type = 'multi'
+
         content_meta = content_meta or self.content_meta
         # TODO: some useful exceptions for 'cant find', 'cant read', 'cant write'
         fetch_method = choose_content_fetch_method(scm_url=self.scm, src=self.src)
@@ -826,6 +829,7 @@ class GalaxyContent(object):
             content_meta = content.GalaxyContentMeta.from_data(data)
             log.debug('role content_meta: %s', content_meta)
 
+            content_archive_type = 'role'
         # we strip off any higher-level directories for all of the files contained within
         # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other
         # hand, does not have a parent directory at all.
@@ -914,7 +918,9 @@ class GalaxyContent(object):
                 # tar info for each file, so we can filter on filename match and file type
                 # tar_file_members = content_tar_file.getmembers()
 
-                member_matches = archive.filter_members_by_content_type(content_tar_file, content_meta)
+                member_matches = archive.filter_members_by_content_type(content_tar_file,
+                                                                        content_archive_type,
+                                                                        content_meta)
 
                 # match_by_content_type() ?
                 # member_matches = [tar_file_member for tar_file_member in tar_file_members
