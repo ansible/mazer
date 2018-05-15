@@ -23,11 +23,17 @@ def get_content_version(content_data, version, content_versions, content_content
               content_content_name, json.dumps(short_versions, indent=2))
 
     if version and version != 'master':
-        if content_versions and str(version) not in [a.get('name', None) for a in content_versions]:
-            msg = "- the specified version (%s) of %s was not found in the list of available versions (%s)." % \
-                (version, content_content_name, short_versions)
+        if not content_versions:
+            msg = "- The list of available versions for %s is empty (%s)." % \
+                (content_content_name or 'content', short_versions)
             raise exceptions.GalaxyError(msg)
 
+        if str(version) not in [a.get('name', None) for a in content_versions]:
+            msg = "- the specified version (%s) of %s was not found in the list of available versions (%s)." % \
+                (version, content_content_name or 'content', short_versions)
+            raise exceptions.GalaxyError(msg)
+
+        # if we get here, 'version' is in content_versions
         # return the exact match version since it was available
         log.debug('%s using requested ver: %s', content_content_name, version)
         return version

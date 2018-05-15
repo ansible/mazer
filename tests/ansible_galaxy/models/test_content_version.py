@@ -16,10 +16,19 @@ def test_get_content_version_none():
 
 
 def test_get_content_version_devel_version_no_content_versions():
-    ret = content_version.get_content_version({}, 'devel', [], None)
+    try:
+        content_version.get_content_version({}, 'devel', [], None)
+    except exceptions.GalaxyError:
+        return
+
+    assert False, 'Excepted a GalaxyError here since there are no content versions and "devel" is not in []'
+
+
+def test_get_content_version_prod_version_in_content_versions():
+    ret = content_version.get_content_version({}, 'prod', content_versions_147, None)
     log.debug('ret=%s', ret)
 
-    assert ret == 'master'
+    assert ret == 'prod'
 
 
 content_versions_147 = [
@@ -37,6 +46,17 @@ content_versions_147 = [
     {
         "id": 127,
         "name": "2.3.6",
+        "release_date": "2018-05-01T11:54:19-04:00",
+        "url": "",
+        "related": {},
+        "summary_fields": {},
+        "created": "2018-05-01T16:11:42.114698Z",
+        "modified": "2018-05-01T16:11:42.427811Z",
+        "active": True
+    },
+    {
+        "id": 128,
+        "name": "prod",
         "release_date": "2018-05-01T11:54:19-04:00",
         "url": "",
         "related": {},
