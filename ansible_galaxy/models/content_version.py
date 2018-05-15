@@ -4,6 +4,7 @@ import logging
 from distutils.version import LooseVersion
 
 from ansible_galaxy import exceptions
+from ansible_galaxy.utils.version import normalize_version_string
 
 log = logging.getLogger(__name__)
 
@@ -14,26 +15,26 @@ def get_content_version(content_data, version, content_versions, content_content
     content_data is a dict based on /api/v1/content/13 for ex
     content_content_data is the name of the content specified by user?
     version is the currently set version?
-    content_versions is ?
+    content_versions is a list of version strings in order
     '''
 
-    short_versions = [x['name'] for x in content_versions]
     log.debug('%s want ver: %s', content_content_name, version)
     log.debug('%s vers avail: %s',
-              content_content_name, json.dumps(short_versions, indent=2))
+              content_content_name, json.dumps(content_versions, indent=2))
 
+    normalized_versions = [normalize_version_string(x) for x in content_versions]
     if version and version != 'master':
-        if not content_versions:
+        if not normalized_versions:
             msg = "- The list of available versions for %s is empty (%s)." % \
-                (content_content_name or 'content', short_versions)
+                (content_content_name or 'content', normalized_versions)
             raise exceptions.GalaxyError(msg)
 
-        if str(version) not in [a.get('name', None) for a in content_versions]:
+        if str(version) not in normalized_versions:
             msg = "- the specified version (%s) of %s was not found in the list of available versions (%s)." % \
-                (version, content_content_name or 'content', short_versions)
+                (version, content_content_name or 'content', normalized_versions)
             raise exceptions.GalaxyError(msg)
 
-        # if we get here, 'version' is in content_versions
+        # if we get here, 'version' is in normalized_versions
         # return the exact match version since it was available
         log.debug('%s using requested ver: %s', content_content_name, version)
         return version
@@ -41,8 +42,8 @@ def get_content_version(content_data, version, content_versions, content_content
     # and sort them to get the latest version. If there
     # are no versions in the list, we'll grab the head
     # of the master branch
-    if len(content_versions) > 0:
-        loose_versions = [LooseVersion(a.get('name', None)) for a in content_versions]
+    if len(normalized_versions) > 0:
+        loose_versions = [LooseVersion(a) for a in normalized_versions]
         try:
             loose_versions.sort()
         except TypeError:

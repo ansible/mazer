@@ -82,13 +82,15 @@ class GalaxyUrlFetch(base.BaseFetch):
         # content_repo = None
         # if related_content_url:
         #     content_repo = api.fetch_content_related(related_content_url)
+        content_repo_versions = [a.get('name') for a in repo_versions if a.get('name', None)]
+        log.debug('content_repo_versions: %s', content_repo_versions)
 
         # log.debug('content_repo: %s', content_repo)
         # FIXME: mv to it's own method
         # FIXME: pass these to fetch() if it really needs it
         _content_version = content_version.get_content_version(repo_data,
                                                                version=self.content_version,
-                                                               content_versions=repo_versions,
+                                                               content_versions=content_repo_versions,
                                                                content_content_name=content_name)
 
         # FIXME: stop munging state

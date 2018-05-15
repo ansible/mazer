@@ -31,7 +31,7 @@ def test_get_content_version_prod_version_in_content_versions():
     assert ret == 'prod'
 
 
-content_versions_147 = [
+raw_content_versions_147 = [
     {
         "id": 126,
         "name": "2.3.7",
@@ -66,6 +66,8 @@ content_versions_147 = [
         "active": True
     }
 ]
+
+content_versions_147 = [a.get('name') for a in raw_content_versions_147 if a.get('name', None)]
 
 
 def test_get_content_version_devel_version_not_in_content_versions():
