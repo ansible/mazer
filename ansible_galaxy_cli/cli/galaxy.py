@@ -163,6 +163,11 @@ class GalaxyCLI(cli.CLI):
         super(GalaxyCLI, self).run()
 
         self.api = GalaxyAPI(self.galaxy)
+
+        log.debug('execute action: %s', self.action)
+        log.debug('execute action with options: %s', self.options)
+        log.debug('execute action with args: %s', self.args)
+
         self.execute()
 
     def exit_without_ignore(self, rc=1):
@@ -382,10 +387,6 @@ class GalaxyCLI(cli.CLI):
             self.galaxy.options.content_type = 'role'
 
             # FIXME - add more types here, PoC is just role/module
-
-        if len(self.args) == 0 and self.galaxy_file is None:
-            # the user needs to specify one of either --role-file or specify a single user/role name
-            raise cli_exceptions.CliOptionsError("- you must specify user/content name or a ansible-galaxy.yml file")
 
         no_deps = self.options.no_deps
         force = self.options.force

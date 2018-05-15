@@ -141,6 +141,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
             fn = getattr(self, "execute_%s" % self.action.replace('-', '_'))
         else:
             fn = getattr(self, "execute_%s" % self.action)
+        log.debug('executing %s action', fn)
         fn()
 
     @abstractmethod
@@ -153,7 +154,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
 
         # FIXME: why is self.parser none?
         # display.vv(to_text(self.parser.get_version()))
-
+        log.debug('self.args: %s', self.args)
         if runtime.CONFIG_FILE:
             log.info(u"Using %s as config file", to_text(runtime.CONFIG_FILE))
         else:
