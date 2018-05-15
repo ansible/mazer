@@ -35,13 +35,28 @@ rm -rf ~/.ansible/content
 ansible-galaxy content-install alikins.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
-#[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
-#[ -d ~/.ansible/content/library ]
-#[ -d ~/.ansible/content/strategy_plugins ]
-#[ -d ~/.ansible/content/filter_plugins ]
-#[ -d ~/.ansible/content/module_utils ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
+[ -d ~/.ansible/content/library ]
+[ -d ~/.ansible/content/strategy_plugins ]
+[ -d ~/.ansible/content/filter_plugins ]
+[ -d ~/.ansible/content/module_utils ]
 # not yet
 # [ -f ~/.ansible/content/library/.galaxy_install_info ]
+
+# content-install role
+rm -rf ~/.ansible/content
+ansible-galaxy content-install alikins.awx
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles ]
+[ -d ~/.ansible/content/roles/alikins.awx ]
+[ -d ~/.ansible/content/roles/alikins.awx/meta ]
+[ -f ~/.ansible/content/roles/alikins.awx/meta/main.yml ]
+[ -d ~/.ansible/content/roles/alikins.awx/tasks ]
+[ -f ~/.ansible/content/roles/alikins.awx/tasks/main.yml ]
+[ -d ~/.ansible/content/roles/alikins.awx/vars ]
+[ -f ~/.ansible/content/roles/alikins.awx/vars/RedHat.yml ]
+
+
 
 # install modules from a multi-content repo
 rm -rf ~/.ansible/content
@@ -75,20 +90,6 @@ for strat_file in debug.py free.py linear.py ;
 do
     [ -f "${HOME}/.ansible/content/strategy_plugins/${strat_file}" ]
 done
-
-
-# content-install role
-rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.awx
-tree ~/.ansible/content
-[ -d ~/.ansible/content/roles ]
-[ -d ~/.ansible/content/roles/alikins.awx ]
-[ -d ~/.ansible/content/roles/alikins.awx/meta ]
-[ -f ~/.ansible/content/roles/alikins.awx/meta/main.yml ]
-[ -d ~/.ansible/content/roles/alikins.awx/tasks ]
-[ -f ~/.ansible/content/roles/alikins.awx/tasks/main.yml ]
-[ -d ~/.ansible/content/roles/alikins.awx/vars ]
-[ -f ~/.ansible/content/roles/alikins.awx/vars/RedHat.yml ]
 
 
 # install a single module

@@ -128,25 +128,32 @@ def find_archive_parent_dir(archive_members, content_meta):
 
 
 # FIXME: mv to AnsibleGalaxyMetadata
-def load_archive_metadata(tar_file_obj, galaxy_file, meta_file):
-    galaxy_metadata = None
+def load_archive_role_metadata(tar_file_obj, meta_file_path):
     metadata = None
+    if not meta_file_path:
+        return None
 
     try:
-        if galaxy_file:
-            # Let the galaxy_file take precedence
-            galaxy_metadata = content_repository.load(tar_file_obj.extractfile(galaxy_file))
-        elif meta_file:
-            metadata = yaml.safe_load(tar_file_obj.extractfile(meta_file))
-    except Exception as e:
-        log.warn('unable to extract and yaml load galaxy_file=%s meta_file=%s tar_file_obj=%s',
-                 galaxy_file, meta_file, tar_file_obj)
-        log.exception(e)
+        metadata = yaml.safe_load(tar_file_obj.extractfile(meta_file_path))
+    except Exception:
+        log.warn('unable to extract and yaml load role meta_file=%s tar_file_obj=%s',
+                 meta_file_path, tar_file_obj)
 
-        # TODO: some archive specific exception
-        raise exceptions.GalaxyClientError("this role does not appear to have a valid meta/main.yml or ansible-galaxy.yml file.")
+    return metadata
 
-    return galaxy_metadata, metadata
+
+def load_archive_galaxyfile(tar_file_obj, galaxy_file_path):
+    galaxy_metadata = None
+    if not galaxy_file_path:
+        return None
+
+    try:
+        galaxy_metadata = content_repository.load(tar_file_obj.extractfile(galaxy_file_path))
+    except Exception:
+        log.warn('unable to extract and yaml load galaxy_file=%s tar_file_obj=%s',
+                 galaxy_file_path, tar_file_obj)
+
+    return galaxy_metadata
 
 
 # FIXME: causes issues on py3
@@ -210,12 +217,8 @@ def filter_members_by_fnmatch(tar_file_obj, match_pattern):
 
 
 def filter_members_by_content_type(tar_file_obj,
-                                   content_meta):
-    if not content_meta:
-        log.debug('no content_meta info')
-        return []
-
-    content_type = content_meta.content_type
+                                   content_archive_type,
+                                   content_type):
 
     tar_file_members = tar_file_obj.getmembers()
 
@@ -226,12 +229,22 @@ def filter_members_by_content_type(tar_file_obj,
                                                      content_path=CONTENT_TYPE_DIR_MAP.get(content_type))]
 
     # everything for roles
-    if content_type == 'role':
+    if content_archive_type == 'role':
         member_matches = tar_file_members
 
     # log.debug('member_matches=%s', pprint.pformat([x.name for x in member_matches]))
 
     return member_matches
+
+
+def filter_members_by_content_meta(tar_file_obj, content_archive_type, content_meta):
+    if not content_meta:
+        log.debug('no content_meta info')
+        return []
+
+    content_type = content_meta.content_type
+
+    return filter_members_by_content_type(tar_file_obj, content_archive_type, content_type)
 
 
 # FIXME: persisting of content archives or subsets thereof
@@ -249,7 +262,9 @@ def extract_by_content_type(tar_file_obj,
                             file_name=None,
                             files_to_extract=None,
                             extract_to_path=None,
+                            content_archive_type=None,
                             content_type=None,
+                            install_content_type=None,
                             display_callback=None,
                             install_all_content=False,
                             force_overwrite=False,
@@ -284,13 +299,14 @@ def extract_by_content_type(tar_file_obj,
         files_to_extract.append(file_name)
     # log.debug('files_to_extract: %s', files_to_extract)
 
-    path = extract_to_path
+    # path = extract_to_path
 
     # append the content_dir if we have one
-    content_sub_path = os.path.join(path, content_meta.content_dir or '')
+    content_sub_path = os.path.join(extract_to_path,
+                                    CONTENT_TYPE_DIR_MAP.get('install_content_type', content_meta.content_dir or ''))
 
-    log.debug('path=%s', path)
-    log.debug('conte_sub_path=%s', content_sub_path)
+    log.debug('extract_to_path=%s', extract_to_path)
+    log.debug('content_sub_path=%s', content_sub_path)
     # log.debug('files_to_extract=%s', pprint.pformat(files_to_extract))
 
     # do we need to drive this from tar_file members if we have file_names_to_extract?
@@ -385,7 +401,10 @@ def extract_by_content_type(tar_file_obj,
             # log.debug('member.name: %s', member.name)
 
             dest_path = os.path.join(content_sub_path, member.name)
-            log.debug('path=%s, member.name=%s, dest_path=%s', path, member.name, dest_path)
+
+            log.debug('extract_to_path=%s', extract_to_path)
+            log.debug('member.name=%s', member.name)
+            log.debug('dest_path=%s', dest_path)
 
             # display_callback("-- extracting %s content %s from %s into %s" %
             #                 (content_meta.content_type, member.name, content_meta.name, dest_path))
@@ -398,10 +417,11 @@ def extract_by_content_type(tar_file_obj,
                 raise exceptions.GalaxyClientError(" ".join(message))
 
             # Alright, *now* actually write the file
-            log.debug('Extracting member=%s, path=%s', member, path)
-            tar_file_obj.extract(member, path)
+            log.debug('Extracting member=%s, content_sub_path=%s', member, content_sub_path)
+            tar_file_obj.extract(member, content_sub_path)
 
-            installed_path = os.path.join(path, member.name)
+            # installed_path = os.path.join(path, member.name)
+            installed_path = os.path.join(content_sub_path, member.name)
             installed_paths.append(installed_path)
             # Reset the name so we're on equal playing field for the sake of
             # re-processing this TarFile object as we iterate through entries

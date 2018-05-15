@@ -42,6 +42,11 @@ class GalaxyContentMeta(object):
 
         self._data = {}
 
+    @classmethod
+    def from_data(cls, data):
+        inst = cls(**data)
+        return inst
+
     def __eq__(self, other):
         return (self.name, self.version, self.src, self.scm,
                 self.content_type, self.content_dir, self.path) == \
@@ -56,6 +61,7 @@ class GalaxyContentMeta(object):
         return {'name': self.name,
                 'version': self.version,
                 'src': self.src,
+                'scm': self.scm,
                 'content_type': self.content_type,
                 'content_dir': self.content_dir,
                 'path': self.path}
