@@ -20,6 +20,7 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 # import ansible
+import errno
 import os
 import logging
 import shutil
@@ -49,6 +50,15 @@ from ansible_galaxy_cli import exceptions as cli_exceptions
 log = logging.getLogger(__name__)
 
 
+def ensure_dir(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            log.exception(e)
+            raise
+
+
 class TestGalaxy(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -66,14 +76,17 @@ class TestGalaxy(unittest.TestCase):
         cls.role_name = "delete_me"
 
         # add a meta/main.yml
-        os.makedirs(os.path.join(cls.role_dir, 'meta'))
+        test_dir = os.path.join(cls.role_dir, 'meta')
+
+        ensure_dir(test_dir)
         fd = open(os.path.join(cls.role_dir, 'meta/main.yml'), 'w')
+
         fd.write('galaxy_info: {}\ndependencies: {}')
         fd.close()
         # making a temp dir for role installation
         cls.role_path = os.path.join(tempfile.mkdtemp(), "roles")
-        if not os.path.isdir(cls.role_path):
-            os.makedirs(cls.role_path)
+
+        ensure_dir(cls.role_path)
 
         # creating a tar file name for class data
         cls.role_tar = './delete_me.tar.gz'
@@ -82,7 +95,13 @@ class TestGalaxy(unittest.TestCase):
         # creating a temp file with installation requirements
         cls.role_req = './delete_me_requirements.yml'
         fd = open(cls.role_req, "w")
-        fd.write("- 'src': '%s'\n  'name': '%s'\n  'path': '%s'" % (cls.role_tar, cls.role_name, cls.role_path))
+
+        dep_lines = ["- 'src': '%s'\n" % cls.role_tar,
+                     "  'name': '%s'\n" % cls.role_name,
+                     "  'path': '%s'\n" % cls.role_path]
+        for dep_line in dep_lines:
+            fd.write(dep_line)
+
         fd.close()
 
     @classmethod
@@ -147,7 +166,7 @@ class TestGalaxy(unittest.TestCase):
 
     def test_execute_remove(self):
         # installing role
-        gc = GalaxyCLI(args=["ansible-galaxy", "install", "-p", self.role_path, "-r", self.role_req, '--force'])
+        gc = GalaxyCLI(args=["ansible-galaxy", "content-install", "-p", self.role_path, "-r", self.role_req, '--force'])
         gc.parse()
         gc.run()
 
@@ -329,8 +348,7 @@ class ValidRoleTests(object):
 
         # Make temp directory for testing
         cls.test_dir = tempfile.mkdtemp()
-        if not os.path.isdir(cls.test_dir):
-            os.makedirs(cls.test_dir)
+        ensure_dir(cls.test_dir)
         log.debug('test_dir: %s', cls.test_dir)
 
         cls.role_dir = os.path.join(cls.test_dir, role_name)
@@ -351,9 +369,11 @@ class ValidRoleTests(object):
 
     @classmethod
     def tearDownClass(cls):
-        log.debug('not deleting %s', cls.test_dir)
-        #if os.path.isdir(cls.test_dir):
-        #    shutil.rmtree(cls.test_dir)
+        if not os.path.isdir(cls.test_dir):
+            return
+
+        log.debug('deleting %s', cls.test_dir)
+        shutil.rmtree(cls.test_dir)
 
     def test_metadata(self):
         with open(os.path.join(self.role_dir, 'meta', 'main.yml'), 'r') as mf:
