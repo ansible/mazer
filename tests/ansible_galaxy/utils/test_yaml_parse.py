@@ -38,6 +38,13 @@ split_kwarg_valid_test_cases = \
      '1.2.3',
      'version=1.2.3',
      'name=somename',
+
+     # weird but valid
+     'name==',
+     'name=name',
+     'name=version',
+     'name=war=peace',
+
      ]
 
 
@@ -54,9 +61,10 @@ def test_split_kwarg_valid(split_kwarg_valid):
 
 
 split_kwarg_invalid_test_cases = \
-    ['name==',
+    ['=',
      'some_invalid_keyword=foo',
-     'blip=']
+     'blip=',
+     ]
 
 
 @pytest.fixture(scope='module',
