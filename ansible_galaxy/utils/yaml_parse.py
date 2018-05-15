@@ -38,7 +38,7 @@ def split_content_spec(spec_string, valid_keywords):
     for kw in valid_keywords:
         print('kw: %s' % kw)
         try:
-            key, value = comma_splitter.next()
+            key, value = next(comma_splitter)
         except StopIteration:
             return info
 
