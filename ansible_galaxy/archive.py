@@ -140,6 +140,7 @@ def load_archive_metadata(tar_file_obj, galaxy_file, meta_file):
     return galaxy_metadata, metadata
 
 
+# FIXME: causes issues on py3
 # suppose we could make this a generator if needed
 def find_content_type_subdirs(tar_file_members):
     '''Return a list of content type subdirs found in tar_file_members
