@@ -130,9 +130,13 @@ class GalaxyContent(object):
         self.options = galaxy.options
         self.galaxy = galaxy
 
+        self.galaxy_content_paths = [os.path.expanduser(p) for p in defaults.DEFAULT_CONTENT_PATH]
+        primary_galaxy_content_path = self.galaxy_content_paths[0]
+
         self.content_meta = content_meta or \
             content.GalaxyContentMeta(name=name, src=src, version=version,
-                                      scm=scm, path=path, content_type=content_type,
+                                      scm=scm, path=primary_galaxy_content_path,
+                                      content_type=content_type,
                                       content_dir=CONTENT_TYPE_DIR_MAP.get(content_type, None))
 
         # TODO: remove this when the data constructors are split
@@ -153,7 +157,7 @@ class GalaxyContent(object):
         self._orig_path = path
 
         # Set self.path and self.path_dir
-        self._set_content_paths(path)
+        # self._set_content_paths(path)
 
     def _display_callback(self, *args, **kwargs):
         level_arg = kwargs.pop('level', None)
@@ -634,14 +638,13 @@ class GalaxyContent(object):
 
         return installed
 
-    def _install_all(self, content_tar_file, archive_parent_dir,
-                     content_archive_type=None, content_meta=None):
-        # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
-        #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
-        content_meta = content_meta or self.content_meta
+    def _install_for_content_types(self, content_tar_file, archive_parent_dir,
+                                   content_archive_type=None, content_meta=None,
+                                   content_types_to_install=None):
 
         all_installed_paths = []
-        for install_content_type in CONTENT_TYPES:
+        content_types_to_install = content_types_to_install or []
+        for install_content_type in content_types_to_install:
             log.debug('INSTALLING %s type content from %s', install_content_type, content_tar_file)
             member_matches = archive.filter_members_by_content_type(content_tar_file,
                                                                     content_archive_type,
@@ -660,6 +663,16 @@ class GalaxyContent(object):
                                                               extract_to_path=content_meta.path,
                                                               content_type_requires_meta=True)
             all_installed_paths.extend(installed_paths)
+
+    def _install_all(self, content_tar_file, archive_parent_dir,
+                     content_archive_type=None, content_meta=None):
+        # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
+        #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
+        content_meta = content_meta or self.content_meta
+
+        all_installed_paths = self._install_for_content_types(content_tar_file, archive_parent_dir,
+                                                              content_archive_type, content_meta,
+                                                              content_types_to_install=CONTENT_TYPES)
 
         installed = [(content_meta, all_installed_paths)]
         return installed
@@ -710,7 +723,7 @@ class GalaxyContent(object):
     def install(self, content_meta=None):
         installed = []
         archive_role_metadata = None
-        archive_galaxy_metadata = None
+        # archive_galaxy_metadata = None
 
         meta_file = None
         archive_parent_dir = None
@@ -782,16 +795,6 @@ class GalaxyContent(object):
         # content types like 'module' shouldn't care about meta_file elsewhere
         if self.content_type in self.NO_META:
             meta_file = None
-
-        # FIXME: THIS IS A HACK
-        #
-        # We've determined that this is a legacy role, we're going to
-        # change state and re-eval paths for backwards compat with the
-        # legacy role type
-        # if self.content_type == "all" and meta_file:
-        #    self._set_type("role")
-        #    self._set_content_paths(self._orig_path)
-        #    self._install_all_content = False
 
         if not archive_parent_dir:
             archive_parent_dir = archive.find_archive_parent_dir(members, content_meta)
@@ -915,12 +918,19 @@ class GalaxyContent(object):
                 #         ansible-testing-content-master/library/database/misc/elasticsearch_plugin.py
                 #       Then we pass that into _write_archive_files as file_name arg
 
+                log.info('about to extract content_type=%s %s to %s',
+                         content_meta.content_type, content_meta.name, content_meta.path)
+                res = self._install_for_content_types(content_tar_file,
+                                                      archive_parent_dir,
+                                                      content_archive_type,
+                                                      content_meta,
+                                                      content_types_to_install=[self.content_type])
                 # tar info for each file, so we can filter on filename match and file type
                 # tar_file_members = content_tar_file.getmembers()
 
-                member_matches = archive.filter_members_by_content_type(content_tar_file,
-                                                                        content_archive_type,
-                                                                        content_meta)
+                #member_matches = archive.filter_members_by_content_type(content_tar_file,
+                #                                                        content_archive_type,
+                #                                                        content_meta)
 
                 # match_by_content_type() ?
                 # member_matches = [tar_file_member for tar_file_member in tar_file_members
@@ -929,15 +939,13 @@ class GalaxyContent(object):
                 #                                                 # self.content_meta.name,
                 #                                                 content_path=CONTENT_TYPE_DIR_MAP[self.content_meta.content_type])]
 
-                log.info('about to extract content_type=%s %s to %s',
-                         content_meta.content_type, content_meta.name, content_meta.path)
-                res = archive.extract_by_content_type(content_tar_file,
-                                                      archive_parent_dir,
-                                                      content_meta,
-                                                      files_to_extract=member_matches,
+                #res = archive.extract_by_content_type(content_tar_file,
+                #                                      archive_parent_dir,
+                #                                      content_meta,
+                #                                      files_to_extract=member_matches,
                                                       # content_type=content_meta.content_type,
-                                                      extract_to_path=content_meta.path,
-                                                      content_type_requires_meta=False)
+                #                                      extract_to_path=content_meta.path,
+                #                                      content_type_requires_meta=False)
                 log.debug('res:\n%s', pprint.pformat(res))
                 installed.append((content_meta, res))
             else:

@@ -15,10 +15,17 @@ VALID_CONTENT_SPEC_KEYS = [
 
 # Galaxy Content Constants
 CONTENT_PLUGIN_TYPES = (
-    'module', 'module_util', 'action_plugin', 'filter_plugin',
-    'connection_plugin', 'inventory_plugin', 'lookup_plugin',
-    'shell_plugin', 'strategy_plugin', 'netconf_plugin'
-
+    'module',
+    'module_util',
+    'action_plugin',
+    'filter_plugin',
+    'connection_plugin',
+    'inventory_plugin',
+    'lookup_plugin',
+    'shell_plugin',
+    'strategy_plugin',
+    'netconf_plugin',
+    'callback_plugin',
 )
 CONTENT_TYPES = CONTENT_PLUGIN_TYPES + ('role',)
 
