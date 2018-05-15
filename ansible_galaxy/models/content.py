@@ -31,13 +31,14 @@ TYPE_DIR_CONTENT_TYPE_MAP['library'] = 'module'
 class GalaxyContentMeta(object):
     def __init__(self, name=None, version=None,
                  src=None, scm=None, content_type=None,
-                 path=None, content_dir=None):
+                 path=None, content_dir=None, content_sub_dir=None):
         self.name = name
         self.version = version
         self.src = src or name
         self.scm = scm
         self.content_type = content_type
         self.content_dir = content_dir
+        self.content_sub_dir = content_sub_dir
         self.path = path
 
         self._data = {}
@@ -54,8 +55,8 @@ class GalaxyContentMeta(object):
              other.content_type, other.content_dir, other.path)
 
     def __repr__(self):
-        return 'GalaxyContentMeta(name=%s, version=%s, src=%s, scm=%s, content_type=%s, content_dir=%s, path=%s)' \
-            % (self.name, self.version, self.src, self.scm, self.content_type, self.content_dir, self.path)
+        return 'GalaxyContentMeta(name=%s, version=%s, src=%s, scm=%s, content_type=%s, content_dir=%s, content_sub_dir=%s, path=%s)' \
+            % (self.name, self.version, self.src, self.scm, self.content_type, self.content_dir, self.content_sub_dir, self.path)
 
     def _as_dict(self):
         return {'name': self.name,
@@ -64,6 +65,7 @@ class GalaxyContentMeta(object):
                 'scm': self.scm,
                 'content_type': self.content_type,
                 'content_dir': self.content_dir,
+                'content_sub_dir': self.content_sub_dir,
                 'path': self.path}
 
     @property

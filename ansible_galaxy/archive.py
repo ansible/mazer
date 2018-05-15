@@ -302,11 +302,14 @@ def extract_by_content_type(tar_file_obj,
     # path = extract_to_path
 
     # append the content_dir if we have one
-    content_sub_path = os.path.join(extract_to_path,
-                                    CONTENT_TYPE_DIR_MAP.get('install_content_type', content_meta.content_dir or ''))
+    content_path = os.path.join(extract_to_path,
+                                CONTENT_TYPE_DIR_MAP.get('install_content_type', content_meta.content_dir or ''))
+    if content_meta.content_sub_dir:
+        log.debug('content_sub_path=%s', content_meta.content_sub_dir)
+        content_path = os.path.join(content_path, content_meta.content_sub_dir or '')
 
     log.debug('extract_to_path=%s', extract_to_path)
-    log.debug('content_sub_path=%s', content_sub_path)
+    log.debug('content_path=%s', content_path)
     # log.debug('files_to_extract=%s', pprint.pformat(files_to_extract))
 
     # do we need to drive this from tar_file members if we have file_names_to_extract?
@@ -400,7 +403,7 @@ def extract_by_content_type(tar_file_obj,
             # TODO: The extract bits below move into sep method
             # log.debug('member.name: %s', member.name)
 
-            dest_path = os.path.join(content_sub_path, member.name)
+            dest_path = os.path.join(content_path, member.name)
 
             log.debug('extract_to_path=%s', extract_to_path)
             log.debug('member.name=%s', member.name)
@@ -417,11 +420,11 @@ def extract_by_content_type(tar_file_obj,
                 raise exceptions.GalaxyClientError(" ".join(message))
 
             # Alright, *now* actually write the file
-            log.debug('Extracting member=%s, content_sub_path=%s', member, content_sub_path)
-            tar_file_obj.extract(member, content_sub_path)
+            log.debug('Extracting member=%s, content_path=%s', member, content_path)
+            tar_file_obj.extract(member, content_path)
 
             # installed_path = os.path.join(path, member.name)
-            installed_path = os.path.join(content_sub_path, member.name)
+            installed_path = os.path.join(content_path, member.name)
             installed_paths.append(installed_path)
             # Reset the name so we're on equal playing field for the sake of
             # re-processing this TarFile object as we iterate through entries

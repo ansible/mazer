@@ -676,6 +676,8 @@ class GalaxyContent(object):
         installed_paths = archive.extract_by_content_type(content_tar_file,
                                                           archive_parent_dir,
                                                           content_meta,
+                                                          content_archive_type='role',
+                                                          install_content_type='role',
                                                           files_to_extract=member_matches,
                                                           extract_to_path=content_meta.path,
                                                           content_type_requires_meta=True)
@@ -818,6 +820,8 @@ class GalaxyContent(object):
             data = self.content_meta.data
             data['content_type'] = 'role'
             data['content_dir'] = CONTENT_TYPE_DIR_MAP.get('role', None)
+            # ie, for roles, the roles/$CONTENT_SUB_DIR/  name
+            data['content_sub_dir'] = data['name']
             # data['path'] =
             content_meta = content.GalaxyContentMeta.from_data(data)
             log.debug('role content_meta: %s', content_meta)
