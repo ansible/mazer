@@ -39,7 +39,7 @@ from ansible_galaxy.fetch.scm_url import ScmUrlFetch
 from ansible_galaxy.fetch.local_file import LocalFileFetch
 from ansible_galaxy.fetch.remote_url import RemoteUrlFetch
 from ansible_galaxy.fetch.galaxy_url import GalaxyUrlFetch
-from ansible_galaxy.models.content import CONTENT_PLUGIN_TYPES, CONTENT_TYPES
+from ansible_galaxy.models.content import CONTENT_TYPES
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.models import content
 
@@ -310,7 +310,8 @@ class GalaxyContent(object):
 
     def _install_for_content_types(self, content_tar_file, archive_parent_dir,
                                    content_archive_type=None, content_meta=None,
-                                   content_types_to_install=None):
+                                   content_types_to_install=None,
+                                   force_overwrite=False):
 
         all_installed_paths = []
         content_types_to_install = content_types_to_install or []
@@ -331,11 +332,15 @@ class GalaxyContent(object):
                                                               content_archive_type=content_archive_type,
                                                               install_content_type=install_content_type,
                                                               files_to_extract=member_matches,
-                                                              extract_to_path=content_meta.path)
+                                                              extract_to_path=content_meta.path,
+                                                              force_overwrite=force_overwrite)
             all_installed_paths.extend(installed_paths)
 
+        return all_installed_paths
+
     def _install_all(self, content_tar_file, archive_parent_dir,
-                     content_archive_type=None, content_meta=None):
+                     content_archive_type=None, content_meta=None,
+                     force_overwrite=False):
 
         # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
         #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
@@ -343,12 +348,14 @@ class GalaxyContent(object):
 
         all_installed_paths = self._install_for_content_types(content_tar_file, archive_parent_dir,
                                                               content_archive_type, content_meta,
-                                                              content_types_to_install=CONTENT_TYPES)
+                                                              content_types_to_install=CONTENT_TYPES,
+                                                              force_overwrite=force_overwrite)
 
         installed = [(content_meta, all_installed_paths)]
         return installed
 
-    def _install_role_archive(self, content_tar_file, archive_parent_dir, content_meta):
+    def _install_role_archive(self, content_tar_file, archive_parent_dir, content_meta,
+                              force_overwrite=False):
 
         member_matches = archive.filter_members_by_content_meta(content_tar_file,
                                                                 content_archive_type='role',
@@ -364,12 +371,13 @@ class GalaxyContent(object):
                                                           content_archive_type='role',
                                                           install_content_type='role',
                                                           files_to_extract=member_matches,
-                                                          extract_to_path=content_meta.path)
+                                                          extract_to_path=content_meta.path,
+                                                          force_overwrite=force_overwrite)
 
         installed = [(content_meta, installed_paths)]
         return installed
 
-    def install(self, content_meta=None):
+    def install(self, content_meta=None, force_overwrite=False):
         installed = []
         archive_role_metadata = None
 
@@ -509,7 +517,8 @@ class GalaxyContent(object):
                                              archive_parent_dir,
                                              self._galaxy_metadata,
                                              content_meta,
-                                             display_callback=self.display_callback)
+                                             display_callback=self.display_callback,
+                                             force_overwrite=force_overwrite)
 
             installed.extend(installed_from_galaxy_metadata)
 
@@ -519,7 +528,8 @@ class GalaxyContent(object):
             log.debug('archive_parent_dir: %s', archive_parent_dir)
             installed_from_role = self._install_role_archive(content_tar_file,
                                                              archive_parent_dir,
-                                                             content_meta=content_meta)
+                                                             content_meta=content_meta,
+                                                             force_overwrite=force_overwrite)
             installed.extend(installed_from_role)
 
         # a multi content archive
@@ -527,7 +537,8 @@ class GalaxyContent(object):
             if content_meta.content_type == 'all':
                 log.info('Installing %s as a content_type=%s (all)', content_meta.name, content_meta.content_type)
 
-                installed_from_all = self._install_all(content_tar_file, archive_parent_dir)
+                installed_from_all = self._install_all(content_tar_file, archive_parent_dir,
+                                                       force_overwrite=force_overwrite)
                 installed.extend(installed_from_all)
             else:
                 log.info('Installing %s as a archive_type=%s content_type=%s ',
@@ -540,7 +551,8 @@ class GalaxyContent(object):
                                                       archive_parent_dir,
                                                       content_archive_type,
                                                       content_meta,
-                                                      content_types_to_install=[self.content_type])
+                                                      content_types_to_install=[self.content_type],
+                                                      force_overwrite=force_overwrite)
 
                 log.debug('res:\n%s', pprint.pformat(res))
 

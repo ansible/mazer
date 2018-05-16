@@ -282,6 +282,7 @@ def extract_by_content_type(tar_file_obj,
     """
 
     installed_paths = []
+    overwritten_paths = []
 
     # details of archive extraction, pretty verbose even for debug
     elog = logging.getLogger('%s.extract' % __name__)
@@ -417,13 +418,12 @@ def extract_by_content_type(tar_file_obj,
             # display_callback("-- extracting %s content %s from %s into %s" %
             #                 (content_meta.content_type, member.name, content_meta.name, dest_path))
 
-            if os.path.exists(dest_path) and not force_overwrite:
-                message = (
-                    "the specified Galaxy Content %s appears to already exist." % dest_path,
-                    "Use of --force for non-role Galaxy Content Type is not yet supported"
-                )
-                raise exceptions.GalaxyClientError(" ".join(message))
+            if os.path.exists(dest_path):
+                if not force_overwrite:
+                    message = "The Galaxy content %s appears to already exist." % dest_path
+                    raise exceptions.GalaxyClientError(message)
 
+                overwritten_paths.append(dest_path)
             # Alright, *now* actually write the file
             elog.debug('Extracting member=%s, content_path=%s', member, content_path)
             tar_file_obj.extract(member, content_path)
@@ -442,4 +442,9 @@ def extract_by_content_type(tar_file_obj,
             # raise exceptions.GalaxyClientError("Required subdirectory not found in Galaxy Content archive for %s" % content_meta.name)
 
     log.debug('Installed paths: %s', installed_paths)
+
+    if overwritten_paths:
+        log.debug('Some content that already existed was overwritten because force_overwrite=%s: %s',
+                  force_overwrite, sorted(overwritten_paths))
+
     return installed_paths

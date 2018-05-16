@@ -35,7 +35,8 @@ def install_from_galaxy_metadata(content_tar_file,
                                  archive_parent_dir,
                                  galaxy_metadata,
                                  content_meta,
-                                 display_callback=None):
+                                 display_callback=None,
+                                 force_overwrite=False):
 
     installed = []
     content_sections = []
@@ -85,7 +86,8 @@ def install_from_galaxy_metadata(content_tar_file,
                                          _content_meta,
                                          galaxy_metadata,
                                          content_section,
-                                         display_callback=display_callback)
+                                         display_callback=display_callback,
+                                         force_overwrite=force_overwrite)
         log.debug('res=%s', res)
         installed.extend(res)
 
@@ -97,7 +99,8 @@ def install_by_galaxy_metadata(content_tar_file,
                                content_meta,
                                galaxy_metadata,
                                galaxy_metadata_section,
-                               display_callback=None):
+                               display_callback=None,
+                               force_overwrite=False):
     '''based on galaxy metadata file, install stuff, eventually include deps
 
     and return a list of the stuff installed (a list of tuples of (content_meta, install_result)).'''
@@ -130,7 +133,8 @@ def install_by_galaxy_metadata(content_tar_file,
                                               files_to_extract=member_matches,
                                               # content_type=content_meta.content_type,
                                               extract_to_path=content_meta.path,
-                                              content_type_requires_meta=False)
+                                              content_type_requires_meta=False,
+                                              force_overwrite=force_overwrite)
         log.debug('res: %s', res)
 
         installed.append((content_meta, res))

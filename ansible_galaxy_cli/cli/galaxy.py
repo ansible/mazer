@@ -98,6 +98,8 @@ class GalaxyCLI(cli.CLI):
             self.parser.add_option('-r', '--role-file', dest='role_file', help='A file containing a list of roles to be imported')
             self.parser.add_option('-g', '--keep-scm-meta', dest='keep_scm_meta', action='store_true',
                                    default=False, help='Use tar instead of the scm archive option when packaging the role')
+            self.parser.add_option('-t', '--type', dest='content_type', default="all", help='A type of Galaxy Content to install: role, module, etc')
+            # FIXME: rm when tests are updated
         elif self.action == "content-install":
             self.parser.set_usage("usage: %prog content-install [options] [-r FILE | role_name(s)[,version] | scm+role_repo_url[,version] | tar_file(s)]")
             self.parser.add_option('-i', '--ignore-errors', dest='ignore_errors', action='store_true', default=False,
@@ -356,7 +358,7 @@ class GalaxyCLI(cli.CLI):
 
         self.display(data)
 
-    def execute_content_install(self):
+    def execute_install(self):
         """
         uses the args list of roles to be installed, unless -f was specified. The list of roles
         can be a name (which will be downloaded via the galaxy API and github), or it can be a local .tar.gz file.
@@ -389,7 +391,7 @@ class GalaxyCLI(cli.CLI):
             # FIXME - add more types here, PoC is just role/module
 
         no_deps = self.options.no_deps
-        force = self.options.force
+        force_overwrite = self.options.force
 
         content_left = []
 
@@ -423,8 +425,8 @@ class GalaxyCLI(cli.CLI):
             #         content. Skipping for non-role types for now.
             if content.content_type == "role":
                 if content.install_info is not None:
-                    if content.install_info['version'] != content.version or force:
-                        if force:
+                    if content.install_info['version'] != content.version or force_overwrite:
+                        if force_overwrite:
                             self.display('- changing role %s from %s to %s' %
                                          (content.name, content.install_info['version'], content.version or "unspecified"))
                             content.remove()
@@ -433,12 +435,12 @@ class GalaxyCLI(cli.CLI):
                                      content.name, content.install_info['version'], content.version or "unspecified")
                             continue
                     else:
-                        if not force:
+                        if not force_overwrite:
                             self.display('- %s is already installed, skipping.' % str(content))
                             continue
 
             try:
-                installed = content.install()
+                installed = content.install(force_overwrite=force_overwrite)
             except cli_exceptions.GalaxyCliError as e:
                 log.warning("- %s was NOT installed successfully: %s ", content.name, str(e))
                 self.exit_without_ignore()
@@ -488,7 +490,11 @@ class GalaxyCLI(cli.CLI):
 
         return 0
 
-    def execute_install(self):
+    # FIXME: rm once test scripts are updated
+    # alias content-install to install for now
+    execute_content_install = execute_install
+
+    def execute_old_role_install(self):
         """
         uses the args list of roles to be installed, unless -f was specified. The list of roles
         can be a name (which will be downloaded via the galaxy API and github), or it can be a local .tar.gz file.
