@@ -283,6 +283,9 @@ def extract_by_content_type(tar_file_obj,
 
     installed_paths = []
 
+    # details of archive extraction, pretty verbose even for debug
+    elog = logging.getLogger('%s.extract' % __name__)
+
     # now we do the actual extraction to the path
     log.debug('tar_file=%s, parent_dir=%s, file_name=%s', tar_file_obj, parent_dir, file_name)
     log.debug('extract_to_path=%s', extract_to_path)
@@ -364,6 +367,8 @@ def extract_by_content_type(tar_file_obj,
             # log.debug('plugin_found2: %s', plugin_found)
 
             # TODO: if we are doing one content_type at a time, seems like we can flatten this some
+            # FIXME: plugin_found isnt a great name, really just a var to track if we found the type
+            #        of content we are looking for
             if plugin_found:
                 # If this is not a role, we don't expect it to be installed
                 # into a subdir under roles path but instead directly
@@ -384,7 +389,7 @@ def extract_by_content_type(tar_file_obj,
                     continue
             else:
                 parts = member.name.replace(parent_dir, "", 1).split(os.sep)
-                log.debug('plugin_found falsey, building parts: %s', parts)
+                elog.debug('plugin_found falsey, building parts: %s', parts)
 
             # log.debug('parts: %s', parts)
             final_parts = []
@@ -392,12 +397,12 @@ def extract_by_content_type(tar_file_obj,
                 if part != '..' and '~' not in part and '$' not in part:
                     final_parts.append(part)
 
-            log.debug('final_parts: %s', final_parts)
-            log.debug('orig member.name: %s', member.name)
+            elog.debug('final_parts: %s', final_parts)
+            elog.debug('orig member.name: %s', member.name)
 
             member.name = os.path.join(*final_parts)
 
-            log.debug('new  member.name: %s', member.name)
+            elog.debug('new  member.name: %s', member.name)
 
             # TODO: build the list of TarInfo members to extract and return it
             # TODO: The extract bits below move into sep method
@@ -405,9 +410,9 @@ def extract_by_content_type(tar_file_obj,
 
             dest_path = os.path.join(content_path, member.name)
 
-            log.debug('extract_to_path=%s', extract_to_path)
-            log.debug('member.name=%s', member.name)
-            log.debug('dest_path=%s', dest_path)
+            elog.debug('extract_to_path=%s', extract_to_path)
+            elog.debug('member.name=%s', member.name)
+            elog.debug('dest_path=%s', dest_path)
 
             # display_callback("-- extracting %s content %s from %s into %s" %
             #                 (content_meta.content_type, member.name, content_meta.name, dest_path))
@@ -420,7 +425,7 @@ def extract_by_content_type(tar_file_obj,
                 raise exceptions.GalaxyClientError(" ".join(message))
 
             # Alright, *now* actually write the file
-            log.debug('Extracting member=%s, content_path=%s', member, content_path)
+            elog.debug('Extracting member=%s, content_path=%s', member, content_path)
             tar_file_obj.extract(member, content_path)
 
             # installed_path = os.path.join(path, member.name)
@@ -431,9 +436,9 @@ def extract_by_content_type(tar_file_obj,
             # in an ansible-galaxy.yml file
             member.name = orig_name
 
-    if content_type_requires_meta:
+    if content_meta.requires_meta_main:
         if not plugin_found:
-            log.warn('we dont think we found a meta/main.yml but we probably did, fixme')
+            log.warn('%s requires a meta/main.yml but we didnt find one', content_meta.name)
             # raise exceptions.GalaxyClientError("Required subdirectory not found in Galaxy Content archive for %s" % content_meta.name)
 
     log.debug('Installed paths: %s', installed_paths)
