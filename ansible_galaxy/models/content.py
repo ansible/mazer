@@ -37,17 +37,20 @@ TYPE_DIR_CONTENT_TYPE_MAP['library'] = 'module'
 
 class GalaxyContentMeta(object):
     def __init__(self, name=None, version=None,
-                 src=None, scm=None, content_type=None,
-                 path=None, content_dir=None, content_sub_dir=None):
+                 src=None, scm=None,
+                 content_type=None,
+                 path=None, requires_meta_main=None,
+                 content_dir=None, content_sub_dir=None):
+
         self.name = name
         self.version = version
         self.src = src or name
         self.scm = scm
         self.content_type = content_type
+        self.path = path
+        self.requires_meta_main = requires_meta_main
         self.content_dir = content_dir
         self.content_sub_dir = content_sub_dir
-        self.path = path
-
         self._data = {}
 
     @classmethod
@@ -62,8 +65,8 @@ class GalaxyContentMeta(object):
              other.content_type, other.content_dir, other.path)
 
     def __repr__(self):
-        return 'GalaxyContentMeta(name=%s, version=%s, src=%s, scm=%s, content_type=%s, content_dir=%s, content_sub_dir=%s, path=%s)' \
-            % (self.name, self.version, self.src, self.scm, self.content_type, self.content_dir, self.content_sub_dir, self.path)
+        return 'GalaxyContentMeta(name=%s, version=%s, src=%s, scm=%s, content_type=%s, content_dir=%s, content_sub_dir=%s, path=%s, requires_meta_main=%s)' \
+            % (self.name, self.version, self.src, self.scm, self.content_type, self.content_dir, self.content_sub_dir, self.path, self.requires_meta_main)
 
     def _as_dict(self):
         return {'name': self.name,
@@ -71,14 +74,38 @@ class GalaxyContentMeta(object):
                 'src': self.src,
                 'scm': self.scm,
                 'content_type': self.content_type,
+                'path': self.path,
+                'requires_meta_main': self.requires_meta_main,
                 'content_dir': self.content_dir,
                 'content_sub_dir': self.content_sub_dir,
-                'path': self.path}
+                }
 
     @property
     def data(self):
         self._data.update(self._as_dict())
         return self._data
+
+
+class RoleContentArchiveMeta(GalaxyContentMeta):
+
+    def __init__(self, *args, **kwargs):
+        super(RoleContentArchiveMeta, self).__init__(*args, **kwargs)
+        self.content_type = 'role'
+        self.content_dir = CONTENT_TYPE_DIR_MAP.get('role', None)
+        self.content_sub_dir = self.name
+        self.requires_meta_main = True
+
+    @classmethod
+    def from_content_meta(cls, content_meta):
+        data = content_meta.data.copy()
+        data['content_type'] = 'role'
+        data['content_dir'] = CONTENT_TYPE_DIR_MAP.get('role', None)
+        # ie, for roles, the roles/$CONTENT_SUB_DIR/  name
+        data['content_sub_dir'] = data['name']
+        data['requires_meta_main'] = True
+        # data['path'] =
+        content_meta = cls.from_data(data)
+        return content_meta
 
 
 class GalaxyContent(object):

@@ -98,10 +98,51 @@ ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_p
 tree ~/.ansible/content
 [ -d ~/.ansible/content/library/ ]
 [ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
-[ ! -e ~/.ansible/content/library/kibana_plugin.py ]
+
+# FIXME
+# [ ! -e ~/.ansible/content/library/kibana_plugin.py ]
 
 
 
+
+
+
+# install a signle module
+# ansible-galaxy content-install -t module atestuseraccount.testing-content.elasticsearch_plugin.py
+# tree ~/.ansible/content
+# [ -d ~/.ansible/content/library/alikins.testing-content ]
+
+
+
+# content-install modules from a scm url
+rm -rf ~/.ansible/content
+ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git
+tree ~/.ansible/content
+
+# content-install all from a scm url
+rm -rf ~/.ansible/content
+ansible-galaxy content-install  git+https://github.com/atestuseraccount/ansible-testing-content.git
+tree ~/.ansible/content
+
+# content-install all with a version from scm
+rm -rf ~/.ansible/content
+ansible-galaxy content-install git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
+tree ~/.ansible/content
+
+# content-install all with a version from scm
+rm -rf ~/.ansible/content
+ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
+tree ~/.ansible/content
+
+# install from a repo with a ansible-galaxy.yml
+rm -rf ~/.ansible/content
+ansible-galaxy content-install alikins.test-galaxy-content-galaxyfile
+tree ~/.ansible/content
+[ -d ~/.ansible/content/library ]
+[ -f ~/.ansible/content/library/module_c.py ]
+[ -f ~/.ansible/content/library/galaxyfile_sample_module.py ]
+[ -f ~/.ansible/content/library/galaxyfile_playbook_sample_module.py ]
+[ ! -e ~/.ansible/content/README.md ]
 
 # install a role from a multi-content repo
 rm -rf ~/.ansible/content
@@ -117,37 +158,7 @@ tree ~/.ansible/content
 # not yet
 # [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
-
-
-
-
-
-
-# install a signle module
-# ansible-galaxy content-install -t module atestuseraccount.testing-content.elasticsearch_plugin.py
-# tree ~/.ansible/content
-# [ -d ~/.ansible/content/library/alikins.testing-content ]
-
-# install from a repo with a ansible-galaxy.yml
-rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.test-galaxy-content-galaxyfile
-tree ~/.ansible/content
-[ -d ~/.ansible/content/library ]
-[ -f ~/.ansible/content/library/module_c.py ]
-[ -f ~/.ansible/content/library/galaxyfile_sample_module.py ]
-[ -f ~/.ansible/content/library/galaxyfile_playbook_sample_module.py ]
-[ ! -e ~/.ansible/content/README.md ]
-
-
-exit 'exit early'
-
-# install role
-rm -rf ~/.ansible/content
-ansible-galaxy install alikins.awx
-tree ~/.ansible/content
-[ -d ~/.ansible/content/roles/alikins.awx ]
-
-
+exit
 
 # TODO: start converting to a test script
 ls -lart ~/.ansible/content/roles/alikins.testing-content
@@ -160,10 +171,6 @@ ansible-galaxy content-install alikins.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 
-# content-install all from a scm url
-rm -rf ~/.ansible/content
-ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git
-
 
 # content-install all modules
 ansible-galaxy content-install -t module atestuseraccount.testing-content
@@ -171,9 +178,6 @@ tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 
 exit 0
-
-# content-install all from a scm url
-ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git
 
 # insall a signle module from a scm url
 ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,name=elasticsearch_plugin.py

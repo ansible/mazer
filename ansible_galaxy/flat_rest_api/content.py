@@ -91,6 +91,7 @@ class GalaxyContent(object):
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
     ROLE_DIRS = ('defaults', 'files', 'handlers', 'meta', 'tasks', 'templates', 'vars', 'tests')
     NO_META = ('module', 'strategy_plugin')
+    REQUIRES_META_MAIN = ('role')
 
     # FIXME(alikins): Not a fan of vars/args with names like 'type', but leave it for now
     def __init__(self, galaxy, name,
@@ -133,9 +134,15 @@ class GalaxyContent(object):
         self.galaxy_content_paths = [os.path.expanduser(p) for p in defaults.DEFAULT_CONTENT_PATH]
         primary_galaxy_content_path = self.galaxy_content_paths[0]
 
+        # If the content requires a meta/main.yml file ala roles
+        requires_meta_main = False
+        if content_type in self.REQUIRES_META_MAIN:
+            requires_meta_main = True
+
         self.content_meta = content_meta or \
             content.GalaxyContentMeta(name=name, src=src, version=version,
                                       scm=scm, path=primary_galaxy_content_path,
+                                      requires_meta_main=requires_meta_main,
                                       content_type=content_type,
                                       content_dir=CONTENT_TYPE_DIR_MAP.get(content_type, None))
 
@@ -646,6 +653,7 @@ class GalaxyContent(object):
         content_types_to_install = content_types_to_install or []
         for install_content_type in content_types_to_install:
             log.debug('INSTALLING %s type content from %s', install_content_type, content_tar_file)
+
             member_matches = archive.filter_members_by_content_type(content_tar_file,
                                                                     content_archive_type,
                                                                     content_type=install_content_type)
@@ -660,8 +668,7 @@ class GalaxyContent(object):
                                                               content_archive_type=content_archive_type,
                                                               install_content_type=install_content_type,
                                                               files_to_extract=member_matches,
-                                                              extract_to_path=content_meta.path,
-                                                              content_type_requires_meta=True)
+                                                              extract_to_path=content_meta.path)
             all_installed_paths.extend(installed_paths)
 
     def _install_all(self, content_tar_file, archive_parent_dir,
@@ -677,7 +684,8 @@ class GalaxyContent(object):
         installed = [(content_meta, all_installed_paths)]
         return installed
 
-    def _install_role(self, content_tar_file, archive_parent_dir, content_meta):
+    def _install_role_archive(self, content_tar_file, archive_parent_dir, content_meta):
+
         member_matches = archive.filter_members_by_content_meta(content_tar_file,
                                                                 content_archive_type='role',
                                                                 content_meta=content_meta)
@@ -692,8 +700,7 @@ class GalaxyContent(object):
                                                           content_archive_type='role',
                                                           install_content_type='role',
                                                           files_to_extract=member_matches,
-                                                          extract_to_path=content_meta.path,
-                                                          content_type_requires_meta=True)
+                                                          extract_to_path=content_meta.path)
 
         installed = [(content_meta, installed_paths)]
         return installed
@@ -824,12 +831,14 @@ class GalaxyContent(object):
             log.debug('Find role metadata in the archive, so installing it as role content_type')
             log.debug('copying self.content_meta: %s', self.content_meta)
             data = self.content_meta.data
-            data['content_type'] = 'role'
-            data['content_dir'] = CONTENT_TYPE_DIR_MAP.get('role', None)
-            # ie, for roles, the roles/$CONTENT_SUB_DIR/  name
-            data['content_sub_dir'] = data['name']
+            # data['content_type'] = 'role'
+            # data['content_dir'] = CONTENT_TYPE_DIR_MAP.get('role', None)
+            # # ie, for roles, the roles/$CONTENT_SUB_DIR/  name
+            #data['content_sub_dir'] = data['name']
+            # data['requires_meta_main'] = True
             # data['path'] =
-            content_meta = content.GalaxyContentMeta.from_data(data)
+            # ontent_meta = content.GalaxyContentMeta.from_data(data)
+            content_meta = content.RoleContentArchiveMeta.from_data(data)
             log.debug('role content_meta: %s', content_meta)
 
             content_archive_type = 'role'
@@ -864,6 +873,10 @@ class GalaxyContent(object):
         #
         # TODO: truthiness of _galaxy_metadata may be better, since that means it was parsed and non empty
         if galaxy_file:
+            content_archive_type = 'galaxy'
+
+        # now branch based on archive type
+        if content_archive_type == 'galaxy':
             log.info('Installing %s as a content_type=%s (galaxy_file)', content_meta.name, content_meta.content_type)
 
             log.debug('galaxy_file=%s', galaxy_file)
@@ -881,85 +894,94 @@ class GalaxyContent(object):
 
             installed.extend(installed_from_galaxy_metadata)
 
-        elif content_meta.content_type == 'role':
-            log.info('Installing %s as a content_type=%s (role)', content_meta.name, content_meta.content_type)
+        # elif content_meta.content_type == 'role':
+        elif content_archive_type == 'role':
+            log.info('Installing %s as a role content archive and content_type=%s (role)', content_meta.name, content_meta.content_type)
 
             log.debug('archive_parent_dir: %s', archive_parent_dir)
-            installed_from_role = self._install_role(content_tar_file,
-                                                     archive_parent_dir,
-                                                     content_meta=content_meta)
+            installed_from_role = self._install_role_archive(content_tar_file,
+                                                             archive_parent_dir,
+                                                             content_meta=content_meta)
             installed.extend(installed_from_role)
 
-        elif content_meta.content_type == 'all':
-            log.info('Installing %s as a content_type=%s (all)', content_meta.name, content_meta.content_type)
-
-            installed_from_all = self._install_all(content_tar_file, archive_parent_dir)
-            installed.extend(installed_from_all)
-            # write out the install info file for later use
-            # self._write_galaxy_install_info()
-
-        elif not meta_file and not galaxy_file:
-            log.info('Installing %s as a content_type=%s (no meta, no galaxy)',
-                     content_meta.name, content_meta.content_type)
-            # No meta/main.yml found so it's not a legacy role
-            # and no galaxyfile found, so assume it's a new
-            # galaxy content type and attempt to install it by
-            # heuristically walking the directories and install
-            # the appropriate things in the appropriate places
-
-            log.info('no meta/main.yml found and no ansible-galaxy.yml found')
-
-            # FIXME: this is basically a big switch to decide what serializer to use
-            if self.content_type != "all":
-                # TODO: based on content_name, need to find/build the full path to that in the
-                #       tar archive so we can extract it.
-                #       ie, alikins.testing-content.elastic_search.py
-                #       full path would be:
-                #         ansible-testing-content-master/library/database/misc/elasticsearch_plugin.py
-                #       Then we pass that into _write_archive_files as file_name arg
-
-                log.info('about to extract content_type=%s %s to %s',
-                         content_meta.content_type, content_meta.name, content_meta.path)
-                res = self._install_for_content_types(content_tar_file,
-                                                      archive_parent_dir,
-                                                      content_archive_type,
-                                                      content_meta,
-                                                      content_types_to_install=[self.content_type])
-                # tar info for each file, so we can filter on filename match and file type
-                # tar_file_members = content_tar_file.getmembers()
-
-                #member_matches = archive.filter_members_by_content_type(content_tar_file,
-                #                                                        content_archive_type,
-                #                                                        content_meta)
-
-                # match_by_content_type() ?
-                # member_matches = [tar_file_member for tar_file_member in tar_file_members
-                #                  if tar_info_content_name_match(tar_file_member,
-                #                                                 "",
-                #                                                 # self.content_meta.name,
-                #                                                 content_path=CONTENT_TYPE_DIR_MAP[self.content_meta.content_type])]
-
-                #res = archive.extract_by_content_type(content_tar_file,
-                #                                      archive_parent_dir,
-                #                                      content_meta,
-                #                                      files_to_extract=member_matches,
-                                                      # content_type=content_meta.content_type,
-                #                                      extract_to_path=content_meta.path,
-                #                                      content_type_requires_meta=False)
-                log.debug('res:\n%s', pprint.pformat(res))
-                installed.append((content_meta, res))
-            else:
-
-                log.debug('No meta/main, no galaxy file, not ct="all"? XXXXXXXXXXXXXX')
-                installed_from_old_way = self._install_all_old_way(content_tar_file,
-                                                                   archive_parent_dir,
-                                                                   members,
-                                                                   self._install_all_content)
-                installed.extend(installed_from_old_way)
+        # a multi content archive
         else:
-            log.debug('installed=%s', installed)
-            log.debug('failed for content_meta=%s self.content_type=%s', content_meta, self.content_type)
-            raise exceptions.GalaxyClientError('Cant figure out what install method to use')
+
+            if content_meta.content_type == 'all':
+                log.info('Installing %s as a content_type=%s (all)', content_meta.name, content_meta.content_type)
+
+                installed_from_all = self._install_all(content_tar_file, archive_parent_dir)
+                installed.extend(installed_from_all)
+                # write out the install info file for later use
+                # self._write_galaxy_install_info()
+
+            elif not meta_file and not galaxy_file:
+                log.info('Installing %s as a content_type=%s (no meta, no galaxy)',
+                         content_meta.name, content_meta.content_type)
+                # No meta/main.yml found so it's not a legacy role
+                # and no galaxyfile found, so assume it's a new
+                # galaxy content type and attempt to install it by
+                # heuristically walking the directories and install
+                # the appropriate things in the appropriate places
+
+                log.info('no meta/main.yml found and no ansible-galaxy.yml found')
+
+                # FIXME: this is basically a big switch to decide what serializer to use
+                if self.content_type != "all":
+                    # TODO: based on content_name, need to find/build the full path to that in the
+                    #       tar archive so we can extract it.
+                    #       ie, alikins.testing-content.elastic_search.py
+                    #       full path would be:
+                    #         ansible-testing-content-master/library/database/misc/elasticsearch_plugin.py
+                    #       Then we pass that into _write_archive_files as file_name arg
+
+                    log.info('about to extract content_type=%s %s to %s',
+                             content_meta.content_type, content_meta.name, content_meta.path)
+                    res = self._install_for_content_types(content_tar_file,
+                                                          archive_parent_dir,
+                                                          content_archive_type,
+                                                          content_meta,
+                                                          content_types_to_install=[self.content_type])
+                    # tar info for each file, so we can filter on filename match and file type
+                    # tar_file_members = content_tar_file.getmembers()
+
+                    # member_matches = archive.filter_members_by_content_type(content_tar_file,
+                    #                                                        content_archive_type,
+                    #                                                        content_meta)
+
+                    # match_by_content_type() ?
+                    # member_matches = [tar_file_member for tar_file_member in tar_file_members
+                    #                  if tar_info_content_name_match(tar_file_member,
+                    #                                                 "",
+                    #                                                 # self.content_meta.name,
+                    #                                                 content_path=CONTENT_TYPE_DIR_MAP[self.content_meta.content_type])]
+
+                    # res = archive.extract_by_content_type(content_tar_file,
+                    #                                      archive_parent_dir,
+                    #                                      content_meta,
+                    #                                      files_to_extract=member_matches,
+                    #                                      content_type=content_meta.content_type,
+                    #                                      extract_to_path=content_meta.path,
+                    #                                      content_type_requires_meta=False)
+                    log.debug('res:\n%s', pprint.pformat(res))
+                    installed.append((content_meta, res))
+                else:
+
+                    log.debug('No meta/main, no galaxy file, not ct="all"? XXXXXXXXXXXXXX')
+                    log.debug('installed=%s', installed)
+                    log.debug('failed for content_meta=%s self.content_type=%s', content_meta, self.content_type)
+                    raise exceptions.GalaxyClientError('Cant figure out what install method to use')
+
+                    # FIXME
+                    installed_from_old_way = self._install_all_old_way(content_tar_file,
+                                                                       archive_parent_dir,
+                                                                       members,
+                                                                       self._install_all_content)
+                    installed.extend(installed_from_old_way)
+#        else:
+#            log.debug('installed=%s', installed)
+#            log.debug('failed for content_meta=%s self.content_type=%s', content_meta, self.content_type)
+#            raise exceptions.GalaxyClientError('Cant figure out what install method to use')
 
         # return the parsed yaml metadata
         self.display_callback("- %s was installed successfully to %s" % (str(self), self.path))
