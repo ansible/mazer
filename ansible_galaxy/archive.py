@@ -136,8 +136,8 @@ def load_archive_role_metadata(tar_file_obj, meta_file_path):
     try:
         metadata = yaml.safe_load(tar_file_obj.extractfile(meta_file_path))
     except Exception:
-        log.warn('unable to extract and yaml load role meta_file=%s tar_file_obj=%s',
-                 meta_file_path, tar_file_obj)
+        log.debug('unable to extract and yaml load role meta_file=%s tar_file_obj=%s',
+                  meta_file_path, tar_file_obj)
 
     return metadata
 
