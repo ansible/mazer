@@ -115,11 +115,12 @@ class GalaxyContent(object):
         :kw content_type: str, Galaxy Content type
         """
 
+        # what we are installing 'as', or what content subset we want to install
+        self.content_install_type = type
         content_type = type
 
         self._metadata = None
-        # TODO: replace with empty ContentRepository instance?
-        self._galaxy_metadata = {}
+
         self._install_info = None
         self._validate_certs = not galaxy.options.ignore_certs
 
@@ -377,6 +378,23 @@ class GalaxyContent(object):
         installed = [(content_meta, installed_paths)]
         return installed
 
+    def _install_apb_archive(self, content_tar_file, archive_parent_dir, content_meta,
+                             force_overwrite=False):
+        apb_name = content_meta.apb_data.get('name', content_meta.name)
+        log.info('about to extract %s to %s', apb_name, content_meta.path)
+
+        installed_paths = archive.extract_by_content_type(content_tar_file,
+                                                          archive_parent_dir,
+                                                          content_meta,
+                                                          content_archive_type='apb',
+                                                          install_content_type='apb',
+                                                          files_to_extract=content_tar_file.getmembers(),
+                                                          extract_to_path=content_meta.path,
+                                                          force_overwrite=force_overwrite)
+
+        installed = [(content_meta, installed_paths)]
+        return installed
+
     def install(self, content_meta=None, force_overwrite=False):
         installed = []
         archive_role_metadata = None
@@ -433,7 +451,7 @@ class GalaxyContent(object):
         members = content_tar_file.getmembers()
 
         # next find the metadata file
-        (meta_file, meta_parent_dir, galaxy_file) = \
+        (meta_file, meta_parent_dir, galaxy_file, apb_yaml_file) = \
             archive.find_archive_metadata(members)
 
         # log.debug('self.content_type: %s', self.content_type)
@@ -451,8 +469,8 @@ class GalaxyContent(object):
         log.debug("archive_parent_dir: %s", archive_parent_dir)
         log.debug("meta_parent_dir: %s", meta_parent_dir)
 
-        if not meta_file and not galaxy_file and self.content_type == "role":
-            raise exceptions.GalaxyClientError("this role does not appear to have a meta/main.yml file or ansible-galaxy.yml.")
+        # if not meta_file and not galaxy_file and self.content_type == "role":
+        #    raise exceptions.GalaxyClientError("this role does not appear to have a meta/main.yml file or ansible-galaxy.yml.")
 
         # Look for top level role metadata
         archive_role_metadata = \
@@ -462,8 +480,13 @@ class GalaxyContent(object):
         self._metadata = archive.load_archive_role_metadata(content_tar_file,
                                                             meta_file)
 
-        self._galaxy_metadata = archive.load_archive_galaxyfile(content_tar_file,
-                                                                galaxy_file)
+        galaxy_metadata = archive.load_archive_galaxyfile(content_tar_file,
+                                                          galaxy_file)
+
+        apb_data = archive.load_archive_apb_yaml(content_tar_file,
+                                                 apb_yaml_file)
+
+        log.debug('apb_data: %s', pprint.pformat(apb_data))
 
         # looks like we are a role, update the default content_type from all -> role
         if archive_role_metadata:
@@ -478,6 +501,23 @@ class GalaxyContent(object):
 
             # we are dealing with an role archive
             content_archive_type = 'role'
+
+        # TODO: truthiness of galaxy_metadata may be better, since that means it was parsed and non empty
+        if galaxy_file:
+            content_archive_type = 'galaxy'
+
+        if apb_data:
+            log.debug('Find APB metadata in the archive, so installing it as APB content_type')
+
+            data = self.content_meta.data
+            data['apb_data'] = apb_data
+
+            content_meta = content.APBContentArchiveMeta.from_data(data)
+
+            log.debug('APB content_meta: %s', content_meta)
+            content_archive_type = 'apb'
+
+        log.debug('content_archive_type=%s', content_archive_type)
 
         # we strip off any higher-level directories for all of the files contained within
         # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other
@@ -497,25 +537,23 @@ class GalaxyContent(object):
 
         log.info('Installing content of type: %s', content_meta.content_type)
 
-        # TODO: truthiness of _galaxy_metadata may be better, since that means it was parsed and non empty
-        if galaxy_file:
-            content_archive_type = 'galaxy'
-
-        log.debug('content_archive_type=%s', content_archive_type)
+        content_types_to_install = [self.content_install_type]
+        if self.content_install_type == 'all':
+            content_types_to_install = CONTENT_TYPES
 
         # now branch based on archive type
         if content_archive_type == 'galaxy':
             log.info('Installing %s as a content_archive_type=%s content_type=%s (galaxy_file)',
                      content_meta.name, content_archive_type, content_meta.content_type)
             log.debug('galaxy_file=%s', galaxy_file)
-            log.debug('galaxy_metadata=%s', pprint.pformat(self._galaxy_metadata))
+            log.debug('galaxy_metadata=%s', pprint.pformat(galaxy_metadata))
 
             # Parse the ansible-galaxy.yml file and install things
             # as necessary
             installed_from_galaxy_metadata =  \
                 install_from_galaxy_metadata(content_tar_file,
                                              archive_parent_dir,
-                                             self._galaxy_metadata,
+                                             galaxy_metadata,
                                              content_meta,
                                              display_callback=self.display_callback,
                                              force_overwrite=force_overwrite)
@@ -532,31 +570,60 @@ class GalaxyContent(object):
                                                              force_overwrite=force_overwrite)
             installed.extend(installed_from_role)
 
+        elif content_archive_type == 'apb':
+            log.info('Installing %s as a Ansible Playbook Bundle content archive and content_type=%s (apb)', content_meta.name, content_meta.content_type)
+
+            apb_name = content_meta.apb_data.get('name', content_meta.name)
+            log.info('about to extract %s to %s', apb_name, content_meta.path)
+
+            if self.content_install_type in ('all', 'apb'):
+                installed_from_apb = \
+                    self._install_apb_archive(content_tar_file,
+                                              archive_parent_dir,
+                                              content_meta=content_meta,
+                                              force_overwrite=force_overwrite)
+
+                installed.extend(installed_from_apb)
+
+            else:
+                # we are installing bits out of the apb, treat it like a multi-content
+                content_meta.content_dir = None
+                content_meta.content_sub_dir = None
+                content_meta.content_type = 'all'
+
+                installed_paths = \
+                    self._install_for_content_types(content_tar_file,
+                                                    archive_parent_dir,
+                                                    content_archive_type='apb',
+                                                    content_meta=content_meta,
+                                                    # install_content_type='apb',
+                                                    content_types_to_install=content_types_to_install,
+                                                    force_overwrite=force_overwrite)
+
+                installed_from_apb = [(content_meta, installed_paths)]
+
+            installed.extend(installed_from_apb)
         # a multi content archive
         else:
-            if content_meta.content_type == 'all':
-                log.info('Installing %s as a content_type=%s (all)', content_meta.name, content_meta.content_type)
+            # if content_meta.content_type == 'all':
 
-                installed_from_all = self._install_all(content_tar_file, archive_parent_dir,
-                                                       force_overwrite=force_overwrite)
-                installed.extend(installed_from_all)
-            else:
-                log.info('Installing %s as a archive_type=%s content_type=%s ',
-                         content_meta.name, content_archive_type, content_meta.content_type)
+            log.info('Installing %s as a archive_type=%s content_type=%s install_type=%s ',
+                     content_meta.name, content_archive_type, content_meta.content_type,
+                     self.content_install_type)
 
-                log.info('about to extract content_type=%s %s to %s',
-                         content_meta.content_type, content_meta.name, content_meta.path)
+            log.info('about to extract content_type=%s %s to %s',
+                     content_meta.content_type, content_meta.name, content_meta.path)
 
-                res = self._install_for_content_types(content_tar_file,
-                                                      archive_parent_dir,
-                                                      content_archive_type,
-                                                      content_meta,
-                                                      content_types_to_install=[self.content_type],
-                                                      force_overwrite=force_overwrite)
+            res = self._install_for_content_types(content_tar_file,
+                                                  archive_parent_dir,
+                                                  content_archive_type,
+                                                  content_meta,
+                                                  content_types_to_install=content_types_to_install,
+                                                  force_overwrite=force_overwrite)
 
-                log.debug('res:\n%s', pprint.pformat(res))
+            log.debug('res:\n%s', pprint.pformat(res))
 
-                installed.append((content_meta, res))
+            installed.append((content_meta, res))
 
         # return the parsed yaml metadata
         self.display_callback("- %s was installed successfully to %s" % (str(self), self.path))

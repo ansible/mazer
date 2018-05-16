@@ -2,7 +2,7 @@
 
 # install strategy plugins from a plugin only  repo
 #rm -rf ~/.ansible/content
-#ansible-galaxy content-install -t strategy_plugin alikins.content-just-strategy-plugins
+#ansible-galaxy install -t strategy_plugin alikins.content-just-strategy-plugins
 #tree ~/.ansible/content
 #[ -d ~/.ansible/content/strategy_plugins ]
 
@@ -32,7 +32,7 @@ ROLE_NAME="some_role1"
 
 # install 'all' from a multi-content repo
 rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.testing-content
+ansible-galaxy install alikins.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 [ -d "${HOME}/.ansible/content/roles/test-role-b" ]
@@ -43,9 +43,9 @@ tree ~/.ansible/content
 # not yet
 # [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
-# content-install role
+# install role
 rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.awx
+ansible-galaxy install alikins.awx
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 [ -d ~/.ansible/content/roles/alikins.awx ]
@@ -60,7 +60,7 @@ tree ~/.ansible/content
 
 # install modules from a multi-content repo
 rm -rf ~/.ansible/content
-ansible-galaxy content-install -t module alikins.testing-content
+ansible-galaxy install -t module alikins.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/library ]
 # not all the modules, but at least more than one
@@ -72,7 +72,7 @@ done
 
 # install 'all' from a repo with plugins and modules but not roles or meta repo
 rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.content-no-meta
+ansible-galaxy install alikins.content-no-meta
 tree ~/.ansible/content
 [ -d ~/.ansible/content/library ]
 [ -d ~/.ansible/content/callback_plugins ]
@@ -83,7 +83,7 @@ tree ~/.ansible/content
 
 # install strategy plugins from a multi-content repo
 rm -rf ~/.ansible/content
-ansible-galaxy content-install -t strategy_plugin alikins.testing-content
+ansible-galaxy install -t strategy_plugin alikins.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/strategy_plugins ]
 for strat_file in debug.py free.py linear.py ;
@@ -94,7 +94,7 @@ done
 
 # install a single module
 rm -rf ~/.ansible/content
-ansible-galaxy content-install -t module alikins.testing-content.elasticsearch_plugin.py
+ansible-galaxy install -t module alikins.testing-content.elasticsearch_plugin.py
 tree ~/.ansible/content
 [ -d ~/.ansible/content/library/ ]
 [ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
@@ -108,35 +108,45 @@ tree ~/.ansible/content
 
 
 # install a signle module
-# ansible-galaxy content-install -t module atestuseraccount.testing-content.elasticsearch_plugin.py
+# ansible-galaxy install -t module atestuseraccount.testing-content.elasticsearch_plugin.py
 # tree ~/.ansible/content
 # [ -d ~/.ansible/content/library/alikins.testing-content ]
 
 
 
-# content-install modules from a scm url
+# install modules from a scm url
 rm -rf ~/.ansible/content
-ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git
+ansible-galaxy install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git
 tree ~/.ansible/content
 
-# content-install all from a scm url
+# install all from a scm url
 rm -rf ~/.ansible/content
-ansible-galaxy content-install  git+https://github.com/atestuseraccount/ansible-testing-content.git
+ansible-galaxy install  git+https://github.com/atestuseraccount/ansible-testing-content.git
 tree ~/.ansible/content
 
-# content-install all with a version from scm
-rm -rf ~/.ansible/content
-ansible-galaxy content-install git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
+# install from a scm url again without cleaning up (should fail)
+ansible-galaxy install  git+https://github.com/atestuseraccount/ansible-testing-content.git && :
+RC=$?
+echo "rc was $RC (70 is expected)"
+[ $RC -eq 70 ]
+
+# install from a scm url again but with --force without cleaning up (should work)
+ansible-galaxy install --force git+https://github.com/atestuseraccount/ansible-testing-content.git
 tree ~/.ansible/content
 
-# content-install all with a version from scm
+# install all with a version from scm
 rm -rf ~/.ansible/content
-ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
+ansible-galaxy install git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
 tree ~/.ansible/content
 
-# content-install roles from a multi content archive from a scm url
+# install all with a version from scm
 rm -rf ~/.ansible/content
-ansible-galaxy content-install -t role  git+https://github.com/atestuseraccount/ansible-testing-content.git
+ansible-galaxy install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
+tree ~/.ansible/content
+
+# install roles from a multi content archive from a scm url
+rm -rf ~/.ansible/content
+ansible-galaxy install -t role  git+https://github.com/atestuseraccount/ansible-testing-content.git
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 [ -d "${HOME}/.ansible/content/roles/test-role-b" ]
@@ -149,7 +159,7 @@ tree ~/.ansible/content
 
 # install roles from a multi-content archive from galaxy
 rm -rf ~/.ansible/content
-ansible-galaxy content-install -t role alikins.testing-content
+ansible-galaxy install -t role alikins.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 [ -d "${HOME}/.ansible/content/roles/test-role-b" ]
@@ -159,13 +169,27 @@ tree ~/.ansible/content
 [ -f "${HOME}/.ansible/content/roles/test-role-b/vars/main.yml" ]
 [ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
 
+# install an apb archive from galaxy
+rm -rf ~/.ansible/content
+ansible-galaxy install atestuseraccount.mssql-apb
+tree ~/.ansible/content
+[ -d ~/.ansible/content/apbs ]
+# should dir be mssql or mssql-apb? apb.yml name: is mssql-apb
+[ -d ~/.ansible/content/apbs/mssql-apb ]
+
+# install just roles from an apb archive from galaxy
+rm -rf ~/.ansible/content
+ansible-galaxy install -t role atestuseraccount.mssql-apb
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles ]
+[ -d ~/.ansible/content/roles/deprovision-mssql-apb ]
 
 # not testing ansible-galaxy.yml support yet
 exit 0
 
 # install from a repo with a ansible-galaxy.yml
 rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.test-galaxy-content-galaxyfile
+ansible-galaxy install alikins.test-galaxy-content-galaxyfile
 tree ~/.ansible/content
 [ -d ~/.ansible/content/library ]
 [ -f ~/.ansible/content/library/module_c.py ]
@@ -184,43 +208,43 @@ ls -lart ~/.ansible/content/roles/alikins.testing-content
 
 # install 'all' from a multi-content repo
 rm -rf ~/.ansible/content
-ansible-galaxy content-install alikins.testing-content
+ansible-galaxy install alikins.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 
 
-# content-install all modules
-ansible-galaxy content-install -t module atestuseraccount.testing-content
+# install all modules
+ansible-galaxy install -t module atestuseraccount.testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 
 exit 0
 
 # insall a signle module from a scm url
-ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,name=elasticsearch_plugin.py
+ansible-galaxy install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,name=elasticsearch_plugin.py
 
 # install a specific version of all
-ansible-galaxy content-install -t module atestuseraccount.galaxy-test-role,0.0.1
-ansible-galaxy content-install -t module atestuseraccount.galaxy-test-role,version=0.0.1
+ansible-galaxy install -t module atestuseraccount.galaxy-test-role,0.0.1
+ansible-galaxy install -t module atestuseraccount.galaxy-test-role,version=0.0.1
 
-# The following commands use the SCM+URL convention to content-install version 0.0.1 of all modules:
+# The following commands use the SCM+URL convention to install version 0.0.1 of all modules:
 
-ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
-ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,version=0.0.1
+ansible-galaxy install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
+ansible-galaxy install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,version=0.0.1
 
-# content-install specific version of signal
-ansible-galaxy content-install -t module atestuseraccount.galaxy-test-role,0.0.1
-ansible-galaxy content-install -t module atestuseraccount.galaxy-test-role,version=0.0.1
+# install specific version of signal
+ansible-galaxy install -t module atestuseraccount.galaxy-test-role,0.0.1
+ansible-galaxy install -t module atestuseraccount.galaxy-test-role,version=0.0.1
 
-# The following commands use the SCM+URL convention to content-install version 0.0.1 of all modules:
+# The following commands use the SCM+URL convention to install version 0.0.1 of all modules:
 
-ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
-ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,version=0.0.1
+ansible-galaxy install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
+ansible-galaxy install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,version=0.0.1
 
 
 # traditional roles https://github.com/ansible/galaxy-cli/wiki/Traditional-Roles
 
-# The following uses the Galaxy name to content-install the latest version of the role:
+# The following uses the Galaxy name to install the latest version of the role:
 
 ansible-galaxy install alikins.awx
 
@@ -232,12 +256,12 @@ ansible-galaxy install git+https://github.com/geerlingguy/ansible-role-awx.git
 
 # Using the Galaxy name, the version can be passed using the following two methods:
 
-ansible-galaxy content-install alikins.awx,1.0.0
-ansible-galaxy content-install alikins.awx,version=1.0.0
+ansible-galaxy install alikins.awx,1.0.0
+ansible-galaxy install alikins.awx,version=1.0.0
 
 #Using the SCM+URL convention, the version can be passed using the following two methods:
-ansible-galaxy content-install git+https://github.com/geerlingguy/ansible-role-awx.git,1.0.0
-ansible-galaxy content-install git+https://github.com/geerlingguy/ansible-role-awx.git,version=1.0.0
+ansible-galaxy install git+https://github.com/geerlingguy/ansible-role-awx.git,1.0.0
+ansible-galaxy install git+https://github.com/geerlingguy/ansible-role-awx.git,version=1.0.0
 
 
 # Traditional roles From a Multicontent Repository
@@ -253,8 +277,8 @@ ansible-galaxy content-install git+https://github.com/geerlingguy/ansible-role-a
 # Modules are found in the root level library directory of the source repository
 # The repository does not contain an ansible-galaxy.yml metadata file
 
-# content-install the latest version of all roles
-# The following uses the Galaxy name to content-install the latest version of all roles:
+# install the latest version of all roles
+# The following uses the Galaxy name to install the latest version of all roles:
 # Expected Result
 # All roles from the repository are installed.
 
@@ -269,7 +293,7 @@ ansible-galaxy content-install git+https://github.com/geerlingguy/ansible-role-a
 # The ~/.ansible/content/roles/.galaxy_install_info contains an entry for each role, and for each, the version reflects the latest version found in the repository, which at the time of this writing is 1.1.0.
 
 
-ansible-galaxy content-install -t role alikins.testing-content
+ansible-galaxy install -t role alikins.testing-content
 RC=$?
 
 # TODO: start converting to a test script
@@ -277,34 +301,34 @@ ls -lart ~/.ansible/content/roles/alikins.testing-content
 grep role_name ~/.ansible/content/roles/alikins.testing-content/meta/main.yml
 ~/.ansible/content/roles/.galaxy_install_info
 
-# Here we use the SCM+URL convention to content-install the latest version of all roles:
-ansible-galaxy content-install -t role git+https://atestuseraccount/ansible-testing-content.git
+# Here we use the SCM+URL convention to install the latest version of all roles:
+ansible-galaxy install -t role git+https://atestuseraccount/ansible-testing-content.git
 
 
-# content-install the latest version of a single role
+# install the latest version of a single role
 
-# The following uses the Galaxy name to content-install the latest version of a single role:
-ansible-galaxy content-install -t role atestuseraccount.ansible-testing-content.testing-role
+# The following uses the Galaxy name to install the latest version of a single role:
+ansible-galaxy install -t role atestuseraccount.ansible-testing-content.testing-role
 
-# Here we use the SCM+URL convention to content-install the latest version of a single role:
-ansible-galaxy content-install -t role git+https://atestuseraccount/ansible-testing-content.git,name=ansible-test-role-1
+# Here we use the SCM+URL convention to install the latest version of a single role:
+ansible-galaxy install -t role git+https://atestuseraccount/ansible-testing-content.git,name=ansible-test-role-1
 
-# content-install a specific version of all roles
+# install a specific version of all roles
 
 # Using the Galaxy name, the version can be passed using the following two methods:
-ansible-galaxy content-install -t role atestuseraccount.ansible-testing-content,0.0.1
-ansible-galaxy content-install -t role atestuseraccount.ansible-testing-content,version=0.0.1
+ansible-galaxy install -t role atestuseraccount.ansible-testing-content,0.0.1
+ansible-galaxy install -t role atestuseraccount.ansible-testing-content,version=0.0.1
 
 #Using the SCM+URL convention, the version can be passed using the following two methods:
-ansible-galaxy content-install -t role git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
-ansible-galaxy content-install -t role git+https://github.com/atestuseraccount/ansible-testing-content,version=0.0.1
+ansible-galaxy install -t role git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
+ansible-galaxy install -t role git+https://github.com/atestuseraccount/ansible-testing-content,version=0.0.1
 
-# content-install specific version of a single role
+# install specific version of a single role
 
-# The following commands uses the Galaxy name to content-install a specific version of a single role:
-ansible-galaxy content-install -t role atestuseraccount.ansible-testing-content.testing-role,0.0.1
-ansible-galaxy content-install -t role atestuseraccount.ansible-testing-content.testing-role,version=0.0.1
+# The following commands uses the Galaxy name to install a specific version of a single role:
+ansible-galaxy install -t role atestuseraccount.ansible-testing-content.testing-role,0.0.1
+ansible-galaxy install -t role atestuseraccount.ansible-testing-content.testing-role,version=0.0.1
 
-# Here we use the SCM+URL convention to content-install the latest version of a single role:
-ansible-galaxy content-install -t role git+https://atestuseraccount/ansible-testing-content.git,name=ansible-test-role-1,version=0.0.1
+# Here we use the SCM+URL convention to install the latest version of a single role:
+ansible-galaxy install -t role git+https://atestuseraccount/ansible-testing-content.git,name=ansible-test-role-1,version=0.0.1
 

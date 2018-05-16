@@ -18,6 +18,7 @@ CONTENT_PLUGIN_TYPES = (
     'module',
     'module_util',
     'action_plugin',
+    'apb',
     'filter_plugin',
     'connection_plugin',
     'inventory_plugin',
@@ -106,6 +107,17 @@ class RoleContentArchiveMeta(GalaxyContentMeta):
         # data['path'] =
         content_meta = cls.from_data(data)
         return content_meta
+
+
+class APBContentArchiveMeta(GalaxyContentMeta):
+    def __init__(self, *args, **kwargs):
+        apb_data = kwargs.pop('apb_data', {})
+        super(APBContentArchiveMeta, self).__init__(*args, **kwargs)
+
+        self.apb_data = apb_data
+        self.content_type = 'apb'
+        self.content_dir = CONTENT_TYPE_DIR_MAP.get('apb', None)
+        self.content_sub_dir = self.apb_data.get('name', self.name)
 
 
 class GalaxyContent(object):

@@ -39,6 +39,19 @@ def default_display_callback(*args, **kwargs):
 # TODO: better place to define?
 META_MAIN = os.path.join('meta', 'main.yml')
 GALAXY_FILE = 'ansible-galaxy.yml'
+APB_YAML = 'apb.yml'
+
+
+class ContentArchiveMetadataFiles(object):
+    def __init__(self):
+        self.meta_main_yml = None
+        self.meta_main_parent_dir = None
+
+        self.galaxy_file = None
+        self.apb_yaml = None
+
+        # FIXME: doesnt belong here
+        self.archive_parent_dir = None
 
 
 # TODO/FIXME: try to make sense of this and find_archive_parent_dir
@@ -56,7 +69,13 @@ def find_archive_metadata(archive_members):
     meta_parent_dir = None
     archive_parent_dir = None
 
+    apb_yaml_file = None
+
     for member in archive_members:
+        if fnmatch.fnmatch(member.name, '*/%s' % APB_YAML):
+            log.debug('apb.yml member: %s', member)
+            apb_yaml_file = member.name
+
         if META_MAIN in member.name or GALAXY_FILE in member.name:
             # Look for parent of meta/main.yml
             # Due to possibility of sub roles each containing meta/main.yml
@@ -82,10 +101,12 @@ def find_archive_metadata(archive_members):
                     else:
                         meta_file = member
 
+    log.debug('apb_yaml_file: %s', apb_yaml_file)
     # FIXME: return a real type/object for archive metadata
     return (meta_file,
             meta_parent_dir,
-            galaxy_file)
+            galaxy_file,
+            apb_yaml_file)
 
 
 def find_archive_parent_dir(archive_members, content_meta):
@@ -154,6 +175,20 @@ def load_archive_galaxyfile(tar_file_obj, galaxy_file_path):
                  galaxy_file_path, tar_file_obj)
 
     return galaxy_metadata
+
+
+def load_archive_apb_yaml(tar_file_obj, apb_yaml_path):
+    apb_data = None
+    if not apb_yaml_path:
+        return None
+
+    try:
+        apb_data = yaml.safe_load(tar_file_obj.extractfile(apb_yaml_path))
+    except Exception:
+        log.warn('unable to extract and yaml load apb_yaml_path=%s tar_file_obj=%s',
+                 apb_yaml_path, tar_file_obj)
+
+    return apb_data
 
 
 # FIXME: causes issues on py3
