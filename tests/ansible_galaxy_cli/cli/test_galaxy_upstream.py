@@ -40,6 +40,8 @@ import yaml
 import ansible_galaxy_cli
 import ansible_galaxy
 
+from ansible_galaxy import exceptions
+
 from ansible_galaxy_cli.cli.galaxy import GalaxyCLI
 from ansible_galaxy_cli import exceptions as cli_exceptions
 # from ansible.compat.tests import unittest
@@ -187,7 +189,7 @@ class TestGalaxy(unittest.TestCase):
         gc = GalaxyCLI(args=["ansible-galaxy", "install", "--server=None", "fake_role_name"])
         gc.parse()
         # testing that error expected is raised
-        self.assertRaises(cli_exceptions.GalaxyCliError, gc.run)
+        self.assertRaises(exceptions.GalaxyError, gc.run)
         # self.assertTrue(mocked_display.called_once_with("- downloading role 'fake_role_name', owned by "))
 
     def test_exit_without_ignore_with_flag(self):

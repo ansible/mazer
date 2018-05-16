@@ -451,7 +451,7 @@ class GalaxyCLI(cli.CLI):
 
             try:
                 installed = content.install(force_overwrite=force_overwrite)
-            except cli_exceptions.GalaxyCliError as e:
+            except exceptions.GalaxyError as e:
                 log.warning("- %s was NOT installed successfully: %s ", content.name, str(e))
                 self.exit_without_ignore()
                 continue
