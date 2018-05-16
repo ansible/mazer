@@ -124,7 +124,6 @@ class GalaxyContent(object):
         self._validate_certs = not galaxy.options.ignore_certs
 
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
-        log.debug('Validate TLS certificates: %s', self._validate_certs)
 
         self.display_callback = display_callback or self._display_callback
 

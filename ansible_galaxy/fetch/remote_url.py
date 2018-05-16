@@ -14,7 +14,9 @@ class RemoteUrlFetch(base.BaseFetch):
         super(RemoteUrlFetch, self).__init__()
 
         self.remote_url = remote_url
+
         self.validate_certs = validate_certs
+        log.debug('Validate TLS certificates: %s', self.validate_certs)
 
         self.remote_resource = remote_url
 

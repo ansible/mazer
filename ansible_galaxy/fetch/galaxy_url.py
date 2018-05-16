@@ -34,6 +34,8 @@ class GalaxyUrlFetch(base.BaseFetch):
         if validate_certs is None:
             self.validate_certs = True
 
+        log.debug('Validate TLS certificates: %s', self.validate_certs)
+
         self.remote_resource = content_spec
 
     def fetch(self):
