@@ -82,6 +82,7 @@ class GalaxyCLI(cli.CLI):
                                    help='Check the status of the most recent import request for given github_user/github_repo.')
         elif self.action == "info":
             self.parser.set_usage("usage: %prog info [options] role_name[,version]")
+
         elif self.action == "init":
             self.parser.set_usage("usage: %prog init [options] role_name")
             self.parser.add_option('--init-path', dest='init_path', default="./",
@@ -90,6 +91,7 @@ class GalaxyCLI(cli.CLI):
                                    help="Initialize using an alternate role type. Valid types include: 'container', 'apb' and 'network'.")
             self.parser.add_option('--role-skeleton', dest='role_skeleton', default=runtime.GALAXY_ROLE_SKELETON,
                                    help='The path to a role skeleton that the new role should be based upon.')
+
         elif self.action == "install":
             self.parser.set_usage("usage: %prog install [options] [-r FILE | role_name(s)[,version] | scm+role_repo_url[,version] | tar_file(s)]")
             self.parser.add_option('-i', '--ignore-errors', dest='ignore_errors', action='store_true', default=False,
@@ -100,6 +102,7 @@ class GalaxyCLI(cli.CLI):
                                    default=False, help='Use tar instead of the scm archive option when packaging the role')
             self.parser.add_option('-t', '--type', dest='content_type', default="all", help='A type of Galaxy Content to install: role, module, etc')
             # FIXME: rm when tests are updated
+
         elif self.action == "content-install":
             self.parser.set_usage("usage: %prog content-install [options] [-r FILE | role_name(s)[,version] | scm+role_repo_url[,version] | tar_file(s)]")
             self.parser.add_option('-i', '--ignore-errors', dest='ignore_errors', action='store_true', default=False,
@@ -138,6 +141,9 @@ class GalaxyCLI(cli.CLI):
             self.parser.add_option('-p', '--roles-path', dest='roles_path', action="append", default=[],
                                    help='The path to the directory containing your roles. The default is the roles_path configured in your ansible.cfg'
                                         'file (/etc/ansible/roles if not configured)', type='str')
+            self.parser.add_option('-C', '--content-path', dest='content_path', action="append", default=[],
+                                   help='The path to the directory containing your galaxy content. The default is the content_path configured in your'
+                                        'ansible.cfg file (/etc/ansible/content if not configured)', type='str')
         if self.action in ("init", "install", "content-install"):
             self.parser.add_option('-f', '--force', dest='force', action='store_true', default=False, help='Force overwriting an existing role')
 
@@ -159,6 +165,7 @@ class GalaxyCLI(cli.CLI):
 
         # self.galaxy = base.Galaxy(self.options)
         self.galaxy = GalaxyContext(self.options)
+        log.debug('galaxy context: %s', self.galaxy)
 
     def run(self):
 
@@ -384,11 +391,14 @@ class GalaxyCLI(cli.CLI):
         # for use with a legacy role and we want to maintain backwards compat
         if self.options.roles_path:
             self.log.warn('Assuming content is of type "role" since --role-path was used')
-            self.galaxy.content_paths = self.options.roles_path
+            self.galaxy.content_path = self.options.roles_path
             # self.galaxy.options['content_type'] = 'role'
             self.galaxy.options.content_type = 'role'
 
             # FIXME - add more types here, PoC is just role/module
+
+        if self.options.content_path:
+            self.galaxy.content_paths = self.options.content_path
 
         no_deps = self.options.no_deps
         force_overwrite = self.options.force

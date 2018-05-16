@@ -184,6 +184,12 @@ tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 [ -d ~/.ansible/content/roles/deprovision-mssql-apb ]
 
+# install to a diff dir via --content-path from scm
+CONTENT_DIR=$(mktemp -d)
+ansible-galaxy install --content-path "${CONTENT_DIR}" git+https://github.com/atestuseraccount/ansible-testing-content.git
+tree "${CONTENT_DIR}"
+rm -rf "${CONTENT_DIR}"
+
 # not testing ansible-galaxy.yml support yet
 exit 0
 

@@ -131,8 +131,7 @@ class GalaxyContent(object):
         self.options = galaxy.options
         self.galaxy = galaxy
 
-        self.galaxy_content_paths = [os.path.expanduser(p) for p in defaults.DEFAULT_CONTENT_PATH]
-        primary_galaxy_content_path = self.galaxy_content_paths[0]
+        primary_galaxy_content_path = self.galaxy.content_paths[0]
 
         # If the content requires a meta/main.yml file ala roles
         requires_meta_main = False

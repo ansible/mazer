@@ -23,8 +23,9 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-#      default_readme_template
-#      default_meta_template
+import os
+
+from ansible_galaxy.config import defaults
 
 
 class GalaxyContext(object):
@@ -39,10 +40,10 @@ class GalaxyContext(object):
         # cli option handling is responsible for making roles_path a list
         self.roles_paths = roles_path
 
-        # FIXME - this is a hack for now, the ":" is just a special place holder
-        #         marker and should be replaced once the rest of the pathing
-        #         is handled properly from DEFAULT_CONTENT_PATH in ansible.cfg
-        self.content_paths = [":"]
+        default_content_paths = [os.path.expanduser(p) for p in defaults.DEFAULT_CONTENT_PATH]
+        content_paths = getattr(self.options, 'content_path', [])
+
+        self.content_paths = content_paths + default_content_paths
 
         self.roles = {}
 
@@ -55,6 +56,10 @@ class GalaxyContext(object):
         # this_dir, this_filename = os.path.split(__file__)
         # type_path = getattr(self.options, 'role_type', "default")
         # self.DATA_PATH = os.path.join(this_dir, 'data', type_path)
+
+    def __repr__(self):
+        return 'GalaxyContext(roles_path=%s, content_paths=%s, roles=%s, options=%s)' % \
+            (self.roles_paths, self.content_paths, self.roles, self.options)
 
     def add_role(self, role):
         self.roles[role.name] = role
