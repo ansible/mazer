@@ -10,7 +10,7 @@ import yaml
 
 
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP, CONTENT_PLUGIN_TYPES
+from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP, CONTENT_TYPES
 from ansible_galaxy.models import content_repository
 
 log = logging.getLogger(__name__)
@@ -137,7 +137,7 @@ def find_archive_parent_dir(archive_members, content_meta):
                     archive_parent_dir = os.path.dirname(member.name)
                     return archive_parent_dir
 
-    if content_meta.content_type not in CONTENT_PLUGIN_TYPES:
+    if content_meta.content_type not in CONTENT_TYPES:
         log.debug('did not find a content_dir or plugin_dir, so using shortest_dir %s for archive_parent_dir', shortest_dir)
         return shortest_dir
 
