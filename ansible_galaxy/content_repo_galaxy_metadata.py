@@ -55,6 +55,7 @@ def install_from_galaxy_metadata(content_tar_file,
     for content_section in content_sections:
         log.debug('content_section=%s', content_section)
 
+        # TODO: should be default behavior of content type specific ContentMeta subclasses
         # default behaviors for the type of content references by this section
         _content_dir = content.CONTENT_TYPE_DIR_MAP.get(content_section, None)
         _content_type = content_section
@@ -76,7 +77,8 @@ def install_from_galaxy_metadata(content_tar_file,
                                                   scm=content_meta.scm,
                                                   path=content_meta.path,
                                                   content_type=_content_type,
-                                                  content_dir=_content_dir)
+                                                  content_dir=_content_dir,
+                                                  requires_meta_main=False)
 
         res = install_by_galaxy_metadata(content_tar_file,
                                          archive_parent_dir,

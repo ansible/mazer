@@ -134,6 +134,35 @@ rm -rf ~/.ansible/content
 ansible-galaxy content-install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git,0.0.1
 tree ~/.ansible/content
 
+# content-install roles from a multi content archive from a scm url
+rm -rf ~/.ansible/content
+ansible-galaxy content-install -t role  git+https://github.com/atestuseraccount/ansible-testing-content.git
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/meta" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-b/meta/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/vars" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-b/vars/main.yml" ]
+[ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
+
+
+# install roles from a multi-content archive from galaxy
+rm -rf ~/.ansible/content
+ansible-galaxy content-install -t role alikins.testing-content
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/meta" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-b/meta/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/vars" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-b/vars/main.yml" ]
+[ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
+
+
+# not testing ansible-galaxy.yml support yet
+exit 0
+
 # install from a repo with a ansible-galaxy.yml
 rm -rf ~/.ansible/content
 ansible-galaxy content-install alikins.test-galaxy-content-galaxyfile
@@ -144,21 +173,9 @@ tree ~/.ansible/content
 [ -f ~/.ansible/content/library/galaxyfile_playbook_sample_module.py ]
 [ ! -e ~/.ansible/content/README.md ]
 
-# install a role from a multi-content repo
-rm -rf ~/.ansible/content
-ansible-galaxy content-install -t role alikins.testing-content
-tree ~/.ansible/content
-[ -d ~/.ansible/content/roles ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b/meta" ]
-[ -f "${HOME}/.ansible/content/roles/test-role-b/meta/main.yml" ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b/vars" ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b/vars/main.yml" ]
-[ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
 # not yet
 # [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
-exit
 
 # TODO: start converting to a test script
 ls -lart ~/.ansible/content/roles/alikins.testing-content
