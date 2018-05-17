@@ -32,7 +32,7 @@ ROLE_NAME="some_role1"
 
 # install 'all' from a multi-content repo
 rm -rf ~/.ansible/content
-ansible-galaxy install alikins.testing-content
+ansible-galaxy install alikins.ansible-testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 [ -d "${HOME}/.ansible/content/roles/test-role-b" ]
@@ -45,22 +45,22 @@ tree ~/.ansible/content
 
 # install role
 rm -rf ~/.ansible/content
-ansible-galaxy install alikins.awx
+ansible-galaxy install alikins.ansible-role-awx
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
-[ -d ~/.ansible/content/roles/alikins.awx ]
-[ -d ~/.ansible/content/roles/alikins.awx/meta ]
-[ -f ~/.ansible/content/roles/alikins.awx/meta/main.yml ]
-[ -d ~/.ansible/content/roles/alikins.awx/tasks ]
-[ -f ~/.ansible/content/roles/alikins.awx/tasks/main.yml ]
-[ -d ~/.ansible/content/roles/alikins.awx/vars ]
-[ -f ~/.ansible/content/roles/alikins.awx/vars/RedHat.yml ]
+[ -d ~/.ansible/content/roles/alikins.ansible-role-awx ]
+[ -d ~/.ansible/content/roles/alikins.ansible-role-awx/meta ]
+[ -f ~/.ansible/content/roles/alikins.ansible-role-awx/meta/main.yml ]
+[ -d ~/.ansible/content/roles/alikins.ansible-role-awx/tasks ]
+[ -f ~/.ansible/content/roles/alikins.ansible-role-awx/tasks/main.yml ]
+[ -d ~/.ansible/content/roles/alikins.ansible-role-awx/vars ]
+[ -f ~/.ansible/content/roles/alikins.ansible-role-awx/vars/RedHat.yml ]
 
 
 
 # install modules from a multi-content repo
 rm -rf ~/.ansible/content
-ansible-galaxy install -t module alikins.testing-content
+ansible-galaxy install -t module alikins.ansible-testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/library ]
 # not all the modules, but at least more than one
@@ -72,7 +72,7 @@ done
 
 # install 'all' from a repo with plugins and modules but not roles or meta repo
 rm -rf ~/.ansible/content
-ansible-galaxy install alikins.content-no-meta
+ansible-galaxy install alikins.ansible-content-no-meta
 tree ~/.ansible/content
 [ -d ~/.ansible/content/library ]
 [ -d ~/.ansible/content/callback_plugins ]
@@ -83,7 +83,7 @@ tree ~/.ansible/content
 
 # install strategy plugins from a multi-content repo
 rm -rf ~/.ansible/content
-ansible-galaxy install -t strategy_plugin alikins.testing-content
+ansible-galaxy install -t strategy_plugin alikins.ansible-testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/strategy_plugins ]
 for strat_file in debug.py free.py linear.py ;
@@ -94,7 +94,7 @@ done
 
 # install a single module
 rm -rf ~/.ansible/content
-ansible-galaxy install -t module alikins.testing-content.elasticsearch_plugin.py
+ansible-galaxy install -t module testing.ansible-testing-content.elasticsearch_plugin
 tree ~/.ansible/content
 [ -d ~/.ansible/content/library/ ]
 [ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
@@ -149,29 +149,29 @@ rm -rf ~/.ansible/content
 ansible-galaxy install -t role  git+https://github.com/atestuseraccount/ansible-testing-content.git
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b/meta" ]
-[ -f "${HOME}/.ansible/content/roles/test-role-b/meta/main.yml" ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b/vars" ]
-[ -f "${HOME}/.ansible/content/roles/test-role-b/vars/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/atestuseraccount.test-role-b" ]
+[ -d "${HOME}/.ansible/content/roles/atestuseraccount.test-role-b/meta" ]
+[ -f "${HOME}/.ansible/content/roles/atestuseraccount.test-role-b/meta/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/atestuseraccount.test-role-b/vars" ]
+[ -f "${HOME}/.ansible/content/roles/atestuseraccount.test-role-b/vars/main.yml" ]
 [ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
 
 
 # install roles from a multi-content archive from galaxy
 rm -rf ~/.ansible/content
-ansible-galaxy install -t role alikins.testing-content
+ansible-galaxy install -t role testing.ansible-testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b/meta" ]
-[ -f "${HOME}/.ansible/content/roles/test-role-b/meta/main.yml" ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b/vars" ]
-[ -f "${HOME}/.ansible/content/roles/test-role-b/vars/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/alikins.test-role-b" ]
+[ -d "${HOME}/.ansible/content/roles/alikins.test-role-b/meta" ]
+[ -f "${HOME}/.ansible/content/roles/alikins.test-role-b/meta/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/alikins.test-role-b/vars" ]
+[ -f "${HOME}/.ansible/content/roles/alikins.test-role-b/vars/main.yml" ]
 [ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
 
 # install an apb archive from galaxy
 rm -rf ~/.ansible/content
-ansible-galaxy install atestuseraccount.mssql-apb
+ansible-galaxy install alikins.mssql-apb
 tree ~/.ansible/content
 [ -d ~/.ansible/content/apbs ]
 # should dir be mssql or mssql-apb? apb.yml name: is mssql-apb
@@ -179,10 +179,10 @@ tree ~/.ansible/content
 
 # install just roles from an apb archive from galaxy
 rm -rf ~/.ansible/content
-ansible-galaxy install -t role atestuseraccount.mssql-apb
+ansible-galaxy install -t role alikins.mssql-apb
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
-[ -d ~/.ansible/content/roles/deprovision-mssql-apb ]
+[ -d ~/.ansible/content/roles/atestuseraccount.deprovision-mssql-apb ]
 
 # install to a diff dir via --content-path from scm
 CONTENT_DIR=$(mktemp -d)
@@ -252,7 +252,7 @@ ansible-galaxy install -t module git+https://github.com/atestuseraccount/ansible
 
 # The following uses the Galaxy name to install the latest version of the role:
 
-ansible-galaxy install alikins.awx
+ansible-galaxy install alikins.ansible-role-awx
 
 # Here we use the SCM+URL convention to install the latest version:
 ansible-galaxy install git+https://github.com/geerlingguy/ansible-role-awx.git
@@ -262,7 +262,7 @@ ansible-galaxy install git+https://github.com/geerlingguy/ansible-role-awx.git
 
 # Using the Galaxy name, the version can be passed using the following two methods:
 
-ansible-galaxy install alikins.awx,1.0.0
+ansible-galaxy install alikins.ansible-role-awx,1.0.0
 ansible-galaxy install alikins.awx,version=1.0.0
 
 #Using the SCM+URL convention, the version can be passed using the following two methods:
