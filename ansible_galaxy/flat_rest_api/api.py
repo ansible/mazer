@@ -218,7 +218,7 @@ class GalaxyAPI(object):
         namespace = urlquote(namespace)
         name = urlquote(name)
 
-        url = '%s/repositories/?name=%s&provider_namespace__name=%s' % (self.baseurl, name, namespace)
+        url = '%s/repositories/?name=%s&provider_namespace__namespace__name=%s' % (self.baseurl, name, namespace)
         data = self.__call_galaxy(url)
         if len(data["results"]) != 0:
             return data["results"][0]
