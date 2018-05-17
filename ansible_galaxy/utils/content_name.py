@@ -37,7 +37,7 @@ def repo_name_to_content_name(repo_name):
 # TODO: test cases
 # TODO: class/type for a content spec
 def parse_content_name(content_name):
-    "split a full content_name into username, content_name"
+    "split a full content_name into username, repo_name, content_name"
 
     repo_name = None
     try:

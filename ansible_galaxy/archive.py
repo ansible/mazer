@@ -122,7 +122,6 @@ def find_archive_parent_dir(archive_members, content_meta):
         # what to do
         member_dir = os.path.dirname(os.path.dirname(member.name))
         shortest_dir = shortest_dir or member_dir
-        log.debug('shortest_dir: %s', shortest_dir)
 
         if len(member_dir) < len(shortest_dir):
             shortest_dir = member_dir

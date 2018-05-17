@@ -96,7 +96,7 @@ class GalaxyContent(object):
     # FIXME(alikins): Not a fan of vars/args with names like 'type', but leave it for now
     def __init__(self, galaxy, name,
                  src=None, version=None, scm=None, path=None, type="role",
-                 content_meta=None,
+                 content_meta=None, sub_name=None,
                  display_callback=None):
         """
         The GalaxyContent type is meant to supercede the old GalaxyRole type,
@@ -130,6 +130,10 @@ class GalaxyContent(object):
 
         self.options = galaxy.options
         self.galaxy = galaxy
+
+        # FIXME
+        self.sub_name = sub_name
+        log.debug('SUB_NAME: %s', sub_name)
 
         primary_galaxy_content_path = self.galaxy.content_paths[0]
 
@@ -311,6 +315,7 @@ class GalaxyContent(object):
     def _install_for_content_types(self, content_tar_file, archive_parent_dir,
                                    content_archive_type=None, content_meta=None,
                                    content_types_to_install=None,
+                                   content_sub_name=None,
                                    force_overwrite=False):
 
         all_installed_paths = []
@@ -322,6 +327,20 @@ class GalaxyContent(object):
                                                                     content_archive_type,
                                                                     content_type=install_content_type)
 
+            log.debug('mem_match1: %s', member_matches)
+            # filter by path built from sub_dir and sub_name for 'modules/elasticsearch_plugin.py'
+            # match_patterns = ['*/%s/%s*' % (content_meta.content_sub_dir, content_sub_name),
+            #                 '*/%s/*/%s*' % (content_meta.content_sub_dir, content_sub_name)]
+            content_sub_dir = content_meta.content_sub_dir or content.CONTENT_TYPE_DIR_MAP.get(install_content_type, '')
+            log.debug('content_sub_dir: %s', content_sub_dir)
+
+            if content_sub_name:
+                match_pattern = '*/%s/%s*' % (content_sub_dir, content_sub_name)
+                log.debug('MATCH_PATTERNS: %s', match_pattern)
+
+                member_matches = archive.filter_members_by_fnmatch(content_tar_file,
+                                                                   match_pattern)
+                log.debug('mem_match2: %s', member_matches)
             # log.debug('member_matches: %s' % member_matches)
             log.debug('content_meta: %s', content_meta)
             log.info('about to extract %s to %s', content_meta.name, content_meta.path)
@@ -405,6 +424,7 @@ class GalaxyContent(object):
         content_archive_type = 'multi'
 
         content_meta = content_meta or self.content_meta
+
 
         # TODO: some useful exceptions for 'cant find', 'cant read', 'cant write'
         fetch_method = choose_content_fetch_method(scm_url=self.scm, src=self.src)
@@ -613,10 +633,12 @@ class GalaxyContent(object):
             log.info('about to extract content_type=%s %s to %s',
                      content_meta.content_type, content_meta.name, content_meta.path)
 
+            log.debug('content_meta: %s', content_meta)
             res = self._install_for_content_types(content_tar_file,
                                                   archive_parent_dir,
                                                   content_archive_type,
                                                   content_meta,
+                                                  content_sub_name=self.sub_name,
                                                   content_types_to_install=content_types_to_install,
                                                   force_overwrite=force_overwrite)
 

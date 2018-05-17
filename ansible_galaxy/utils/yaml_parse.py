@@ -3,7 +3,7 @@ import logging
 import six
 
 from ansible_galaxy import exceptions
-from ansible_galaxy.utils.content_name import repo_url_to_repo_name
+from ansible_galaxy.utils.content_name import repo_url_to_repo_name, parse_content_name
 from ansible_galaxy.utils.role_spec import role_spec_parse
 from ansible_galaxy.utils.version import normalize_version_string
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
@@ -59,6 +59,7 @@ def parse_content_spec(content_spec_text, valid_keywords=None):
     valid_keywords = valid_keywords or ('src', 'version', 'name', 'scm')
     data = {'src': None,
             'name': None,
+            'sub_name': None,
             'version': None,
             'scm': None}
     split_data = split_content_spec(content_spec_text, valid_keywords)
@@ -72,6 +73,26 @@ def parse_content_spec(content_spec_text, valid_keywords=None):
             (scm_url, scm_src) = data['src'].split('+', 1)
             data['scm'] = scm_url
             data['src'] = scm_src
+
+    # split the name on '.' and recombine the first 1 or 2
+    name_parts = data['name'].split('.')
+    new_name_parts = []
+    new_name_parts.append(name_parts.pop(0))
+
+    # we may not have a second part to the name
+    try:
+        new_name_parts.append(name_parts.pop(0))
+    except IndexError:
+        pass
+
+    # combine the name parts, which may be one or two parts
+    data['name'] = '.'.join(new_name_parts)
+
+    # See if we have a sub_name as the third part of the name
+    try:
+        data['sub_name'] = name_parts.pop()
+    except IndexError:
+        data['sub_name'] = None
 
     data['version'] = normalize_version_string(data['version'])
     # log.debug('parsed content_spec_text="%s" into: %s', content_spec_text, data)
@@ -133,7 +154,7 @@ def yaml_parse(content):
         # FIXME: this fails for objects with no dict attribute, like a list
         content_copy = content.copy()
 
-        data = {'src': None, 'version': None, 'name': None, 'scm': None}
+        data = {'src': None, 'version': None, 'name': None, 'scm': None, 'sub_name': None}
         data.update(content_copy)
         content = data
 
@@ -157,7 +178,8 @@ def yaml_parse(content):
             content['scm'] = None
 
     for key in list(content.keys()):
-        if key not in VALID_ROLE_SPEC_KEYS:
+        # sub_name doesnt mean anything to role spec
+        if key not in VALID_ROLE_SPEC_KEYS and not key == 'sub_name':
             log.debug('removing invalid key: %s', key)
 
             content.pop(key)
