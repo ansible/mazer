@@ -39,6 +39,9 @@ from ansible_galaxy.utils.text import to_native, to_text
 from ansible_galaxy.flat_rest_api.urls import open_url
 
 log = logging.getLogger(__name__)
+http_log = logging.getLogger('%s.(http)' % __name__)
+request_log = logging.getLogger('%s.(http).(request)' % __name__)
+response_log = logging.getLogger('%s.(http).(response)' % __name__)
 
 
 def g_connect(method):
@@ -91,28 +94,43 @@ class GalaxyAPI(object):
         if args and not headers:
             headers = self.__auth_header()
         try:
-            # self.log.info('%s %s', method, url)
-            log.debug('opening url: %s %s args=%s', method, url, args)
-            # self.log.debug('%s %s headers=%s', method, url, headers)
-            resp = open_url(url, data=args, validate_certs=self._validate_certs, headers=headers, method=method,
+            http_log.info('%s %s', method, url)
+            request_log.debug('%s %s args=%s', method, url, args)
+            request_log.debug('%s %s headers=%s', method, url, headers)
+
+            resp = open_url(url, data=args, validate_certs=self._validate_certs,
+                            headers=headers, method=method,
                             timeout=20)
 
-            self.log.debug('%s %s http_status=%s', method, url, resp.getcode())
+            http_log.info('%s %s http_status=%s', method, url, resp.getcode())
 
             final_url = resp.geturl()
             if final_url != url:
-                self.log.debug('%s %s Redirected to: %s', method, url, resp.geturl())
+                http_log.debug('%s %s Redirected to: %s', method, url, resp.geturl())
 
-            # self.log.debug('%s %s info:\n%s', method, url, resp.info())
+            resp_info = resp.info()
+            response_log.debug('%s %s info:\n%s', method, url, resp_info)
 
-            data = json.loads(to_text(resp.read(), errors='surrogate_or_strict'))
+            # FIXME: making the request and loading the response should be sep try/except blocks
+            response_body = to_text(resp.read(), errors='surrogate_or_strict')
 
-            # self.log.debug('%s %s data: \n%s', method, url, json.dumps(data, indent=2))
+            # debug log the raw response body
+            response_log.debug('%s %s response body:\n%s', method, url, response_body)
+
+            data = json.loads(response_body)
+
+            # debug log a json version of the data that was created from the response
+            response_log.debug('%s %s data:\n%s', method, url, json.dumps(data, indent=2))
         except HTTPError as e:
             self.log.debug('Exception on %s %s', method, url)
             self.log.exception(e)
+
+            # FIXME: probably need a try/except here if the response body isnt json which
+            #        can happen if a proxy mangles the response
             res = json.loads(to_text(e.fp.read(), errors='surrogate_or_strict'))
-            log.debug('Exception json data: %s', res)
+
+            http_log.error('%s %s data from server error response:\n%s', method, url, res)
+
             raise exceptions.GalaxyClientError(res['detail'])
         except (ssl.SSLError, socket.error) as e:
             self.log.debug('Connection error to Galaxy API for request "%s %s": %s', method, url, e)
@@ -217,7 +235,6 @@ class GalaxyAPI(object):
         self.log.debug('name=%s', name)
         namespace = urlquote(namespace)
         name = urlquote(name)
-
         url = '%s/repositories/?name=%s&provider_namespace__namespace__name=%s' % (self.baseurl, name, namespace)
         data = self.__call_galaxy(url)
         if len(data["results"]) != 0:

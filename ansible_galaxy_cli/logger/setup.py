@@ -43,6 +43,13 @@ DEFAULT_LOGGING_CONFIG = {
             'class': 'logging.handlers.WatchedFileHandler',
             'filename': os.path.expandvars(os.path.expanduser('~/.ansible/ansible-galaxy-cli.log')),
             'formatter': 'file_verbose',
+        },
+        'http_file': {
+            'level': DEFAULT_LEVEL,
+            'class': 'logging.handlers.WatchedFileHandler',
+            'filename': os.path.expandvars(os.path.expanduser('~/.ansible/ansible-galaxy-cli-http.log')),
+            'formatter': 'file_verbose',
+
         }
     },
 
@@ -56,6 +63,13 @@ DEFAULT_LOGGING_CONFIG = {
         },
         'ansible_galaxy.flat_rest_api.content': {
             'level': 'DEBUG'
+        },
+        'ansible_galaxy.flat_rest_api.api.(http)': {
+            'level': 'INFO',
+            'handlers': DEFAULT_HANDLERS,
+            # to log verbose debug level logging to http_file handler:
+            # 'level': 'DEBUG',
+            # 'handlers': ['http_file'],
         },
         'ansible_galaxy.archive.(extract)': {
             'level': 'INFO',
