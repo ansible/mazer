@@ -10,8 +10,8 @@ DEFAULT_CONSOLE_LEVEL = os.getenv('GALAXY_CLI_LOG_LEVEL', 'WARNING').upper()
 DEFAULT_LEVEL = 'DEBUG'
 
 DEFAULT_DEBUG_FORMAT = '[%(asctime)s,%(msecs)03d %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)d - %(message)s'
-DEFAULT_HANDLERS = ['console', 'file']
-# DEFAULT_HANDLERS = ['file']
+# DEFAULT_HANDLERS = ['console', 'file']
+DEFAULT_HANDLERS = ['file']
 
 DEFAULT_LOGGING_CONFIG = {
     'version': 1,
