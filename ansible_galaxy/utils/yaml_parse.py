@@ -3,7 +3,7 @@ import logging
 import six
 
 from ansible_galaxy import exceptions
-from ansible_galaxy.utils.content_name import repo_url_to_repo_name, parse_content_name
+from ansible_galaxy.utils.content_name import repo_url_to_repo_name
 from ansible_galaxy.utils.role_spec import role_spec_parse
 from ansible_galaxy.utils.version import normalize_version_string
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS

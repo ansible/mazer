@@ -31,7 +31,6 @@ from shutil import rmtree
 import tarfile
 import yaml
 
-from ansible_galaxy.config import defaults
 from ansible_galaxy import exceptions
 from ansible_galaxy import archive
 from ansible_galaxy.content_repo_galaxy_metadata import install_from_galaxy_metadata
@@ -133,7 +132,6 @@ class GalaxyContent(object):
 
         # FIXME
         self.sub_name = sub_name
-        log.debug('SUB_NAME: %s', sub_name)
 
         primary_galaxy_content_path = self.galaxy.content_paths[0]
 
@@ -327,21 +325,18 @@ class GalaxyContent(object):
                                                                     content_archive_type,
                                                                     content_type=install_content_type)
 
-            log.debug('mem_match1: %s', member_matches)
             # filter by path built from sub_dir and sub_name for 'modules/elasticsearch_plugin.py'
-            # match_patterns = ['*/%s/%s*' % (content_meta.content_sub_dir, content_sub_name),
-            #                 '*/%s/*/%s*' % (content_meta.content_sub_dir, content_sub_name)]
             content_sub_dir = content_meta.content_sub_dir or content.CONTENT_TYPE_DIR_MAP.get(install_content_type, '')
-            log.debug('content_sub_dir: %s', content_sub_dir)
 
+            # FIXME: probably should be using a more explicit content name->file name map if we have one, or
+            #        at least figuring all this out before the install step.
+            # if we are installing a single content from the repo, filter out everything else by path name matches
             if content_sub_name:
                 match_pattern = '*/%s/%s*' % (content_sub_dir, content_sub_name)
-                log.debug('MATCH_PATTERNS: %s', match_pattern)
+                # log.debug('MATCH_PATTERNS: %s', match_pattern)
 
                 member_matches = archive.filter_members_by_fnmatch(content_tar_file,
                                                                    match_pattern)
-                log.debug('mem_match2: %s', member_matches)
-            # log.debug('member_matches: %s' % member_matches)
             log.debug('content_meta: %s', content_meta)
             log.info('about to extract %s to %s', content_meta.name, content_meta.path)
 
@@ -424,7 +419,6 @@ class GalaxyContent(object):
         content_archive_type = 'multi'
 
         content_meta = content_meta or self.content_meta
-
 
         # TODO: some useful exceptions for 'cant find', 'cant read', 'cant write'
         fetch_method = choose_content_fetch_method(scm_url=self.scm, src=self.src)
