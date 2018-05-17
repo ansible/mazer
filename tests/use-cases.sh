@@ -24,6 +24,18 @@ ROLE_NAME="some_role1"
 [ -d ~/.ansible/test-roles/${ROLE_NAME}/vars ]
 
 
+# install a single role from a multi-content archive from galaxy
+rm -rf ~/.ansible/content
+ansible-galaxy install -t role testing.ansible-testing-content.test-role-c
+tree ~/.ansible/content
+[ -d ~/.ansible/content/roles ]
+[ -d "${HOME}/.ansible/content/roles/test-role-c" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-c/meta" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-c/meta/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-c/vars" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-c/vars/main.yml" ]
+[ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
+
 # ansible-galaxy list -p ~/.ansible/test-roles
 
 # ansible-galaxy search  --author=alikins
@@ -149,11 +161,11 @@ rm -rf ~/.ansible/content
 ansible-galaxy install -t role  git+https://github.com/atestuseraccount/ansible-testing-content.git
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
-[ -d "${HOME}/.ansible/content/roles/atestuseraccount.test-role-b" ]
-[ -d "${HOME}/.ansible/content/roles/atestuseraccount.test-role-b/meta" ]
-[ -f "${HOME}/.ansible/content/roles/atestuseraccount.test-role-b/meta/main.yml" ]
-[ -d "${HOME}/.ansible/content/roles/atestuseraccount.test-role-b/vars" ]
-[ -f "${HOME}/.ansible/content/roles/atestuseraccount.test-role-b/vars/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/meta" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-b/meta/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/vars" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-b/vars/main.yml" ]
 [ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
 
 
@@ -162,11 +174,11 @@ rm -rf ~/.ansible/content
 ansible-galaxy install -t role testing.ansible-testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
-[ -d "${HOME}/.ansible/content/roles/alikins.test-role-b" ]
-[ -d "${HOME}/.ansible/content/roles/alikins.test-role-b/meta" ]
-[ -f "${HOME}/.ansible/content/roles/alikins.test-role-b/meta/main.yml" ]
-[ -d "${HOME}/.ansible/content/roles/alikins.test-role-b/vars" ]
-[ -f "${HOME}/.ansible/content/roles/alikins.test-role-b/vars/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/meta" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-b/meta/main.yml" ]
+[ -d "${HOME}/.ansible/content/roles/test-role-b/vars" ]
+[ -f "${HOME}/.ansible/content/roles/test-role-b/vars/main.yml" ]
 [ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
 
 # install an apb archive from galaxy
@@ -182,7 +194,7 @@ rm -rf ~/.ansible/content
 ansible-galaxy install -t role alikins.mssql-apb
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
-[ -d ~/.ansible/content/roles/atestuseraccount.deprovision-mssql-apb ]
+[ -d ~/.ansible/content/roles/deprovision-mssql-apb ]
 
 # install to a diff dir via --content-path from scm
 CONTENT_DIR=$(mktemp -d)
@@ -214,13 +226,13 @@ ls -lart ~/.ansible/content/roles/alikins.testing-content
 
 # install 'all' from a multi-content repo
 rm -rf ~/.ansible/content
-ansible-galaxy install alikins.testing-content
+ansible-galaxy install alikins.ansible-testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 
 
 # install all modules
-ansible-galaxy install -t module atestuseraccount.testing-content
+ansible-galaxy install -t module testing.ansible-testing-content
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
 
