@@ -22,3 +22,8 @@ class ParserError(GalaxyError):
 class GalaxyDownloadError(GalaxyError):
     '''Raise when there is an error downloading galaxy content'''
     pass
+
+
+class GalaxyClientAPIConnectionError(GalaxyClientError):
+    '''Raised if there were errors connecting to the Galaxy REST API'''
+    pass

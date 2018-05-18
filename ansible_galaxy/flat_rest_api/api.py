@@ -27,6 +27,8 @@ import json
 import six
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.parse import quote as urlquote, urlencode
+import socket
+import ssl
 
 from ansible_galaxy.flat_rest_api.token import GalaxyToken
 from ansible_galaxy.config import runtime
@@ -83,13 +85,14 @@ class GalaxyAPI(object):
             raise exceptions.GalaxyClientError("No access token. You must first use login to authenticate and obtain an access token.")
         return {'Authorization': 'Token ' + token}
 
+    # TODO: raise an API/net specific exception?
     @g_connect
     def __call_galaxy(self, url, args=None, headers=None, method=None):
         if args and not headers:
             headers = self.__auth_header()
         try:
             # self.log.info('%s %s', method, url)
-            # self.log.debug('%s %s args=%s', method, url, args)
+            log.debug('opening url: %s %s args=%s', method, url, args)
             # self.log.debug('%s %s headers=%s', method, url, headers)
             resp = open_url(url, data=args, validate_certs=self._validate_certs, headers=headers, method=method,
                             timeout=20)
@@ -109,8 +112,13 @@ class GalaxyAPI(object):
             self.log.debug('Exception on %s %s', method, url)
             self.log.exception(e)
             res = json.loads(to_text(e.fp.read(), errors='surrogate_or_strict'))
-            log.debug('res: %s', res)
+            log.debug('Exception json data: %s', res)
             raise exceptions.GalaxyClientError(res['detail'])
+        except (ssl.SSLError, socket.error) as e:
+            self.log.debug('Connection error to Galaxy API for request "%s %s": %s', method, url, e)
+            self.log.exception(e)
+            raise exceptions.GalaxyClientAPIConnectionError('Connection error to Galaxy API for request "%s %s": %s' % (method, url, e))
+
         return data
 
     @property
