@@ -1,6 +1,6 @@
 # galaxy-cli
 
-ansible-galaxy is a tool to manage ansible related content from https://galaxy.ansible.com
+ansible-galaxy-cli is a tool to manage ansible related content from https://galaxy.ansible.com
 
 ## Features
 
@@ -18,19 +18,19 @@ ansible-galaxy is a tool to manage ansible related content from https://galaxy.a
 To install https://galaxy.ansible.com/geerlingguy/nginx/ https://github.com/geerlingguy/ansible-role-nginx via galaxy:
 
 ```
-$ ansible-galaxy install geerlingguy.nginx
+$ ansible-galaxy-cli install geerlingguy.nginx
 ```
 
 To install a specific version via galaxy:
 
 ```
-$ ansible-galaxy install geerlingguy.nginx,2.6.0
+$ ansible-galaxy-cli install geerlingguy.nginx,2.6.0
 ```
 
 To install via github:
 
 ```
-$ ansible-galaxy install git+https://github.com/geerlingguy/ansible-role-nginx
+$ ansible-galaxy-cli install git+https://github.com/geerlingguy/ansible-role-nginx
 ```
 
 ### Installing repos with multiple types of content
@@ -38,7 +38,7 @@ $ ansible-galaxy install git+https://github.com/geerlingguy/ansible-role-nginx
 To install https://github.com/alikins/ansible-testing-content (alikins.testing-content):
 
 ```
-$ ansible-galaxy install alikins.testing-content
+$ ansible-galaxy-cli install alikins.ansible-testing-content
 ```
 
 This will install all of the content in the https://github.com/alikins/ansible-testing-content
@@ -100,7 +100,7 @@ $ tree ~/.ansible/content
 To install just the modules from https://github.com/alikins/ansible-testing-content:
 
 ```
-$ ansible-galaxy install -t modules alikins.testing-content
+$ ansible-galaxy-cli install -t modules alikins.ansible-testing-content
 ```
 
 This will install only the modules from modules/ into ~/.ansible/content/library
@@ -123,25 +123,25 @@ $ tree ~/.ansible/content
 ### Install just the strategy plugins
 
 ``` shell
-# install just the strategy plugins from alikins.testing-content
+# install just the strategy plugins from alikins.ansible-testing-content
 
-rm -rf ~/.ansible/content && ansible-galaxy install -t strategy_plugin alikins.testing-content
+ansible-galaxy-cli install -t strategy_plugin alikins.ansible-testing-content
 tree ~/.ansible/content
 
 # install just the modules
 
-rm -rf ~/.ansible/content && ansible-galaxy install -t module alikins.testing-content
+ansible-galaxy-cli install -t module alikins.ansible-testing-content
 ```
 
 ### Install a role to a different content path
 
 ```
-$ ansible-galaxy install --content-path ~/my-ansible-content geerlingguy.nginx
+$ ansible-galaxy-cli install --content-path ~/my-ansible-content geerlingguy.nginx
 ```
 
 This will install the geerlingguy.nginx role to ~/my-ansible-content/roles/geerlingguy.nginx
 
-## Installation of the ansible-galaxy tool
+## Installation of the ansible-galaxy-cli tool
 
 ### From source
 
