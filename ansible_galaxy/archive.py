@@ -319,12 +319,12 @@ def extract_by_content_type(tar_file_obj,
     overwritten_paths = []
 
     # details of archive extraction, pretty verbose even for debug
-    elog = logging.getLogger('%s.extract' % __name__)
+    elog = logging.getLogger('%s.(extract)' % __name__)
 
     # now we do the actual extraction to the path
-    log.debug('tar_file=%s, parent_dir=%s, file_name=%s', tar_file_obj, parent_dir, file_name)
-    log.debug('extract_to_path=%s', extract_to_path)
-    log.debug('content_meta=%s', content_meta)
+    elog.debug('tar_file=%s, parent_dir=%s, file_name=%s', tar_file_obj, parent_dir, file_name)
+    elog.debug('extract_to_path=%s', extract_to_path)
+    elog.debug('content_meta=%s', content_meta)
 
     display_callback = display_callback or default_display_callback
     files_to_extract = files_to_extract or []
@@ -475,10 +475,10 @@ def extract_by_content_type(tar_file_obj,
             log.warn('%s requires a meta/main.yml but we didnt find one', content_meta.name)
             # raise exceptions.GalaxyClientError("Required subdirectory not found in Galaxy Content archive for %s" % content_meta.name)
 
-    log.debug('Installed paths: %s', installed_paths)
+    elog.debug('Installed paths: %s', installed_paths)
 
     if overwritten_paths:
-        log.debug('Some content that already existed was overwritten because force_overwrite=%s: %s',
+        elog.debug('Some content that already existed was overwritten because force_overwrite=%s: %s',
                   force_overwrite, sorted(overwritten_paths))
 
     return installed_paths

@@ -57,7 +57,7 @@ DEFAULT_LOGGING_CONFIG = {
         'ansible_galaxy.flat_rest_api.content': {
             'level': 'DEBUG'
         },
-        'ansible_galaxy.archive.extract': {
+        'ansible_galaxy.archive.(extract)': {
             'level': 'INFO',
         },
         'ansible_galaxy_cli': {
