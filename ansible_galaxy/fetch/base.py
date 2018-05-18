@@ -9,7 +9,7 @@ class BaseFetch(object):
 
     def __init__(self):
         self.local_path = None
-        self.cleanup_tmp_files = False
+        self.cleanup_tmp_files = True
 
         # remote_resource is whatever was fetched, ie a url or galaxy content spec
         # just an identifier to use in messages
