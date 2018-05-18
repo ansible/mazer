@@ -179,13 +179,17 @@ class GalaxyCLI(cli.CLI):
 
         self.execute()
 
-    def exit_without_ignore(self, rc=1):
+    def exit_without_ignore(self, msg=None, rc=1):
         """
         Exits with the specified return code unless the
         option --ignore-errors was specified
         """
+        ignore_error_blurb = '- you can use --ignore-errors to skip failed roles and finish processing the list.'
         if not self.options.ignore_errors:
-            raise cli_exceptions.GalaxyCliError('- you can use --ignore-errors to skip failed roles and finish processing the list.')
+            message = ignore_error_blurb
+            if msg:
+                message = '%s:\n%s' % (msg, ignore_error_blurb)
+            raise cli_exceptions.GalaxyCliError(message)
 
     def _display_content_info(self, content_info):
         log.debug('content_info: %s', content_info)
@@ -453,7 +457,7 @@ class GalaxyCLI(cli.CLI):
                 installed = content.install(force_overwrite=force_overwrite)
             except exceptions.GalaxyError as e:
                 log.warning("- %s was NOT installed successfully: %s ", content.name, str(e))
-                self.exit_without_ignore()
+                self.exit_without_ignore(e)
                 continue
 
             if not installed:
