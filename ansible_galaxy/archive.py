@@ -479,6 +479,6 @@ def extract_by_content_type(tar_file_obj,
 
     if overwritten_paths:
         elog.debug('Some content that already existed was overwritten because force_overwrite=%s: %s',
-                  force_overwrite, sorted(overwritten_paths))
+                   force_overwrite, sorted(overwritten_paths))
 
     return installed_paths
