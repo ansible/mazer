@@ -27,21 +27,16 @@ DEFAULTS = [
 
     # In order of priority
     ('content_roots', [
-        {'name': 'default',
-         'content_path': '~/.ansible/content',
-         },
-        {'name': 'system',
-         'content_path': '/usr/share/ansible/content',
-         },
+        '~/.ansible/content',
+        '/usr/share/ansible/content',
     ]),
 
     # runtime options
     ('options', {
-        'verbosity': 0,
-        'local_tmp': '~/.ansible/tmp',
         'role_skeleton_path': None,
         'role_skeleton_ignore': ["^.git$", "^.*/.git_keep$"],
     }),
+    ('version', 1),
 ]
 
 _default_conf_data = collections.OrderedDict(DEFAULTS)

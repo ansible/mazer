@@ -127,13 +127,14 @@ class GalaxyContent(object):
 
         self.display_callback = display_callback or self._display_callback
 
-        self.options = galaxy.options
+        # self.options = galaxy.options
         self.galaxy = galaxy
 
         # FIXME
         self.sub_name = sub_name
 
-        primary_galaxy_content_path = self.galaxy.content_paths[0]
+        # self.galaxy.content_roots['default']['content_path']
+        primary_galaxy_content_path = self.galaxy.content_path
 
         # If the content requires a meta/main.yml file ala roles
         requires_meta_main = False

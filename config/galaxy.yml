@@ -5,10 +5,8 @@ servers:
     url: https://galaxy-qa.ansible.com
     # url: http://localhost:8000
 content_roots:
-  - content_path: ~/.ansible/content
-    name: default
-  - content_path: /usr/share/ansible/content
-    name: system
+  - ~/.ansible/content
+  - /usr/share/ansible/content
 options:
   local_tmp: ~/.ansible/tmp
   role_skeleton_ignore:
@@ -16,3 +14,4 @@ options:
     - ^.*/.git_keep$
   role_skeleton_path: null
   verbosity: 0
+version: 1

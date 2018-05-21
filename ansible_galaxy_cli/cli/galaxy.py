@@ -68,7 +68,6 @@ class GalaxyCLI(cli.CLI):
         self.galaxy = None
         super(GalaxyCLI, self).__init__(args)
 
-
     def set_action(self):
 
         super(GalaxyCLI, self).set_action()
@@ -93,7 +92,9 @@ class GalaxyCLI(cli.CLI):
                                    help='The path in which the skeleton role will be created. The default is the current working directory.')
             self.parser.add_option('--type', dest='role_type', action='store', default='default',
                                    help="Initialize using an alternate role type. Valid types include: 'container', 'apb' and 'network'.")
-            self.parser.add_option('--role-skeleton', dest='role_skeleton', default=self.config['options']['role_skeleton_path'],
+            # self.parser.add_option('--role-skeleton', dest='role_skeleton', default=self.config['options']['role_skeleton_path'],
+            #                       help='The path to a role skeleton that the new role should be based upon.')
+            self.parser.add_option('--role-skeleton', dest='role_skeleton', default=None,
                                    help='The path to a role skeleton that the new role should be based upon.')
 
         elif self.action == "install":
@@ -176,19 +177,17 @@ class GalaxyCLI(cli.CLI):
 
         self.config = config_load()
 
-        log.debug('type(new_confi): %s', type(self.config))
         log.debug(self.config)
         import json
         log.debug(json.dumps(self.config, indent=4))
 
         # cli --server value or the url field of the first server in config
         # TODO: pass list of server config objects to GalaxyContext and/or create a GalaxyContext later
-        server_url = self.options.server_url or self.config['servers'][0]['url']
-        ignore_certs = self.options.ignore_certs or self.config['servers'][0]['ignore_certs']
+        # server_url = self.options.server_url or self.config['servers'][0]['url']
+        # ignore_certs = self.options.ignore_certs or self.config['servers'][0]['ignore_certs']
 
-        self.galaxy = GalaxyContext(self.options,
-                                    server_url=server_url,
-                                    ignore_certs=ignore_certs)
+        self.galaxy = GalaxyContext.from_config_and_options(self.config,
+                                                            self.options)
         log.debug('galaxy context: %s', self.galaxy)
 
         self.api = GalaxyAPI(self.galaxy)
@@ -395,6 +394,8 @@ class GalaxyCLI(cli.CLI):
         can be a name (which will be downloaded via the galaxy API and github), or it can be a local .tar.gz file.
         """
 
+        install_content_type = self.options.content_type
+
         # FIXME - still not sure where to put this or how best to handle it,
         #         but for now just detect when it's not provided and offer up
         #         default paths
@@ -410,20 +411,26 @@ class GalaxyCLI(cli.CLI):
                 (self.options.content_type, ", ".join(CONTENT_TYPES))
             )
 
-        self.log.debug('galaxy.options: %s', self.galaxy.options)
+        self.log.debug('self.options: %s', self.options)
+
+        # TODO: mv to GalaxyContext constructor
         # If someone provides a --roles-path at the command line, we assume this is
         # for use with a legacy role and we want to maintain backwards compat
         if self.options.roles_path:
             self.log.warn('Assuming content is of type "role" since --role-path was used')
-            self.galaxy.content_path = self.options.roles_path
+            # self.galaxy.content_path = self.options.roles_path
             # self.galaxy.options['content_type'] = 'role'
-            self.galaxy.options.content_type = 'role'
+            # self.galaxy.options.content_type = 'role'
+            install_content_type = 'role'
 
             # FIXME - add more types here, PoC is just role/module
 
-        if self.options.content_path:
-            self.galaxy.content_paths = self.options.content_path
+        #if self.options.content_path:
+        #    self.galaxy.content_paths = self.options.content_path
 
+        galaxy_context = GalaxyContext.from_config_and_options(self.config, self.options)
+
+        # TODO: are these per-contentroot options?
         no_deps = self.options.no_deps
         force_overwrite = self.options.force
 
@@ -431,13 +438,20 @@ class GalaxyCLI(cli.CLI):
 
         # FIXME - Need to handle role files here for backwards compat
 
+        # TODO: this should be adding the content/self.args/content_left to
+        #       a list of needed deps
+
         # roles were specified directly, so we'll just go out grab them
         # (and their dependencies, unless the user doesn't want us to).
         for content in self.args:
             galaxy_content = yaml_parse(content.strip())
-            galaxy_content["type"] = self.options.content_type
+
+            # FIXME: this is a InstallOption
+            galaxy_content["type"] = install_content_type
+
             self.log.info('content install galaxy_content: %s', galaxy_content)
-            content_left.append(GalaxyContent(self.galaxy, **galaxy_content))
+
+            content_left.append(GalaxyContent(galaxy_context, **galaxy_content))
 
         for content in content_left:
             # only process roles in roles files when names matches if given
@@ -453,7 +467,7 @@ class GalaxyCLI(cli.CLI):
             #    display.vvv('Skipping role %s' % role.name)
             #    continue
 
-            log.debug('Processing %s %s ', content.content_type, content.name)
+            log.debug('Processing %s as %s', content.name, content.content_type)
 
             # FIXME - Unsure if we want to handle the install info for all galaxy
             #         content. Skipping for non-role types for now.
@@ -490,6 +504,8 @@ class GalaxyCLI(cli.CLI):
 
             # oh dear god, a dep solver...
 
+            # FIXME: should install all of init 'deps', then build a list of new deps, and repeat
+
             # install dependencies, if we want them
             # FIXME - Galaxy Content Types handle dependencies in the GalaxyContent type itself because
             #         a content repo can contain many types and many of any single type and it's just
@@ -504,7 +520,7 @@ class GalaxyCLI(cli.CLI):
                         for dep in role_dependencies:
                             log.debug('Installing dep %s', dep)
                             dep_info = yaml_parse(dep)
-                            dep_role = GalaxyContent(self.galaxy, **dep_info)
+                            dep_role = GalaxyContent(galaxy_context, **dep_info)
                             if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
                                 # we know we can skip this, as it's not going to
                                 # be found on galaxy.ansible.com

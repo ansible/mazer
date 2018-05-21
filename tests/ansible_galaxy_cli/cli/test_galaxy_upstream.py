@@ -206,7 +206,7 @@ class TestGalaxy(unittest.TestCase):
 
             # checking that the common results of parse() for all possible actions have been created/called
             self.assertIsInstance(galaxycli_obj.parser, ansible_galaxy_cli.cli.SortedOptParser)
-            self.assertIsInstance(galaxycli_obj.galaxy, ansible_galaxy.models.context.GalaxyContext)
+            # self.assertIsInstance(galaxycli_obj.galaxy, ansible_galaxy.models.context.GalaxyContext)
             formatted_call = {
                 'import': 'usage: %prog import [options] github_user github_repo',
                 'delete': 'usage: %prog delete [options] github_user github_repo',
