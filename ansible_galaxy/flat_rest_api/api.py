@@ -69,18 +69,15 @@ class GalaxyAPI(object):
     def __init__(self, galaxy):
         self.galaxy = galaxy
         self.token = GalaxyToken()
-        self._api_server = runtime.GALAXY_SERVER
-        self._validate_certs = not galaxy.options.ignore_certs
+        self._validate_certs = not galaxy.ignore_certs
         self.baseurl = None
         self.version = None
         self.initialized = False
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
-        self.log.debug('Validate TLS certificates: %s', self._validate_certs)
-
         # set the API server
-        if galaxy.options.api_server != runtime.GALAXY_SERVER:
-            self._api_server = galaxy.options.api_server
+        self._api_server = galaxy.server_url
+        self.log.debug('Validate TLS certificates for %s: %s', self._api_server, self._validate_certs)
 
     def __auth_header(self):
         token = self.token.get()

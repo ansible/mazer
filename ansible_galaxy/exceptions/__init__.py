@@ -27,3 +27,8 @@ class GalaxyDownloadError(GalaxyError):
 class GalaxyClientAPIConnectionError(GalaxyClientError):
     '''Raised if there were errors connecting to the Galaxy REST API'''
     pass
+
+
+class GalaxyConfigError(GalaxyClientError):
+    '''Raised if there is an error parsing the configuration files'''
+    pass

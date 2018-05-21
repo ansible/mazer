@@ -1,5 +1,8 @@
 six
 PyYaml
 
+# for loading yaml into ordered dicts
+yamlloader
+
 # TODO: we can likely eliminate this
 jinja2

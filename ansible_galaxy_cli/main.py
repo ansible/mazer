@@ -19,7 +19,9 @@ def main(args=None):
     # logging_tree.printout()
 
     log.debug('args: %s', args)
+
     cli = galaxy.GalaxyCLI(args)
+
     try:
         cli.parse()
     except cli_exceptions.CliOptionsError as e:
@@ -27,8 +29,15 @@ def main(args=None):
         log.error(e)
         return os.EX_USAGE
 
+    # TODO: some level of exception mapper to set exit code based on exception
     try:
         exit_code = cli.run()
+    except exceptions.GalaxyConfigError as e:
+        log.exception(e)
+        log.error(e)
+        print('Error loading configuration:')
+        print(e)
+        return os.EX_CONFIG
     except exceptions.GalaxyError as e:
         log.exception(e)
         print(e)

@@ -35,6 +35,8 @@ from jinja2 import Environment, FileSystemLoader
 from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
 from ansible_galaxy.config import runtime
+from ansible_galaxy.config.data import config_load, config_save
+# from ansible_galaxy.config.file import config_load, config_save
 from ansible_galaxy import exceptions
 from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy.models.context import GalaxyContext
@@ -66,6 +68,7 @@ class GalaxyCLI(cli.CLI):
         self.galaxy = None
         super(GalaxyCLI, self).__init__(args)
 
+
     def set_action(self):
 
         super(GalaxyCLI, self).set_action()
@@ -90,7 +93,7 @@ class GalaxyCLI(cli.CLI):
                                    help='The path in which the skeleton role will be created. The default is the current working directory.')
             self.parser.add_option('--type', dest='role_type', action='store', default='default',
                                    help="Initialize using an alternate role type. Valid types include: 'container', 'apb' and 'network'.")
-            self.parser.add_option('--role-skeleton', dest='role_skeleton', default=runtime.GALAXY_ROLE_SKELETON,
+            self.parser.add_option('--role-skeleton', dest='role_skeleton', default=self.config['options']['role_skeleton_path'],
                                    help='The path to a role skeleton that the new role should be based upon.')
 
         elif self.action == "install":
@@ -159,20 +162,34 @@ class GalaxyCLI(cli.CLI):
         )
 
         # common
-        self.parser.add_option('-s', '--server', dest='api_server', default=runtime.GALAXY_SERVER, help='The API server destination')
-        self.parser.add_option('-c', '--ignore-certs', action='store_true', dest='ignore_certs', default=runtime.GALAXY_IGNORE_CERTS,
+        self.parser.add_option('-s', '--server', dest='server_url', default=None, help='The API server destination')
+
+        self.parser.add_option('-c', '--ignore-certs', action='store_true', dest='ignore_certs', default=None,
                                help='Ignore SSL certificate validation errors.')
         self.set_action()
 
         super(GalaxyCLI, self).parse()
 
-        # self.galaxy = base.Galaxy(self.options)
-        self.galaxy = GalaxyContext(self.options)
-        log.debug('galaxy context: %s', self.galaxy)
-
     def run(self):
 
         super(GalaxyCLI, self).run()
+
+        self.config = config_load()
+
+        log.debug('type(new_confi): %s', type(self.config))
+        log.debug(self.config)
+        import json
+        log.debug(json.dumps(self.config, indent=4))
+
+        # cli --server value or the url field of the first server in config
+        # TODO: pass list of server config objects to GalaxyContext and/or create a GalaxyContext later
+        server_url = self.options.server_url or self.config['servers'][0]['url']
+        ignore_certs = self.options.ignore_certs or self.config['servers'][0]['ignore_certs']
+
+        self.galaxy = GalaxyContext(self.options,
+                                    server_url=server_url,
+                                    ignore_certs=ignore_certs)
+        log.debug('galaxy context: %s', self.galaxy)
 
         self.api = GalaxyAPI(self.galaxy)
 

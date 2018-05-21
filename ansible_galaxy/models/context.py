@@ -31,7 +31,7 @@ from ansible_galaxy.config import defaults
 class GalaxyContext(object):
     ''' Keeps global galaxy info '''
 
-    def __init__(self, options):
+    def __init__(self, options, server_url=None, ignore_certs=False):
 
         self.options = options
         # self.options.roles_path needs to be a list and will be by default
@@ -50,6 +50,9 @@ class GalaxyContext(object):
         # FIXME self.content will eventually replace self.roles when we're ready
         # to deprecate
         self.content = {}
+
+        self.server_url = server_url
+        self.ignore_certs = ignore_certs
 
         # load data path for resource usage
         # FIXME/TODO(akl): Need better way to find this other than __file__

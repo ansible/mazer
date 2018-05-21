@@ -121,7 +121,7 @@ class GalaxyContent(object):
         self._metadata = None
 
         self._install_info = None
-        self._validate_certs = not galaxy.options.ignore_certs
+        self._validate_certs = not galaxy.ignore_certs
 
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
