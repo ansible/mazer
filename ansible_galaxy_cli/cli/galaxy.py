@@ -22,6 +22,7 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import json
 import logging
 import os
 import re
@@ -34,9 +35,9 @@ from jinja2 import Environment, FileSystemLoader
 
 from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
+from ansible_galaxy.config import defaults
 from ansible_galaxy.config import runtime
-from ansible_galaxy.config.data import config_load, config_save
-# from ansible_galaxy.config.file import config_load, config_save
+from ansible_galaxy.config import config
 from ansible_galaxy import exceptions
 from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy.models.context import GalaxyContext
@@ -65,7 +66,6 @@ class GalaxyCLI(cli.CLI):
 
     def __init__(self, args):
         self.api = None
-        self.galaxy = None
         super(GalaxyCLI, self).__init__(args)
 
     def set_action(self):
@@ -148,7 +148,7 @@ class GalaxyCLI(cli.CLI):
             self.parser.add_option('-p', '--roles-path', dest='roles_path', action="append", default=[],
                                    help='The path to the directory containing your roles. The default is the roles_path configured in your ansible.cfg'
                                         'file (/etc/ansible/roles if not configured)', type='str')
-            self.parser.add_option('-C', '--content-path', dest='content_path', action="append", default=[],
+            self.parser.add_option('-C', '--content-path', dest='content_path',
                                    help='The path to the directory containing your galaxy content. The default is the content_path configured in your'
                                         'ansible.cfg file (/etc/ansible/content if not configured)', type='str')
         if self.action in ("init", "install", "content-install"):
@@ -171,26 +171,53 @@ class GalaxyCLI(cli.CLI):
 
         super(GalaxyCLI, self).parse()
 
+    def _get_galaxy_context(self, options, config):
+        # use content_path from options if availble but fallback to configured content_path
+        options_content_path = None
+        if hasattr(options, 'content_path'):
+            options_content_path = options.content_path
+
+        raw_content_path = options_content_path or config.content_path
+
+        content_path = os.path.expanduser(raw_content_path)
+
+        # server is a dict like:
+        # {'url': 'http://localhost',
+        #  'ignore_certs': False}
+        server = config.server.copy()
+
+        if getattr(options, 'server_url', None):
+            server['url'] = options.server_url
+
+        if getattr(options, 'ignore_certs', None):
+            # use ignore certs from options if available, but fallback to configured ignore_certs
+            server['ignore_certs'] = options.ignore_certs
+
+        galaxy_context = GalaxyContext(server=server, content_path=content_path)
+
+        return galaxy_context
+
     def run(self):
+
+        raw_config_file_path = os.environ.get('ANSIBLE_GALAXY_CONFIG', defaults.CONFIG_FILE)
+        self.config_file_path = os.path.expanduser(raw_config_file_path)
 
         super(GalaxyCLI, self).run()
 
-        self.config = config_load()
+        self.config = config.load(self.config_file_path)
 
-        log.debug(self.config)
-        import json
-        log.debug(json.dumps(self.config, indent=4))
+        log.debug(json.dumps(self.config.as_dict(), indent=4))
 
         # cli --server value or the url field of the first server in config
         # TODO: pass list of server config objects to GalaxyContext and/or create a GalaxyContext later
         # server_url = self.options.server_url or self.config['servers'][0]['url']
         # ignore_certs = self.options.ignore_certs or self.config['servers'][0]['ignore_certs']
 
-        self.galaxy = GalaxyContext.from_config_and_options(self.config,
-                                                            self.options)
-        log.debug('galaxy context: %s', self.galaxy)
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
 
-        self.api = GalaxyAPI(self.galaxy)
+        log.debug('galaxy context: %s', galaxy_context)
+
+        self.api = GalaxyAPI(galaxy_context)
 
         log.debug('execute action: %s', self.action)
         log.debug('execute action with options: %s', self.options)
@@ -285,7 +312,7 @@ class GalaxyCLI(cli.CLI):
             os.makedirs(role_path)
 
         if role_skeleton_path is not None:
-            skeleton_ignore_expressions = runtime.GALAXY_ROLE_SKELETON_IGNORE
+            skeleton_ignore_expressions = self.config.options['role_skeleton_ignore']
         else:
             this_dir, this_filename = os.path.split(__file__)
 
@@ -343,6 +370,8 @@ class GalaxyCLI(cli.CLI):
 
         log.debug('args=%s', self.args)
 
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
+
         for content_spec in self.args:
 
             content_username, repo_name, content_name = parse_content_name(content_spec)
@@ -356,7 +385,7 @@ class GalaxyCLI(cli.CLI):
             log.debug('repo_name2=%s', repo_name)
 
             content_info = {'path': content_path}
-            gr = GalaxyContent(self.galaxy, content_spec)
+            gr = GalaxyContent(galaxy_context, content_spec)
 
             install_info = gr.install_info
             if install_info:
@@ -418,17 +447,11 @@ class GalaxyCLI(cli.CLI):
         # for use with a legacy role and we want to maintain backwards compat
         if self.options.roles_path:
             self.log.warn('Assuming content is of type "role" since --role-path was used')
-            # self.galaxy.content_path = self.options.roles_path
-            # self.galaxy.options['content_type'] = 'role'
-            # self.galaxy.options.content_type = 'role'
             install_content_type = 'role'
 
             # FIXME - add more types here, PoC is just role/module
 
-        #if self.options.content_path:
-        #    self.galaxy.content_paths = self.options.content_path
-
-        galaxy_context = GalaxyContext.from_config_and_options(self.config, self.options)
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
 
         # TODO: are these per-contentroot options?
         no_deps = self.options.no_deps
@@ -681,14 +704,17 @@ class GalaxyCLI(cli.CLI):
         if len(self.args) == 0:
             raise cli_exceptions.CliOptionsError('- you must specify at least one role to remove.')
 
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
+
         for role_name in self.args:
-            role = GalaxyContent(self.galaxy, role_name)
+            role = GalaxyContent(galaxy_context, role_name)
             try:
                 if role.remove():
                     self.display('- successfully removed %s' % role_name)
                 else:
                     self.display('- %s is not installed, skipping.' % role_name)
             except Exception as e:
+                log.exception(e)
                 raise cli_exceptions.GalaxyCliError("Failed to remove role %s: %s" % (role_name, str(e)))
 
         return 0
@@ -701,10 +727,12 @@ class GalaxyCLI(cli.CLI):
         if len(self.args) > 1:
             raise cli_exceptions.CliOptionsError("- please specify only one role to list, or specify no roles to see a full list")
 
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
+
         if len(self.args) == 1:
             # show only the request role, if it exists
             name = self.args.pop()
-            gr = GalaxyContent(self.galaxy, name)
+            gr = GalaxyContent(galaxy_context, name)
             if gr.metadata:
                 install_info = gr.install_info
                 version = None
@@ -729,7 +757,7 @@ class GalaxyCLI(cli.CLI):
                 for path_file in path_files:
                     role_full_path = os.path.join(role_path, path_file)
                     log.debug('role_full_path: %s', role_full_path)
-                    gr = GalaxyContent(self.galaxy, path_file, path=role_full_path)
+                    gr = GalaxyContent(galaxy_context, path_file, path=role_full_path)
                     log.debug('gr: %s', gr)
                     log.debug('gr.metadata: %s', gr.metadata)
                     if gr.metadata:
@@ -790,16 +818,19 @@ class GalaxyCLI(cli.CLI):
         self.display(data)
         return True
 
+    # TODO: remove
     def execute_login(self):
         """
         verify user's identify via Github and retrieve an auth token from Ansible Galaxy.
         """
+
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
         # Authenticate with github and retrieve a token
         if self.options.token is None:
-            if runtime.GALAXY_TOKEN:
-                github_token = runtime.GALAXY_TOKEN
+            if galaxy_context.server['token']:
+                github_token = galaxy_context.server['token']
             else:
-                login = GalaxyLogin(self.galaxy)
+                login = GalaxyLogin(galaxy_context)
                 github_token = login.create_github_token()
         else:
             github_token = self.options.token
@@ -936,8 +967,8 @@ class GalaxyCLI(cli.CLI):
         self.display('Ansible Galaxy CLI, version', galaxy_cli_version)
         self.display(', '.join(os.uname()))
         self.display(sys.version, sys.executable)
-        if runtime.CONFIG_FILE:
-            self.display(u"Using %s as config file", to_text(runtime.CONFIG_FILE))
+        if self.config_file_path:
+            self.display(u"Using %s as config file", to_text(self.config_file_path))
         else:
             self.display(u"No config file found; using defaults")
         return True

@@ -121,7 +121,6 @@ class GalaxyContent(object):
         self._metadata = None
 
         self._install_info = None
-        self._validate_certs = not galaxy.ignore_certs
 
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
@@ -129,6 +128,11 @@ class GalaxyContent(object):
 
         # self.options = galaxy.options
         self.galaxy = galaxy
+
+        # FIXME: validate_certs is an option for two different things,
+        #        the connection to the galaxy_server (eg, galaxy.ansible.com)
+        #        and to where archives are downloaded (eg, github)
+        self._validate_certs = not galaxy.server['ignore_certs']
 
         # FIXME
         self.sub_name = sub_name
@@ -212,6 +216,8 @@ class GalaxyContent(object):
         """
         if self.content_type in ["role", "all"]:
             if self._metadata is None:
+                log.debug('content_meta.path: %s', self.content_meta.path)
+                log.debug('archive.META_MAIN: %s', archive.META_MAIN)
                 meta_path = os.path.join(self.content_meta.path, archive.META_MAIN)
                 if os.path.isfile(meta_path):
                     try:
@@ -236,7 +242,8 @@ class GalaxyContent(object):
         """
         # FIXME: Do we want to have this for galaxy content?
         if self._install_info is None:
-
+            log.debug('self.path: %s', self.path)
+            log.debug('self.META_INSTALL: %s', self.META_INSTALL)
             info_path = os.path.join(self.path, self.META_INSTALL)
             if os.path.isfile(info_path):
                 try:

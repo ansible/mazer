@@ -151,12 +151,10 @@ class CLI(six.with_metaclass(ABCMeta, object)):
         Subclasses must implement this method.  It does the actual work of
         running an Ansible command.
         """
-
-        # FIXME: why is self.parser none?
-        # display.vv(to_text(self.parser.get_version()))
         log.debug('self.args: %s', self.args)
-        if runtime.CONFIG_FILE:
-            log.info(u"Using %s as config file", to_text(runtime.CONFIG_FILE))
+
+        if self.config_file_path:
+            log.info(u"Using %s as config file", to_text(self.config_file_path))
         else:
             log.info(u"No config file found; using defaults")
 
@@ -214,7 +212,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
 
         # base opts
         parser = SortedOptParser(usage,  description=desc, epilog=epilog)
-        parser.add_option('-v', '--verbose', dest='verbosity', default=defaults.DEFAULT_VERBOSITY, action="count",
+        parser.add_option('-v', '--verbose', dest='verbosity', default=defaults.VERBOSITY, action="count",
                           help="verbose mode (-vvv for more, -vvvv to enable connection debugging)")
 
         return parser

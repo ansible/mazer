@@ -31,7 +31,6 @@ import socket
 import ssl
 
 from ansible_galaxy.flat_rest_api.token import GalaxyToken
-from ansible_galaxy.config import runtime
 from ansible_galaxy import exceptions
 from ansible_galaxy.utils.text import to_native, to_text
 
@@ -66,17 +65,20 @@ class GalaxyAPI(object):
 
     SUPPORTED_VERSIONS = ['v1']
 
+    # FIXME: just pass in server_url
     def __init__(self, galaxy):
         self.galaxy = galaxy
         self.token = GalaxyToken()
-        self._validate_certs = not galaxy.ignore_certs
+        log.debug('galaxy: %s', galaxy)
+        log.debug('galaxy.server: %s', galaxy.server)
+        self._validate_certs = not galaxy.server['ignore_certs']
         self.baseurl = None
         self.version = None
         self.initialized = False
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
         # set the API server
-        self._api_server = galaxy.server_url
+        self._api_server = galaxy.server['url']
         self.log.debug('Validate TLS certificates for %s: %s', self._api_server, self._validate_certs)
 
     def __auth_header(self):
@@ -282,8 +284,8 @@ class GalaxyAPI(object):
             return data["results"][0]
         return None
 
-    #@g_connect
-    #def fetch_content_related(self, related_url):
+    # @g_connect
+    # def fetch_content_related(self, related_url):
     #    "Fetch a related item for the given content"
     #    self.log.debug('related_url=%s', related_url)
     #    url = '%s%s' % (self._api_server, related_url)

@@ -6,9 +6,6 @@
 # FIXME: replace with something backed with config files etc
 
 # no default?
-GALAXY_ROLE_SKELETON = None
-GALAXY_SERVER = "https://galaxy-qa.ansible.com"
-GALAXY_IGNORE_CERTS = False
 GALAXY_ROLE_SKELETON_IGNORE = ["^.git$", "^.*/.git_keep$"]
 GALAXY_TOKEN = None
 
