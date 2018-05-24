@@ -71,8 +71,6 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         log.debug('Validate TLS certificates: %s', self.validate_certs)
 
-        self.remote_resource = content_spec
-
     def fetch(self):
         api = GalaxyAPI(self.galaxy_context)
 
@@ -144,13 +142,12 @@ class GalaxyUrlFetch(base.BaseFetch):
         log.debug('content_spec=%s', self.content_spec)
         log.debug('download_url=%s', download_url)
 
-        try:
-            content_archive_path = download.fetch_url(download_url,
-                                                      validate_certs=self.validate_certs)
-        except exceptions.GalaxyDownloadError as e:
-            log.exception(e)
-            self.display_callback("failed to download the file: %s" % str(e))
-            return None
+        # for including in any error messages or logging for this fetch
+        self.remote_resource = download_url
+
+        # can raise GalaxyDownloadError
+        content_archive_path = download.fetch_url(download_url,
+                                                  validate_certs=self.validate_certs)
 
         self.local_path = content_archive_path
 

@@ -21,7 +21,21 @@ class ParserError(GalaxyError):
 # TODO: attrs for http code, url, msg or just reuse http exception from elsewhere
 class GalaxyDownloadError(GalaxyError):
     '''Raise when there is an error downloading galaxy content'''
-    pass
+
+    def __init__(self, *args, **kwargs):
+        url = kwargs.pop('url', None)
+        super(GalaxyDownloadError, self).__init__(*args, **kwargs)
+        self.url = url
+
+    def __str__(self):
+        url_blurb = ': '
+        if self.url:
+            url_blurb = ' (%s): ' % self.url
+        msg = 'Error downloading%s%s' % (url_blurb, super(GalaxyDownloadError, self).__str__())
+        return msg
+
+    def __repr__(self):
+        return '%s(url=%s, %s)' % (self.__class__.__name__, self.url, self.args)
 
 
 class GalaxyClientAPIConnectionError(GalaxyClientError):

@@ -561,7 +561,18 @@ class GalaxyContent(object):
         log.debug('fetch_method: %s', fetch_method)
 
         if fetcher:
-            fetch_results = fetcher.fetch()
+            try:
+                fetch_results = fetcher.fetch()
+            except exceptions.GalaxyDownloadError as e:
+                log.exception(e)
+
+                blurb = 'Failed to fetch the content archive "%s": %s'
+                log.error(blurb, fetcher.remote_resource, e)
+
+                # reraise, currently handled in main
+                # TODO: if we support more than one archive per invocation, will need to accumulate errors
+                #       if we want to skip some of them
+                raise
 
             archive_path = fetch_results['archive_path']
 

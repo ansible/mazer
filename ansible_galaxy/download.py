@@ -33,6 +33,6 @@ def fetch_url(archive_url, validate_certs=True):
     except Exception as e:
         # FIXME: there is a ton of reasons a download and save could fail so could likely provided better errors here
         log.exception(e)
-        raise exceptions.GalaxyDownloadError("failed to download the file: %s" % str(e))
+        raise exceptions.GalaxyDownloadError(e, url=archive_url)
 
     return False
