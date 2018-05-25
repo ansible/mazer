@@ -15,9 +15,10 @@ def load(full_file_path):
         log.exception(e)
         log.error('Unable to load config file (%s): %s', e.filename, e)
     except Exception as e:
-        log.exception(e)
+        log.debug(e, exc_info=True)
         log.error('Unable to load and parse config file (%s): %s', full_file_path, e)
-        raise exceptions.GalaxyConfigError(e)
+        # TODO: add a py2/py3 compat raise_from method for exception chaining
+        raise exceptions.GalaxyConfigFileError(e, config_file_path=full_file_path)
 
     log.warn('No config data was loaded from file (%s), returning None instead', full_file_path)
     # TODO: empty dict instead?

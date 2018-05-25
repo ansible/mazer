@@ -200,7 +200,7 @@ class GalaxyCLI(cli.CLI):
     def run(self):
 
         raw_config_file_path = os.environ.get('ANSIBLE_GALAXY_CONFIG', defaults.CONFIG_FILE)
-        self.config_file_path = os.path.expanduser(raw_config_file_path)
+        self.config_file_path = os.path.abspath(os.path.expanduser(raw_config_file_path))
 
         super(GalaxyCLI, self).run()
 

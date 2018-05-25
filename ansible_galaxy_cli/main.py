@@ -8,6 +8,7 @@ from ansible_galaxy_cli.cli import galaxy
 from ansible_galaxy_cli import exceptions as cli_exceptions
 
 log = logging.getLogger(__name__)
+stderr_log = logging.getLogger('%s.(stderr)' % __package__)
 
 
 def main(args=None):
@@ -32,15 +33,19 @@ def main(args=None):
     # TODO: some level of exception mapper to set exit code based on exception
     try:
         exit_code = cli.run()
-    except exceptions.GalaxyConfigError as e:
+    except exceptions.GalaxyConfigFileError as e:
         log.exception(e)
-        log.error(e)
-        print('Error loading configuration:')
-        print(e)
+
+        # The str(e)/error here maybe a multiline yaml error that looks
+        # best on a fresh line
+        stderr_log.error('Error loading configuration file %s:', e.config_file_path)
+        stderr_log.error(e)
+
         return os.EX_CONFIG
     except exceptions.GalaxyError as e:
         log.exception(e)
-        print(e)
+        stderr_log.error(e)
+
         # exit with EX_SOFTWARE on generic error
         exit_code = os.EX_SOFTWARE
 

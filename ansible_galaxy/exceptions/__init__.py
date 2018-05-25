@@ -29,6 +29,13 @@ class GalaxyClientAPIConnectionError(GalaxyClientError):
     pass
 
 
-class GalaxyConfigError(GalaxyClientError):
-    '''Raised if there is an error parsing the configuration files'''
-    pass
+# TODO: proper rst docstrings with api info
+class GalaxyConfigFileError(GalaxyClientError):
+    '''Raised where there is an error loading or parsing a config file
+
+       has a 'config_file_path' attribute with the config file path'''
+
+    def __init__(self, *args, **kwargs):
+        config_file_path = kwargs.pop('config_file_path', None)
+        super(GalaxyConfigFileError, self).__init__(*args, **kwargs)
+        self.config_file_path = config_file_path

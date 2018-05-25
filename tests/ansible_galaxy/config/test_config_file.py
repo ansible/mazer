@@ -49,12 +49,12 @@ def test_load_busted_yaml():
 
     try:
         config_data = config_file.load(yaml_fo.name)
-    except exceptions.GalaxyConfigError as e:
+    except exceptions.GalaxyConfigFileError as e:
         log.debug(e, exc_info=True)
         return
 
     log.debug('config_data: %s', config_data)
-    assert config_data, 'A GalaxyConfigError was expected here'
+    assert config_data, 'A GalaxyConfigFileError was expected here'
 
 
 VALID_YAML = b'''
@@ -136,4 +136,3 @@ def test_save_bogus_path():
         return
 
     assert res, 'Expected a OSError, IOError or subclass (NotADirectoryError etc) to be raised here'
-
