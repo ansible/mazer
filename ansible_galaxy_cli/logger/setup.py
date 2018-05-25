@@ -24,6 +24,10 @@ DEFAULT_LOGGING_CONFIG = {
             'format': DEFAULT_DEBUG_FORMAT,
             'datefmt': '%H:%M:%S',
         },
+        # a plain formatter for messages/errors to stderr
+        'console_plain': {
+            'format': '%(message)s',
+        },
         'file_verbose': {
             'format': '[%(asctime)s %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)d - %(message)s',
         },
@@ -32,10 +36,16 @@ DEFAULT_LOGGING_CONFIG = {
     'filters': {},
 
     'handlers': {
-        'console': {
+        'stderr_verbose': {
             'level': DEFAULT_CONSOLE_LEVEL,
             'class': 'logging.StreamHandler',
             'formatter': 'console_verbose',
+            'stream': 'ext://sys.stderr',
+        },
+        'stderr_plain': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'console_plain',
             'stream': 'ext://sys.stderr',
         },
         'file': {
@@ -49,7 +59,6 @@ DEFAULT_LOGGING_CONFIG = {
             'class': 'logging.handlers.WatchedFileHandler',
             'filename': os.path.expandvars(os.path.expanduser('~/.ansible/ansible-galaxy-cli-http.log')),
             'formatter': 'file_verbose',
-
         }
     },
 
@@ -78,6 +87,12 @@ DEFAULT_LOGGING_CONFIG = {
             'handlers': DEFAULT_HANDLERS,
             'level': 'DEBUG'
         },
+        # For sending messages to stderr and to default handlers
+        'ansible_galaxy_cli.(stderr)': {
+            'handlers': DEFAULT_HANDLERS + ['stderr_plain'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
     }
 }
 
@@ -87,8 +102,8 @@ def setup(logging_config=None):
 
     conf = logging.config.dictConfig(logging_config)
 
-    # import logging_tree
-    # logging_tree.printout()
+#    import logging_tree
+#    logging_tree.printout()
 
     return conf
 
