@@ -1,15 +1,18 @@
-# galaxy-cli
+# Mazer 
 
-mazer is a tool to manage ansible related content from https://galaxy.ansible.com
+A new command-line tool for managing [Ansible](https://github.com/ansible/ansible) content.
 
-## Features
+**NOTE**: Mazer is experimental, and currently only available for tech-preview. Use with lots of caution! It is not intended for use in
+production environments, nor is it currently intended to replace the `ansible-galaxy` command-line tool. If you're seeking to install
+Ansible content to a production environment, or need assistance with Ansible, please visit the [Ansible docs site](https://docs.ansible.com). 
+
+## Proposed Features
 
 - More than just roles!
-- Content types include modules, module utils, all plugin types.
-- Content repos can contain multipe types of ansible content
-  - repos can contain multiple roles
-  - repos can also contain modules and plugins
-- Supports installing modules and plugins from galaxy or directly from repos
+- Support all the content types, including: roles, modules, module utils, all types of plugins.
+- Support repositories containing multipe types of each content. In other words, allow 
+for mulitple modules, multiple plugins, and multiple roles all in one repository.
+- Support installing modules and plugins from [Ansible Galaxy](https://galaxy.ansible.com), or directly from a source repository.
 
 ## Examples
 
@@ -141,7 +144,7 @@ $ mazer install --content-path ~/my-ansible-content geerlingguy.nginx
 
 This will install the geerlingguy.nginx role to ~/my-ansible-content/roles/geerlingguy.nginx
 
-## Installation of the mazer tool
+## Installing Mazer
 
 ### From source
 
@@ -177,6 +180,7 @@ pip install -r requirements_test.txt
 To run unit tests
 
 via `tox` for default platforms (python 2.6, 2.7, 3.6):
+```
 
 ```
 $ tox
@@ -187,3 +191,13 @@ via 'pytest' directly
 ```
 $ pytest tests/
 ```
+
+## Prerequisites 
+
+When installing content from an Ansible Galaxy server, requires Galaxy v3.0+.
+
+## License
+
+[GNU General Public License v3.0](./LICENSE)
+
+
