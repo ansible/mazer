@@ -13,7 +13,7 @@ the change does.-->
 
 
 ##### GALAXY CLI VERSION
-<!--- Paste verbatim output from "ansible-galaxy --version" between quotes below -->
+<!--- Paste verbatim output from "mazer version" between quotes below -->
 ```
 
 ```

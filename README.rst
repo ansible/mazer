@@ -2,7 +2,6 @@
 README
 ======
 
-ansible-galaxy-cli
-
+mazer
 
 Ansible content manager

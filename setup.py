@@ -22,7 +22,7 @@ setup_requirements = ['pytest-runner', ]
 test_requirements = ['pytest', ]
 
 entry_points = {
-    'console_scripts': ['ansible-galaxy-cli = ansible_galaxy_cli.__main__:main']
+    'console_scripts': ['mazer = ansible_galaxy_cli.__main__:main']
 }
 
 setup(
@@ -45,8 +45,8 @@ setup(
     license="Apache-2.0",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
-    keywords='ansible_galaxy_cli',
-    name='ansible_galaxy_cli',
+    keywords='mazer',
+    name='mazer',
     packages=find_packages(include=['ansible_galaxy', 'ansible_galaxy_cli',
                                     'ansible_galaxy.*', 'ansible_galaxy_cli.*']),
     setup_requires=setup_requirements,

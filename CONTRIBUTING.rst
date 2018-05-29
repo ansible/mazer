@@ -38,8 +38,8 @@ and "help wanted" is open to whoever wants to implement it.
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-ansible-galaxy-cli could always use more documentation, whether as part of the
-official ansible-galaxy-cli docs, in docstrings, or even on the web in blog posts,
+mazer could always use more documentation, whether as part of the
+official mazer docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 Submit Feedback

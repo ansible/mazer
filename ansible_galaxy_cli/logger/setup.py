@@ -4,9 +4,9 @@ import logging
 import logging.config
 import os
 
-LOG_FILE = os.path.expandvars(os.path.expanduser('~/.ansible/ansible-galaxy-cli.log')),
+LOG_FILE = os.path.expandvars(os.path.expanduser('~/.ansible/mazer.log')),
 
-DEFAULT_CONSOLE_LEVEL = os.getenv('GALAXY_CLI_LOG_LEVEL', 'WARNING').upper()
+DEFAULT_CONSOLE_LEVEL = os.getenv('MAZER_LOG_LEVEL', 'WARNING').upper()
 DEFAULT_LEVEL = 'DEBUG'
 
 DEFAULT_DEBUG_FORMAT = '[%(asctime)s,%(msecs)03d %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)d - %(message)s'
@@ -51,13 +51,13 @@ DEFAULT_LOGGING_CONFIG = {
         'file': {
             'level': DEFAULT_LEVEL,
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': os.path.expandvars(os.path.expanduser('~/.ansible/ansible-galaxy-cli.log')),
+            'filename': os.path.expandvars(os.path.expanduser('~/.ansible/mazer.log')),
             'formatter': 'file_verbose',
         },
         'http_file': {
             'level': DEFAULT_LEVEL,
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': os.path.expandvars(os.path.expanduser('~/.ansible/ansible-galaxy-cli-http.log')),
+            'filename': os.path.expandvars(os.path.expanduser('~/.ansible/mazer-http.log')),
             'formatter': 'file_verbose',
         }
     },
