@@ -2,9 +2,12 @@
 
 A new command-line tool for managing [Ansible](https://github.com/ansible/ansible) content.
 
-**NOTE**: Mazer is experimental, and currently only available for tech-preview. Use with lots of caution! It is not intended for use in
-production environments, nor is it currently intended to replace the `ansible-galaxy` command-line tool. If you're seeking to install
-Ansible content to a production environment, or need assistance with Ansible, please visit the [Ansible docs site](https://docs.ansible.com). 
+### Expect breaking changes! 
+
+Mazer is experimental, and currently only available for tech-preview. Use with lots of caution! It is not intended for use in
+production environments, nor is it currently intended to replace the `ansible-galaxy` command-line tool.
+
+If you're installing Ansible content in production environment, or need assistance with Ansible, please visit the [Ansible docs site](https://docs.ansible.com). 
 
 ## Proposed Features
 
