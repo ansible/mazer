@@ -15,6 +15,7 @@ with open('HISTORY.rst') as history_file:
 requirements = ['six',
                 'PyYaml',
                 'jinja2',
+                'yamlloader',
                 ]
 
 setup_requirements = ['pytest-runner', ]
