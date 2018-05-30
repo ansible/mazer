@@ -215,14 +215,14 @@ def test_yaml_parse_name_and_version_leading_V():
     spec = 'some_content,V1.0.0'
     result = parse_spec(spec)
 
-    assert_keys(result, name='some_content', version='1.0.0', scm=None, src='some_content')
+    assert_keys(result, name='some_content', version='V1.0.0', scm=None, src='some_content')
 
 
 def test_yaml_parse_name_and_version_leading_v():
     spec = 'some_content,v1.0.0'
     result = parse_spec(spec)
 
-    assert_keys(result, name='some_content', version='1.0.0', scm=None, src='some_content')
+    assert_keys(result, name='some_content', version='v1.0.0', scm=None, src='some_content')
 
 
 # proving a name and a version as comma separated key values
