@@ -33,6 +33,7 @@ from ansible_galaxy_cli import __version__ as galaxy_cli_version
 from ansible_galaxy.actions import install
 from ansible_galaxy.actions import info
 from ansible_galaxy.actions import init
+from ansible_galaxy.actions import list as list_action
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
 from ansible_galaxy_cli import exceptions as cli_exceptions
@@ -370,31 +371,15 @@ class GalaxyCLI(cli.CLI):
                 self.display("- %s, %s" % (name, version))
             else:
                 self.display("- the role %s was not found" % name)
-        else:
-            # show all valid roles in the roles_path directory
-            roles_path = self.options.roles_path
-            for path in roles_path:
-                role_path = os.path.expanduser(path)
-                if not os.path.exists(role_path):
-                    raise cli_exceptions.CliOptionsError("- the path %s does not exist. Please specify a valid path with --roles-path" % role_path)
-                elif not os.path.isdir(role_path):
-                    raise cli_exceptions.CliOptionsError("- %s exists, but it is not a directory. Please specify a valid path with --roles-path" % role_path)
-                path_files = os.listdir(role_path)
-                for path_file in path_files:
-                    role_full_path = os.path.join(role_path, path_file)
-                    log.debug('role_full_path: %s', role_full_path)
-                    gr = GalaxyContent(galaxy_context, path_file, path=role_full_path)
-                    log.debug('gr: %s', gr)
-                    log.debug('gr.metadata: %s', gr.metadata)
-                    if gr.metadata:
-                        install_info = gr.install_info
-                        version = None
-                        if install_info:
-                            version = install_info.get("version", None)
-                        if not version:
-                            version = "(unknown version)"
-                        self.display("- %s, %s" % (path_file, version))
-        return 0
+
+            return 0
+
+        log.debug('list')
+        roles_path = self.options.roles_path
+        # TODO: eventually, loop over content types
+        roles_path = [os.path.join(galaxy_context.content_path, 'roles')]
+
+        return list_action.list(galaxy_context, roles_path, display_callback=self.display)
 
     def execute_version(self):
         self.display('Ansible Galaxy CLI, version', galaxy_cli_version)

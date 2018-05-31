@@ -34,6 +34,7 @@ import yaml
 from ansible_galaxy import exceptions
 from ansible_galaxy import archive
 from ansible_galaxy.content_repo_galaxy_metadata import install_from_galaxy_metadata
+from ansible_galaxy import display
 from ansible_galaxy.fetch.scm_url import ScmUrlFetch
 from ansible_galaxy.fetch.local_file import LocalFileFetch
 from ansible_galaxy.fetch.remote_url import RemoteUrlFetch
@@ -218,7 +219,11 @@ class GalaxyContent(object):
             if self._metadata is None:
                 log.debug('content_meta.path: %s', self.content_meta.path)
                 log.debug('archive.META_MAIN: %s', archive.META_MAIN)
+
                 meta_path = os.path.join(self.content_meta.path, archive.META_MAIN)
+
+                log.debug('meta_path: %s', meta_path)
+
                 if os.path.isfile(meta_path):
                     try:
                         f = open(meta_path, 'r')
