@@ -134,21 +134,6 @@ class TestGalaxy(unittest.TestCase):
         galaxy_cli = GalaxyCLI(args=self.default_args)
         self.assertTrue(isinstance(galaxy_cli, GalaxyCLI))
 
-    def test_display_min(self):
-        gc = GalaxyCLI(args=self.default_args)
-        role_info = {'name': 'some_role_name'}
-        display_result = gc._display_role_info(role_info)
-        self.assertTrue(display_result.find('some_role_name') > -1)
-
-    def test_display_galaxy_info(self):
-        gc = GalaxyCLI(args=self.default_args)
-        galaxy_info = {}
-        role_info = {'name': 'some_role_name',
-                     'galaxy_info': galaxy_info}
-        display_result = gc._display_role_info(role_info)
-        if display_result.find('\n\tgalaxy_info:') == -1:
-            self.fail('Expected galaxy_info to be indented once')
-
     def test_run(self):
         ''' verifies that the GalaxyCLI object's api is created and that execute() is called. '''
         gc = GalaxyCLI(args=["ansible-galaxy", "install", "--ignore-errors", "imaginary_role"])
