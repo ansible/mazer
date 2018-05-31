@@ -87,6 +87,7 @@ class GalaxyContentMeta(object):
         return self._data
 
 
+# TODO: separate GalaxyContent, ContentMeta and ContentArchive classes
 class RoleContentArchiveMeta(GalaxyContentMeta):
 
     def __init__(self, *args, **kwargs):

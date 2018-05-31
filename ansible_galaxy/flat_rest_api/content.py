@@ -125,7 +125,7 @@ class GalaxyContent(object):
 
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
-        self.display_callback = display_callback or self._display_callback
+        self.display_callback = display_callback or display.display_callback
 
         # self.options = galaxy.options
         self.galaxy = galaxy
@@ -159,14 +159,6 @@ class GalaxyContent(object):
         # Set original path, needed to determine what action to take in order to
         # maintain backwards compat with legacy roles
         self._orig_path = path
-
-    def _display_callback(self, *args, **kwargs):
-        level_arg = kwargs.pop('level', None)
-        levels = {'warning': 'WARNING'}
-        level = levels.get(level_arg, None)
-        if level:
-            print('%s' % level, *args)
-        print(*args)
 
     def __repr__(self):
         """
@@ -249,7 +241,10 @@ class GalaxyContent(object):
         if self._install_info is None:
             log.debug('self.path: %s', self.path)
             log.debug('self.META_INSTALL: %s', self.META_INSTALL)
+
             info_path = os.path.join(self.path, self.META_INSTALL)
+
+            log.debug('info_path: %s', info_path)
             if os.path.isfile(info_path):
                 try:
                     f = open(info_path, 'r')

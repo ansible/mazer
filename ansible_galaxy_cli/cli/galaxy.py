@@ -351,35 +351,20 @@ class GalaxyCLI(cli.CLI):
         lists the roles installed on the local system or matches a single role passed as an argument.
         """
 
-        if len(self.args) > 1:
-            raise cli_exceptions.CliOptionsError("- please specify only one role to list, or specify no roles to see a full list")
-
         galaxy_context = self._get_galaxy_context(self.options, self.config)
-
-        if len(self.args) == 1:
-            # show only the request role, if it exists
-            name = self.args.pop()
-            gr = GalaxyContent(galaxy_context, name)
-            if gr.metadata:
-                install_info = gr.install_info
-                version = None
-                if install_info:
-                    version = install_info.get("version", None)
-                if not version:
-                    version = "(unknown version)"
-                # show some more info about single roles here
-                self.display("- %s, %s" % (name, version))
-            else:
-                self.display("- the role %s was not found" % name)
-
-            return 0
-
-        log.debug('list')
-        roles_path = self.options.roles_path
-        # TODO: eventually, loop over content types
         roles_path = [os.path.join(galaxy_context.content_path, 'roles')]
 
-        return list_action.list(galaxy_context, roles_path, display_callback=self.display)
+        match_filter = list_action.match_all
+
+        # if len(self.args) == 1:
+        if self.args:
+            match_filter = list_action.MatchNames(self.args)
+
+        # TODO: eventually, loop over content types
+
+        return list_action.list(galaxy_context, roles_path,
+                                match_filter=match_filter,
+                                display_callback=self.display)
 
     def execute_version(self):
         self.display('Ansible Galaxy CLI, version', galaxy_cli_version)
