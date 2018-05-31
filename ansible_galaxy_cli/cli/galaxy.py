@@ -25,17 +25,14 @@ __metaclass__ = type
 import json
 import logging
 import os
-import re
-import shutil
 import sys
 import time
-
-from jinja2 import Environment, FileSystemLoader
 
 from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
 from ansible_galaxy.actions import install
 from ansible_galaxy.actions import info
+from ansible_galaxy.actions import init
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
 from ansible_galaxy_cli import exceptions as cli_exceptions
@@ -218,6 +215,7 @@ class GalaxyCLI(cli.CLI):
         role_name = self.args.pop(0).strip() if self.args else None
         if not role_name:
             raise cli_exceptions.CliOptionsError("- no role name specified for init")
+
         role_path = os.path.join(init_path, role_name)
         if os.path.exists(role_path):
             if os.path.isfile(role_path):
@@ -227,26 +225,6 @@ class GalaxyCLI(cli.CLI):
                                                     "you can use --force to re-initialize this directory,\n"
                                                     "however it will reset any main.yml files that may have\n"
                                                     "been modified there already." % role_path)
-
-        # FIXME(akl): role_skeleton stuff should probably be a module or two and a few classes instead of inline here
-        # role_skeleton ends mostly being a list of file paths to copy
-        inject_data = dict(
-            role_name=role_name,
-            author='your name',
-            description='your description',
-            company='your company (optional)',
-            license='license (GPLv2, CC-BY, etc)',
-            issue_tracker_url='http://example.com/issue/tracker',
-            min_ansible_version='1.2',
-            role_type=self.options.role_type
-        )
-
-        import pprint
-        self.log.debug('inject_data: %s', pprint.pformat(inject_data))
-
-        # create role directory
-        if not os.path.exists(role_path):
-            os.makedirs(role_path)
 
         if role_skeleton_path is not None:
             skeleton_ignore_expressions = self.config.options['role_skeleton_ignore']
@@ -260,37 +238,14 @@ class GalaxyCLI(cli.CLI):
 
             skeleton_ignore_expressions = ['^.*/.git_keep$']
 
-        role_skeleton = os.path.expanduser(role_skeleton_path)
-
-        self.log.debug('role_skeleton: %s', role_skeleton)
-        skeleton_ignore_re = [re.compile(x) for x in skeleton_ignore_expressions]
-
-        template_env = Environment(loader=FileSystemLoader(role_skeleton))
-
-        # TODO: mv elsewhere, this is main role install logic
-        for root, dirs, files in os.walk(role_skeleton, topdown=True):
-            rel_root = os.path.relpath(root, role_skeleton)
-            in_templates_dir = rel_root.split(os.sep, 1)[0] == 'templates'
-            dirs[:] = [d for d in dirs if not any(r.match(d) for r in skeleton_ignore_re)]
-
-            for f in files:
-                filename, ext = os.path.splitext(f)
-                if any(r.match(os.path.join(rel_root, f)) for r in skeleton_ignore_re):
-                    continue
-                elif ext == ".j2" and not in_templates_dir:
-                    src_template = os.path.join(rel_root, f)
-                    dest_file = os.path.join(role_path, rel_root, filename)
-                    template_env.get_template(src_template).stream(inject_data).dump(dest_file)
-                else:
-                    f_rel_path = os.path.relpath(os.path.join(root, f), role_skeleton)
-                    shutil.copyfile(os.path.join(root, f), os.path.join(role_path, f_rel_path))
-
-            for d in dirs:
-                dir_path = os.path.join(role_path, rel_root, d)
-                if not os.path.exists(dir_path):
-                    os.makedirs(dir_path)
-
-        self.display("- %s was created successfully" % role_name)
+        return init.init(role_name,
+                         init_path,
+                         role_path,
+                         force,
+                         role_skeleton_path,
+                         skeleton_ignore_expressions,
+                         self.options.role_type,
+                         display_callback=self.display)
 
     def execute_info(self):
         """
