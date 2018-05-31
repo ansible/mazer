@@ -428,6 +428,8 @@ class GalaxyContent(object):
 
         content_meta = content_meta or self.content_meta
 
+        # FIXME: really need to move the fetch step elsewhere and do it before,
+        #        install should get pass a content_archive (or something more abstract)
         # TODO: some useful exceptions for 'cant find', 'cant read', 'cant write'
         fetch_method = choose_content_fetch_method(scm_url=self.scm, src=self.src)
 

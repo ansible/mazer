@@ -28,18 +28,18 @@ import os
 import re
 import shutil
 import sys
+import time
 
 from jinja2 import Environment, FileSystemLoader
 
 from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
+from ansible_galaxy.actions import install
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
-from ansible_galaxy import exceptions
 from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.utils.text import to_text
-from ansible_galaxy.utils.yaml_parse import yaml_parse
 from ansible_galaxy.utils.content_name import parse_content_name
 
 # FIXME: importing class, fix name collision later or use this style
@@ -51,6 +51,19 @@ from ansible_galaxy.flat_rest_api.content import GalaxyContent
 from ansible_galaxy.models.content import CONTENT_TYPES
 
 log = logging.getLogger(__name__)
+
+
+def exit_without_ignore(ignore_errors, msg=None, rc=1):
+    """
+    Exits with the specified return code unless the
+    option --ignore-errors was specified
+    """
+    ignore_error_blurb = '- you can use --ignore-errors to skip failed roles and finish processing the list.'
+    if not ignore_errors:
+        message = ignore_error_blurb
+        if msg:
+            message = '%s:\n%s' % (msg, ignore_error_blurb)
+        raise cli_exceptions.GalaxyCliError(message)
 
 
 class GalaxyCLI(cli.CLI):
@@ -187,18 +200,6 @@ class GalaxyCLI(cli.CLI):
         log.debug('execute action with args: %s', self.args)
 
         self.execute()
-
-    def exit_without_ignore(self, msg=None, rc=1):
-        """
-        Exits with the specified return code unless the
-        option --ignore-errors was specified
-        """
-        ignore_error_blurb = '- you can use --ignore-errors to skip failed roles and finish processing the list.'
-        if not self.options.ignore_errors:
-            message = ignore_error_blurb
-            if msg:
-                message = '%s:\n%s' % (msg, ignore_error_blurb)
-            raise cli_exceptions.GalaxyCliError(message)
 
     def _display_content_info(self, content_info):
         log.debug('content_info: %s', content_info)
@@ -403,8 +404,6 @@ class GalaxyCLI(cli.CLI):
                 (self.options.content_type, ", ".join(CONTENT_TYPES))
             )
 
-        self.log.debug('self.options: %s', self.options)
-
         # TODO: mv to GalaxyContext constructor
         # If someone provides a --roles-path at the command line, we assume this is
         # for use with a legacy role and we want to maintain backwards compat
@@ -412,119 +411,28 @@ class GalaxyCLI(cli.CLI):
             self.log.warn('Assuming content is of type "role" since --role-path was used')
             install_content_type = 'role'
 
-            # FIXME - add more types here, PoC is just role/module
-
+        self.log.debug('self.options: %s', self.options)
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
-        # TODO: are these per-contentroot options?
-        no_deps = self.options.no_deps
-        force_overwrite = self.options.force
+        # FIXME - add more types here, PoC is just role/module
+        # TODO: more prep here?
+        requested_content_specs = self.args
 
-        content_left = []
+        rc = 1
 
-        # FIXME - Need to handle role files here for backwards compat
+        try:
+            rc = install.install_content_specs(galaxy_context,
+                                               content_specs=requested_content_specs,
+                                               install_content_type=install_content_type,
+                                               display_callback=self.display,
+                                               ignore_errors=self.options.ignore_errors,
+                                               no_deps=self.options.no_deps,
+                                               force_overwrite=self.options.force)
+        except Exception as e:
+            log.exception(e)
+            raise
 
-        # TODO: this should be adding the content/self.args/content_left to
-        #       a list of needed deps
-
-        # roles were specified directly, so we'll just go out grab them
-        # (and their dependencies, unless the user doesn't want us to).
-        for content in self.args:
-            galaxy_content = yaml_parse(content.strip())
-
-            # FIXME: this is a InstallOption
-            galaxy_content["type"] = install_content_type
-
-            self.log.info('content install galaxy_content: %s', galaxy_content)
-
-            content_left.append(GalaxyContent(galaxy_context, **galaxy_content))
-
-        for content in content_left:
-            # only process roles in roles files when names matches if given
-
-            # FIXME - not sure how to handle this scenario for ansible galaxy files
-            #         here or if we even want to handle that scenario because of
-            #         the galaxy content allowing blank repos to be inspected
-            #
-            #         maybe we want this but only for role types for backwards
-            #         compat
-            #
-            # if role_file and self.args and role.name not in self.args:
-            #    display.vvv('Skipping role %s' % role.name)
-            #    continue
-
-            log.debug('Processing %s as %s', content.name, content.content_type)
-
-            # FIXME - Unsure if we want to handle the install info for all galaxy
-            #         content. Skipping for non-role types for now.
-            if content.content_type == "role":
-                if content.install_info is not None:
-                    if content.install_info['version'] != content.version or force_overwrite:
-                        if force_overwrite:
-                            self.display('- changing role %s from %s to %s' %
-                                         (content.name, content.install_info['version'], content.version or "unspecified"))
-                            content.remove()
-                        else:
-                            log.warn('- %s (%s) is already installed - use --force to change version to %s',
-                                     content.name, content.install_info['version'], content.version or "unspecified")
-                            continue
-                    else:
-                        if not force_overwrite:
-                            self.display('- %s is already installed, skipping.' % str(content))
-                            continue
-
-            try:
-                installed = content.install(force_overwrite=force_overwrite)
-            except exceptions.GalaxyError as e:
-                log.warning("- %s was NOT installed successfully: %s ", content.name, str(e))
-                self.exit_without_ignore(e)
-                continue
-
-            if not installed:
-                log.warning("- %s was NOT installed successfully.", content.name)
-                self.exit_without_ignore()
-
-            if no_deps:
-                log.warning('- %s was installed but any deps will not be installed because of no_deps',
-                            content.name)
-
-            # oh dear god, a dep solver...
-
-            # FIXME: should install all of init 'deps', then build a list of new deps, and repeat
-
-            # install dependencies, if we want them
-            # FIXME - Galaxy Content Types handle dependencies in the GalaxyContent type itself because
-            #         a content repo can contain many types and many of any single type and it's just
-            #         easier to have that introspection there. In the future this should be more
-            #         unified and have a clean API
-            if content.content_type == "role":
-                if not no_deps and installed:
-                    if not content.metadata:
-                        log.warning("Meta file %s is empty. Skipping dependencies.", content.path)
-                    else:
-                        role_dependencies = content.metadata.get('dependencies') or []
-                        for dep in role_dependencies:
-                            log.debug('Installing dep %s', dep)
-                            dep_info = yaml_parse(dep)
-                            dep_role = GalaxyContent(galaxy_context, **dep_info)
-                            if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
-                                # we know we can skip this, as it's not going to
-                                # be found on galaxy.ansible.com
-                                continue
-                            if dep_role.install_info is None:
-                                if dep_role not in content_left:
-                                    self.display('- adding dependency: %s' % str(dep_role))
-                                    content_left.append(dep_role)
-                                else:
-                                    self.display('- dependency %s already pending installation.' % dep_role.name)
-                            else:
-                                if dep_role.install_info['version'] != dep_role.version:
-                                    log.warning('- dependency %s from role %s differs from already installed version (%s), skipping',
-                                                str(dep_role), content.name, dep_role.install_info['version'])
-                                else:
-                                    self.display('- dependency %s is already installed, skipping.' % dep_role.name)
-
-        return 0
+        return rc
 
     def execute_remove(self):
         """
