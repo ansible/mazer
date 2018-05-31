@@ -149,7 +149,7 @@ class TestGalaxy(unittest.TestCase):
 
     def test_execute_remove(self):
         # installing role
-        gc = GalaxyCLI(args=["ansible-galaxy", "content-install", "-p", self.role_path, "-r", self.role_req, '--force'])
+        gc = GalaxyCLI(args=["ansible-galaxy", "install", "-p", self.role_path, "-r", self.role_req, '--force'])
         gc.parse()
         gc.run()
 
