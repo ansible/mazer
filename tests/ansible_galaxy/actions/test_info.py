@@ -13,16 +13,8 @@ def display_callback(msg, **kwargs):
     log.debug(msg)
 
 
-def _galaxy_context():
-    tmp_content_path = tempfile.mkdtemp()
-    # FIXME: mock
-    server = {'url': 'http://localhost:8000',
-              'ignore_certs': False}
-    return GalaxyContext(server=server, content_path=tmp_content_path)
-
-
-def test_info_empty():
-    ret = info.info_content_specs(_galaxy_context(),
+def test_info_empty(galaxy_context):
+    ret = info.info_content_specs(galaxy_context,
                                   # mock api
                                   mock.Mock(),
                                   [],
@@ -33,8 +25,8 @@ def test_info_empty():
     log.debug('ret: %s', ret)
 
 
-def test_info():
-    ret = info.info_content_specs(_galaxy_context(),
+def test_info(galaxy_context):
+    ret = info.info_content_specs(galaxy_context,
                                   # mock api
                                   mock.Mock(),
                                   ['namespace.repo.content'],

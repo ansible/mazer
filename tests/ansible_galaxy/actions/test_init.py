@@ -11,12 +11,13 @@ def display_callback(msg, **kwargs):
     log.debug(msg)
 
 
-def test_init():
+def test_init(tmpdir):
     role_name = 'test-role'
     # FIXME: needs lots of mocking
-    init_path = tempfile.mkdtemp()
-    role_path = os.path.join(init_path, role_name)
-    role_skeleton_path = tempfile.mkdtemp()
+    init_path = tmpdir.mkdir('init_path')
+    role_path = init_path.join(role_name).strpath
+    # role_path = os.path.join(init_path, role_name)
+    role_skeleton_path = tmpdir.mkdir('role_skeleton').strpath
     skeleton_ignore_expressions = []
     role_type = 'default'
     ret = init.init(role_name,

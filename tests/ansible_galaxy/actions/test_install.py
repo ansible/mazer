@@ -22,10 +22,9 @@ def _galaxy_context():
     return GalaxyContext(server=server, content_path=tmp_content_path)
 
 
-def test_install_contents_empty_contents():
+def test_install_contents_empty_contents(galaxy_context):
     contents = []
 
-    galaxy_context = _galaxy_context()
     ret = install.install_contents(galaxy_context,
                                    requested_contents=contents,
                                    install_content_type='role',
@@ -35,13 +34,12 @@ def test_install_contents_empty_contents():
     assert ret == 0
 
 
-def test_install_contents():
+def test_install_contents(galaxy_context):
     contents = [mock.Mock(content_type='role',
                           # FIXME: install bases update on install_info existing, so will fail for other content
                           install_info=None,
                           metadata={'content_type': 'role'})]
 
-    galaxy_context = _galaxy_context()
     ret = install.install_contents(galaxy_context,
                                    requested_contents=contents,
                                    install_content_type='role',
@@ -51,13 +49,12 @@ def test_install_contents():
     assert ret == 0
 
 
-def test_install_contents_module():
+def test_install_contents_module(galaxy_context):
     contents = [mock.Mock(content_type='module',
                           # FIXME: install bases update on install_info existing, so will fail for other content
                           install_info=None,
                           metadata={'content_type': 'module'})]
 
-    galaxy_context = _galaxy_context()
     ret = install.install_contents(galaxy_context,
                                    requested_contents=contents,
                                    install_content_type='module',
@@ -67,15 +64,15 @@ def test_install_contents_module():
     # assert ret == 0
 
 
-def test_build_content_set_empty():
-    ret = install._build_content_set([], 'role', _galaxy_context())
+def test_build_content_set_empty(galaxy_context):
+    ret = install._build_content_set([], 'role', galaxy_context)
     log.debug('ret: %s', ret)
     assert ret == []
 
 
 # even though 'blrp' isnt a valid spec, _build_content_set return something for now
-def test_build_content_set_malformed():
-    ret = install._build_content_set(['blrp'], 'role', _galaxy_context())
+def test_build_content_set_malformed(galaxy_context):
+    ret = install._build_content_set(['blrp'], 'role', galaxy_context)
     log.debug('ret: %s', ret)
     # TODO: eventually this should fail, depending on where it looks it up
     assert isinstance(ret[0], GalaxyContent)
