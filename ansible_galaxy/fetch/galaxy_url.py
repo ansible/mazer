@@ -41,7 +41,6 @@ def get_download_url(repo_data=None, external_url=None, repoversion=None):
 
 
 def select_repository_version(repoversions, version):
-    log.debug('repoversions: %s', pprint.pformat(repoversions))
     # repository_versions name is 'not null' so should always exist
 
     # we could build a map/dict first and search in it, but we only use this
@@ -111,8 +110,6 @@ class GalaxyUrlFetch(base.BaseFetch):
         # FIXME: exception handling
         repoversions = api.fetch_content_related(repo_versions_url)
 
-        log.debug('repoversions: %s', repoversions)
-
         # repo_versions is uniq on (name, repository_id), so for a particular
         # repository_id, we can build a map of repositoryversion.name -> repository.id
 
@@ -125,7 +122,6 @@ class GalaxyUrlFetch(base.BaseFetch):
         # if related_content_url:
         #     content_repo = api.fetch_content_related(related_content_url)
         content_repo_versions = [a.get('name') for a in repoversions if a.get('name', None)]
-        log.debug('content_repo_versions: %s', content_repo_versions)
 
         # log.debug('content_repo: %s', content_repo)
         # FIXME: mv to it's own method

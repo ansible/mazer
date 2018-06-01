@@ -9,6 +9,7 @@ from ansible_galaxy.utils.version import normalize_version_string
 log = logging.getLogger(__name__)
 
 
+# FIXME: rename, really get_repo_version
 def get_content_version(content_data, version, content_versions, content_content_name):
     '''find and compare content version found in content_data dict
 
@@ -19,8 +20,8 @@ def get_content_version(content_data, version, content_versions, content_content
     '''
 
     log.debug('%s want ver: %s', content_content_name, version)
-    log.debug('%s vers avail: %s',
-              content_content_name, json.dumps(content_versions, indent=2))
+#    log.debug('%s vers avail: %s',
+#              content_content_name, json.dumps(content_versions, indent=2))
 
     # a list of tuples of (normalized_version, original_version) for building map of normalized version to original version
     normalized_versions = [(normalize_version_string(x), x) for x in content_versions]
@@ -32,8 +33,8 @@ def get_content_version(content_data, version, content_versions, content_content
 
     normalized_version = normalize_version_string(version)
 
-    log.debug('normalized_version: %s', normalized_version)
-    log.debug('avail_normalized_versions: %s', json.dumps(available_normalized_versions, indent=4))
+#    log.debug('normalized_version: %s', normalized_version)
+#    log.debug('avail_normalized_versions: %s', json.dumps(available_normalized_versions, indent=4))
 
     # we specified a particular version is required so look for it in available versions
     if version and version != 'master':
