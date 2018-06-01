@@ -270,6 +270,7 @@ class GalaxyContent(object):
         info = dict(
             version=content_meta.version,
             install_date=datetime.datetime.utcnow().strftime("%c"),
+            install_date_iso=datetime.datetime.now()
         )
 
         import pprint
@@ -288,7 +289,7 @@ class GalaxyContent(object):
             # FIXME: just return the install_info dict (or better, build it elsewhere and pass in)
             # FIXME: stop minging self state
             try:
-                self._install_info = yaml.safe_dump(info, f)
+                self._install_info = yaml.safe_dump(info, f, default_flow_style=False)
             except Exception as e:
                 log.warn('unable to serialize .galaxy_install_info to info_path=%s for data=%s', info_path, info)
                 log.exception(e)
