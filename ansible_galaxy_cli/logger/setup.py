@@ -74,11 +74,11 @@ DEFAULT_LOGGING_CONFIG = {
             'level': 'DEBUG'
         },
         'ansible_galaxy.flat_rest_api.api.(http)': {
-            # 'level': 'INFO',
-            # 'handlers': DEFAULT_HANDLERS,
+            'level': 'INFO',
+            'handlers': DEFAULT_HANDLERS,
             # to log verbose debug level logging to http_file handler:
-            'level': 'DEBUG',
-            'handlers': ['http_file'],
+            # 'level': 'DEBUG',
+            # 'handlers': ['http_file'],
         },
         'ansible_galaxy.archive.(extract)': {
             'level': 'INFO',
