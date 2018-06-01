@@ -31,4 +31,8 @@ class RemoteUrlFetch(base.BaseFetch):
 
         log.debug('content_archive_path=%s', content_archive_path)
 
+        results = {'archive_path': content_archive_path,
+                   'fetch_method': self.fetch_method}
+        results['custom'] = {'remote_url': self.remote_url,
+                             'validate_certs': self.validate_certs}
         return content_archive_path

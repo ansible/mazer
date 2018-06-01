@@ -25,4 +25,11 @@ class ScmUrlFetch(base.BaseFetch):
 
         log.debug('content_archive_path=%s', content_archive_path)
 
-        return content_archive_path
+        results = {'archive_path': content_archive_path,
+                   'fetch_method': self.fetch_method,
+                   'download_url': self.scm_url}
+        results['custom'] = {'scm_url': self.scm_url,
+                             'specified_content_spec': self.scm_spec}
+
+        # TODO: what the heck should the version be for a scm_url if one wasnt specified?
+        return results

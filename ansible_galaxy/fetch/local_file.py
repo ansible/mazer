@@ -15,7 +15,12 @@ class LocalFileFetch(object):
 
         log.debug('content_archive_path=%s (inplace)', content_archive_path)
 
-        return content_archive_path
+        results = {'archive_path': content_archive_path,
+                   'fetch_method': self.fetch_method}
+
+        results['custom'] = {'local_path': self.local_path}
+
+        return results
 
     def cleanup(self):
         return None

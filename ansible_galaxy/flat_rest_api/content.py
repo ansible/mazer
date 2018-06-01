@@ -468,9 +468,11 @@ class GalaxyContent(object):
         log.debug('fetch_method: %s', fetch_method)
 
         if fetcher:
-            content_archive = fetcher.fetch()
+            fetch_results = fetcher.fetch()
 
-            log.debug('content_archive=%s', content_archive)
+            content_archive = fetch_results['archive_path']
+            log.debug('fetch_results=%s', pprint.pformat(fetch_results))
+            # log.debug('content_archive=%s', fetch_results.archive_path)
 
         if not content_archive:
             raise exceptions.GalaxyClientError('No valid content data found for %s', self.src)
@@ -536,6 +538,8 @@ class GalaxyContent(object):
             log.debug('old content_meta: %s', old)
             data = self.content_meta.data
 
+            content_data = fetch_results.get('content', {})
+            data['version'] = content_data.get('fetched_version', data.get('version'))
             content_meta = content.RoleContentArchiveMeta.from_data(data)
 
             log.debug('role content_meta: %s', content_meta)

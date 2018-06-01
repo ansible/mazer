@@ -1,5 +1,6 @@
 
 import logging
+import pprint
 
 # mv details of this here
 from ansible_galaxy import exceptions
@@ -16,6 +17,42 @@ def _build_download_url(external_url=None, version=None):
     if external_url and version:
         archive_url = '%s/archive/%s.tar.gz' % (external_url, version)
         return archive_url
+
+
+def get_download_url(repo_data=None, external_url=None, repoversion=None):
+    repo_data = repo_data or {}
+
+    # If we want a specific version, provide an exact match repoversion.
+    # if provided an exact match repoversion, use its download_url
+    if 'download_url' in repoversion:
+        return repoversion['download_url']
+
+    # but then try whatever the Repository suggests for download_url
+    # This should be the case if we dont specify a version and the galaxy Repository
+    # has no versions associated to it, so this will likely reference the latest in
+    # the default branch
+    if 'download_url' in repo_data:
+        return repo_data['download_url']
+
+    # server response didn't suggest a download_url, take a guess and make one up
+    if external_url and repoversion:
+        archive_url = '%s/archive/%s.tar.gz' % (external_url, repoversion['name'])
+        return archive_url
+
+
+def select_repository_version(repoversions, version):
+    log.debug('repoversions: %s', pprint.pformat(repoversions))
+    # repository_versions name is 'not null' so should always exist
+
+    # we could build a map/dict first and search in it, but we only use this
+    # once, so this linear search is ok, since building the map would be that
+    # plus the getitem
+    results = [x for x in repoversions if x['name'] == version]
+
+    # repository_versions is uniq on (name, repo.id) so for any given repo,
+    # there should only be one result here
+    repoversion = results.pop()
+    return repoversion
 
 
 class GalaxyUrlFetch(base.BaseFetch):
@@ -72,9 +109,12 @@ class GalaxyUrlFetch(base.BaseFetch):
         log.debug('related=%s', related)
 
         # FIXME: exception handling
-        repo_versions = api.fetch_content_related(repo_versions_url)
+        repoversions = api.fetch_content_related(repo_versions_url)
 
-        log.debug('repo_versions: %s', repo_versions)
+        log.debug('repoversions: %s', repoversions)
+
+        # repo_versions is uniq on (name, repository_id), so for a particular
+        # repository_id, we can build a map of repositoryversion.name -> repository.id
 
         # related_repo_url = related.get('repository', None)
         # log.debug('related_repo_url: %s', related_repo_url)
@@ -84,17 +124,19 @@ class GalaxyUrlFetch(base.BaseFetch):
         # content_repo = None
         # if related_content_url:
         #     content_repo = api.fetch_content_related(related_content_url)
-        content_repo_versions = [a.get('name') for a in repo_versions if a.get('name', None)]
+        content_repo_versions = [a.get('name') for a in repoversions if a.get('name', None)]
         log.debug('content_repo_versions: %s', content_repo_versions)
 
         # log.debug('content_repo: %s', content_repo)
         # FIXME: mv to it's own method
         # FIXME: pass these to fetch() if it really needs it
-        _content_version = content_version.get_content_version(repo_data,
-                                                               version=self.content_version,
-                                                               content_versions=content_repo_versions,
-                                                               content_content_name=content_name)
+        _repo_version_name = content_version.get_content_version(repo_data,
+                                                                 version=self.content_version,
+                                                                 content_versions=content_repo_versions,
+                                                                 content_content_name=content_name)
 
+        # get the RepositoryVersion obj (or its data anyway)
+        _repoversion = select_repository_version(repoversions, _repo_version_name)
         # FIXME: stop munging state
         # self.content_meta.version = _content_version
 
@@ -103,7 +145,9 @@ class GalaxyUrlFetch(base.BaseFetch):
             raise exceptions.GalaxyError('no external_url info on the Repository object from %s',
                                          repo_name)
 
-        download_url = _build_download_url(external_url=external_url, version=_content_version)
+        download_url = get_download_url(repo_data=repo_data, external_url=external_url, repoversion=_repoversion)
+        # download_url = _build_download_url(external_url=external_url, version=_content_version)
+        # TODO: error handling if there is no download_url
 
         log.debug('content_spec=%s', self.content_spec)
         log.debug('download_url=%s', download_url)
@@ -120,4 +164,29 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         log.debug('content_archive_path=%s', content_archive_path)
 
-        return content_archive_path
+        # TODO: This is indication that a fetcher is wrong abstraction. A fetch
+        #       can resolve a name/spec, find metadata about the content including avail versions,
+        #       compare/sort versions, select matching versions, find a download uri, and finally
+        #       actually fetch it.
+        #       Ie, more of a 'ContentRepository' (ContentSource? ContentChannel? ContentProvider?)
+        #       that is a remote 'channel' with info and content itself.
+        results = {'archive_path': content_archive_path,
+                   'download_url': download_url,
+                   'fetch_method': self.fetch_method}
+
+        results['custom'] = {'external_url': external_url,
+                             'repo_versions_url': repo_versions_url,
+                             'galaxy_namespace': content_username,
+                             'repo_name': repo_name,
+                             'content_name': content_name,
+                             'related': related,
+                             'content_repo_versions': content_repo_versions,
+                             'galaxy_context': self.galaxy_context,
+                             'specified_content_version': self.content_version,
+                             'specified_content_spec': self.content_spec,
+                             'repository_data': repo_data}
+
+        results['content'] = {'fetched_version': _repoversion.get('name'),
+                              'repo_name': repo_name,
+                              'content_name': content_name}
+        return results
