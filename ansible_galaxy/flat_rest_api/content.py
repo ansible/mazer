@@ -258,7 +258,7 @@ class GalaxyContent(object):
         return self._install_info
 
     # FIXME: should probably be a GalaxyInfoInfo class
-    def _write_galaxy_install_info(self):
+    def _write_galaxy_install_info(self, content_meta):
         """
         Writes a YAML-formatted file to the role's meta/ directory
         (named .galaxy_install_info) which contains some information
@@ -268,12 +268,22 @@ class GalaxyContent(object):
         #
 
         info = dict(
-            version=self.version,
+            version=content_meta.version,
             install_date=datetime.datetime.utcnow().strftime("%c"),
         )
-        if not os.path.exists(os.path.join(self.path, 'meta')):
-            os.makedirs(os.path.join(self.path, 'meta'))
-        info_path = os.path.join(self.path, self.META_INSTALL)
+
+        import pprint
+        log.debug('content.content_meta.__dict__ %s', pprint.pformat(content_meta.__dict__))
+
+        if not os.path.exists(os.path.join(content_meta.path, 'meta')):
+            os.makedirs(os.path.join(content_meta.path, 'meta'))
+
+        info_path = os.path.join(content_meta.path,
+                                 content_meta.content_dir,
+                                 content_meta.content_sub_dir,
+                                 self.META_INSTALL)
+        log.debug('info_path: %s', info_path)
+
         with open(info_path, 'w+') as f:
             # FIXME: just return the install_info dict (or better, build it elsewhere and pass in)
             # FIXME: stop minging self state
@@ -397,6 +407,10 @@ class GalaxyContent(object):
                                                           force_overwrite=force_overwrite)
 
         installed = [(content_meta, installed_paths)]
+
+        # FIXME: seems oddly sideeffecty...
+        self._write_galaxy_install_info(content_meta)
+
         return installed
 
     def _install_apb_archive(self, content_tar_file, archive_parent_dir, content_meta,
@@ -516,10 +530,15 @@ class GalaxyContent(object):
             log.debug('Find role metadata in the archive, so installing it as role content_type')
             log.debug('copying self.content_meta: %s', self.content_meta)
 
+            import copy
+            old = copy.copy(self.content_meta)
+            log.debug('orig content_meta: %s', content_meta)
+            log.debug('old content_meta: %s', old)
             data = self.content_meta.data
 
             content_meta = content.RoleContentArchiveMeta.from_data(data)
 
+            log.debug('role content_meta: %s', content_meta)
             log.debug('role content_meta: %s', content_meta)
 
             # we are dealing with an role archive
