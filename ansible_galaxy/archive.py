@@ -109,7 +109,7 @@ def find_archive_metadata(archive_members):
             apb_yaml_file)
 
 
-def find_archive_parent_dir(archive_members, content_meta):
+def find_archive_parent_dir(archive_members, content_type, content_dir):
     # archive_parent_dir wasn't found when checking for metadata files
     archive_parent_dir = None
 
@@ -126,8 +126,8 @@ def find_archive_parent_dir(archive_members, content_meta):
         if len(member_dir) < len(shortest_dir):
             shortest_dir = member_dir
 
-        if content_meta.content_type != "all":
-            if content_meta.content_dir and content_meta.content_dir in member.name:
+        if content_type != "all":
+            if content_dir and content_dir in member.name:
                 archive_parent_dir = os.path.dirname(member.name)
                 return archive_parent_dir
         else:
@@ -136,14 +136,15 @@ def find_archive_parent_dir(archive_members, content_meta):
                     archive_parent_dir = os.path.dirname(member.name)
                     return archive_parent_dir
 
-    if content_meta.content_type not in CONTENT_TYPES:
+    if content_type not in CONTENT_TYPES:
         log.debug('did not find a content_dir or plugin_dir, so using shortest_dir %s for archive_parent_dir', shortest_dir)
         return shortest_dir
 
     # TODO: archive format exception?
     msg = "No content metadata provided, nor content directories found for content_type: %s" % \
-        content_meta.content_type
-    log.debug('content_meta: %s', content_meta)
+        content_type
+    log.debug('content_type: %s', content_type)
+    log.debug('content_dir: %s', content_dir)
     raise exceptions.GalaxyClientError(msg)
 
 
@@ -318,10 +319,11 @@ def extract_by_content_type(tar_file_obj,
     installed_paths = []
     overwritten_paths = []
 
+    # parent_dir = parent_dir or tar_file_obj.members
     # details of archive extraction, pretty verbose even for debug
     elog = logging.getLogger('%s.(extract)' % __name__)
 
-    # now we do the actual extraction to the path
+    # now we do the actual extraction to the
     elog.debug('tar_file=%s, parent_dir=%s, file_name=%s', tar_file_obj, parent_dir, file_name)
     elog.debug('extract_to_path=%s', extract_to_path)
     elog.debug('content_meta=%s', content_meta)
@@ -348,7 +350,6 @@ def extract_by_content_type(tar_file_obj,
 
     log.debug('extract_to_path=%s', extract_to_path)
     log.debug('content_path=%s', content_path)
-    # log.debug('files_to_extract=%s', pprint.pformat(files_to_extract))
 
     # do we need to drive this from tar_file members if we have file_names_to_extract?
     # for member in tar_file.getmembers():
@@ -423,7 +424,9 @@ def extract_by_content_type(tar_file_obj,
                     # skip it
                     continue
             else:
-                parts = member.name.replace(parent_dir, "", 1).split(os.sep)
+                parts = []
+                if parent_dir:
+                    parts = member.name.replace(parent_dir, "", 1).split(os.sep)
                 elog.debug('plugin_found falsey, building parts: %s', parts)
 
             # log.debug('parts: %s', parts)
@@ -435,7 +438,8 @@ def extract_by_content_type(tar_file_obj,
             elog.debug('final_parts: %s', final_parts)
             elog.debug('orig member.name: %s', member.name)
 
-            member.name = os.path.join(*final_parts)
+            if final_parts:
+                member.name = os.path.join(*final_parts)
 
             elog.debug('new  member.name: %s', member.name)
 
@@ -458,6 +462,7 @@ def extract_by_content_type(tar_file_obj,
                     raise exceptions.GalaxyClientError(message)
 
                 overwritten_paths.append(dest_path)
+
             # Alright, *now* actually write the file
             elog.debug('Extracting member=%s, content_path=%s', member, content_path)
             tar_file_obj.extract(member, content_path)

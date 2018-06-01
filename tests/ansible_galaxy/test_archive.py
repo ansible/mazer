@@ -2,8 +2,10 @@
 import logging
 import tarfile
 import tempfile
+import mock
 
 from ansible_galaxy import archive
+from ansible_galaxy.models.content import GalaxyContentMeta
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +25,46 @@ def test_find_content_type_subdirs_empty():
     assert isinstance(res, list)
     assert res == []
     assert not res
+
+
+foo = {'content_archive_type': 'multi-content',
+#       'content_meta': GalaxyContentMeta(name=alikins.ansible-testing-content, version=3.1.0, src=alikins.ansible-testing-content, scm=None, content_type=all, content_dir=None, content_sub_dir=None, path=/home/adrian/.ansible/content, requires_meta_main=None),
+       'content_type': None,
+       'content_type_requires_meta': True,
+       'display_callback': None,
+       'extract_to_path': '/home/adrian/.ansible/content',
+       'file_name': None,
+ #      'files_to_extract': [<TarInfo 'ansible-testing-content-3.1.0/library/elasticsearch_plugin.py' at 0x7f5b549c9c90>,
+ #                           <TarInfo 'ansible-testing-content-3.1.0/library/riak.py' at 0x7f5b549c9e50>],
+       'force_overwrite': True,
+       'install_all_content': False,
+       'install_content_type': 'module',
+       'parent_dir': None,
+ #      'tar_file_obj': <tarfile.TarFile object at 0x7f5b549c9950>
+       }
+
+
+def test_extract_by_content_type():
+    # tar_file_obj = tarfile.TarFile()
+    members = [tarfile.TarInfo(name='foo')]
+    mock_tar_file_obj = mock.Mock(members=members)
+    res = archive.extract_by_content_type(tar_file_obj=mock_tar_file_obj,
+                                          parent_dir=None,
+                                          content_meta=GalaxyContentMeta(name="alikins.ansible-testing-content",
+                                                                         version="3.1.0",
+                                                                         src="alikins.ansible-testing-content",
+                                                                         scm=None,
+                                                                         content_type="all",
+                                                                         content_dir=None,
+                                                                         content_sub_dir=None,
+                                                                         path="/home/adrian/.ansible/content",
+                                                                         requires_meta_main=None),
+                                          install_content_type="module",
+                                          install_all_content=False,
+                                          files_to_extract=members,
+                                          extract_to_path='/home/adrian/.ansible/content')
+
+    log.debug('res: %s', res)
 
 
 tar_example1 = [

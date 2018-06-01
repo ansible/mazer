@@ -29,6 +29,7 @@ CONTENT_PLUGIN_TYPES = (
     'callback_plugin',
 )
 CONTENT_TYPES = CONTENT_PLUGIN_TYPES + ('role',)
+SUPPORTED_CONTENT_TYPES = ('role',)
 
 CONTENT_TYPE_DIR_MAP = dict([(k, '%ss' % k) for k in CONTENT_TYPES])
 CONTENT_TYPE_DIR_MAP['module'] = 'library'
@@ -88,26 +89,14 @@ class GalaxyContentMeta(object):
 
 
 # TODO: separate GalaxyContent, ContentMeta and ContentArchive classes
-class RoleContentArchiveMeta(GalaxyContentMeta):
+class RoleContentMeta(GalaxyContentMeta):
 
     def __init__(self, *args, **kwargs):
-        super(RoleContentArchiveMeta, self).__init__(*args, **kwargs)
+        super(RoleContentMeta, self).__init__(*args, **kwargs)
         self.content_type = 'role'
         self.content_dir = CONTENT_TYPE_DIR_MAP.get('role', None)
         self.content_sub_dir = self.name
-        self.requires_meta_main = True
-
-    @classmethod
-    def from_content_meta(cls, content_meta):
-        data = content_meta.data.copy()
-        data['content_type'] = 'role'
-        data['content_dir'] = CONTENT_TYPE_DIR_MAP.get('role', None)
-        # ie, for roles, the roles/$CONTENT_SUB_DIR/  name
-        data['content_sub_dir'] = data['name']
-        data['requires_meta_main'] = True
-        # data['path'] =
-        content_meta = cls.from_data(data)
-        return content_meta
+        # self.requires_meta_main = True
 
 
 class APBContentArchiveMeta(GalaxyContentMeta):
