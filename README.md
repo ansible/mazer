@@ -199,6 +199,16 @@ $ pytest tests/
 
 When installing content from an Ansible Galaxy server, requires Galaxy v3.0+.
 
+## Roadmap
+
+To see what we're working on, and where we're headed, [view the roadmap](./ROADMAP.md).
+
+## Getting help
+
+Issues welcome! If you find a bug, or have a feature idea, please let us know by [opening an issue](https://github.com/ansible/mazer/issues).
+
+You can also reach out to us on irc.freenode.net in the #ansible-galaxy channel.
+
 ## Origin of "Mazer"
 
 The name Mazer comes from a character from Ender's Game, Mazer Rackham, that Wikipedia describes as "the half-Māori captain who singlehandedly stopped the Second Invasion by realizing that the Buggers are a hive mind. Due to his inability to pass on his knowledge, he was forced to spend fifty years at relativistic speeds (eight years to Rackham) so that he could train the next commander — Ender Wiggin."
