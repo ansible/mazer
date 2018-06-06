@@ -1,8 +1,10 @@
 
+import glob
 import logging
+import mock
+import os
 import tarfile
 import tempfile
-import mock
 
 from ansible_galaxy import archive
 from ansible_galaxy.models.content import GalaxyContentMeta
@@ -25,6 +27,138 @@ def test_find_content_type_subdirs_empty():
     assert isinstance(res, list)
     assert res == []
     assert not res
+
+
+def test_extract_file_empty():
+    tmp_tar = tempfile.TemporaryFile()
+    # TODO: replace with tmpdir fixture
+    tmp_dir = tempfile.mkdtemp()
+
+    tar_file = tarfile.TarFile(name='some-top-level',
+                               mode='r',
+                               fileobj=tmp_tar)
+
+    files_to_extract = []
+    # for pathname in tar_example1:
+    pathname = 'foo_blip.yml'
+    item = {'archive_member': tarfile.TarInfo(name='foo'),
+            'dest_dir': tmp_dir,
+            'dest_filename': pathname,
+            'force_overwrite': True}
+
+    import pprint
+    log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
+
+    try:
+        archive.extract_file(tar_file, file_to_extract=item)
+    except tarfile.ReadError as e:
+        log.exception(e)
+        return
+
+
+def test_extract_file_foo():
+    tmp_tar_fo = tempfile.NamedTemporaryFile(delete=False)
+    tmp_member_fo = tempfile.NamedTemporaryFile()
+    # TODO: replace with tmpdir fixture
+    tmp_dir = tempfile.mkdtemp()
+
+    tar_file = tarfile.TarFile.open(name='some-top-level',
+                                    mode='w',
+                                    fileobj=tmp_tar_fo)
+    # fileobj=tmp_tar)
+
+    files_to_extract = []
+
+    member = tarfile.TarInfo('foo')
+    tar_file.addfile(member, tmp_member_fo)
+    # for pathname in tar_example1:
+    pathname = 'foo_blip.yml'
+
+    item = {'archive_member': member,
+            'dest_dir': tmp_dir,
+            'dest_filename': pathname,
+            'force_overwrite': True}
+
+    import pprint
+    log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
+
+    read_tmp_fo = open(tmp_tar_fo.name, 'r')
+    read_tar_file = tarfile.TarFile.open(name='some-top-level',
+                                         mode='r',
+                                         fileobj=read_tmp_fo)
+    res = archive.extract_file(read_tar_file, file_to_extract=item)
+    log.debug('res: %s', res)
+
+
+def test_extract_file():
+    # FIXME: rm out of tests tar file example
+    # FIXME: generate a test tarfile
+    tar_file = tarfile.TarFile.open(name='/tmp/alikins.testing-content.tar.gz',
+                                    mode='r')
+    # TODO: replace with tmpdir fixture
+    tmp_dir = tempfile.mkdtemp()
+
+    files_to_extract = []
+    # for pathname in tar_example1:
+    pathname = 'roles/test-role-d/handlers/main.yml'
+    top_dir = 'ansible-content-archive'
+
+    member = tarfile.TarInfo(os.path.join(top_dir, pathname))
+
+    dest_dir = os.path.join(tmp_dir, 'extracted_stuff')
+
+    item = {'archive_member': member,
+            'dest_dir': dest_dir,
+            'dest_filename': pathname,
+            'force_overwrite': True}
+
+    import pprint
+    log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
+
+    res = archive.extract_file(tar_file, file_to_extract=item)
+
+    log.debug('res: %s', res)
+    # log.debug('%s contents: %s', tmp_dir, glob.glob(dest_dir, '**', recursive=True))
+    log.debug('%s contents: %s', tmp_dir, list(os.walk(dest_dir)))
+
+
+def test_extract_files():
+    # FIXME: rm out of tests tar file example
+    # FIXME: generate a test tarfile
+    tar_file = tarfile.TarFile.open(name='/tmp/alikins.testing-content.tar.gz',
+                                    mode='r')
+    # TODO: replace with tmpdir fixture
+    tmp_dir = tempfile.mkdtemp()
+
+    files_to_extract = []
+    # for pathname in tar_example1:
+    top_dir = 'ansible-content-archive'
+
+    dest_dir = os.path.join(tmp_dir, 'extracted_stuff')
+
+    extract_file_list = []
+    path_list = ['roles/test-role-d/handlers/main.yml',
+                 'roles/test-role-a/handlers/main.yml']
+
+    for pathname in path_list:
+        member_path = os.path.join(top_dir, pathname)
+        member = tarfile.TarInfo(member_path)
+
+        item = {'archive_member': member,
+                'dest_dir': dest_dir,
+                'dest_filename': pathname,
+                'force_overwrite': True}
+
+        files_to_extract.append(item)
+
+    import pprint
+    log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
+
+    res = archive.extract_files(tar_file, files_to_extract=files_to_extract)
+
+    log.debug('res: %s', list(res))
+    # log.debug('%s contents: %s', tmp_dir, glob.glob(dest_dir, '**', recursive=True))
+    log.debug('%s contents: %s', tmp_dir, list(os.walk(dest_dir)))
 
 
 foo = {'content_archive_type': 'multi-content',
@@ -59,8 +193,8 @@ def test_extract_by_content_type():
                                                                          content_sub_dir=None,
                                                                          path="/home/adrian/.ansible/content",
                                                                          requires_meta_main=None),
-                                          install_content_type="module",
-                                          install_all_content=False,
+#                                        install_content_type="module",
+#                                          install_all_content=False,
                                           files_to_extract=members,
                                           extract_to_path='/home/adrian/.ansible/content')
 

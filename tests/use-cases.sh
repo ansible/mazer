@@ -52,16 +52,16 @@ tree ~/.ansible/content
 
 # install role
 rm -rf ~/.ansible/content
-mazer install alikins.ansible-role-awx
+mazer install alikins.role-awx
 tree ~/.ansible/content
 [ -d ~/.ansible/content/roles ]
-[ -d ~/.ansible/content/roles/alikins.ansible-role-awx ]
-[ -d ~/.ansible/content/roles/alikins.ansible-role-awx/meta ]
-[ -f ~/.ansible/content/roles/alikins.ansible-role-awx/meta/main.yml ]
-[ -d ~/.ansible/content/roles/alikins.ansible-role-awx/tasks ]
-[ -f ~/.ansible/content/roles/alikins.ansible-role-awx/tasks/main.yml ]
-[ -d ~/.ansible/content/roles/alikins.ansible-role-awx/vars ]
-[ -f ~/.ansible/content/roles/alikins.ansible-role-awx/vars/RedHat.yml ]
+[ -d ~/.ansible/content/roles/alikins.role-awx ]
+[ -d ~/.ansible/content/roles/alikins.role-awx/meta ]
+[ -f ~/.ansible/content/roles/alikins.role-awx/meta/main.yml ]
+[ -d ~/.ansible/content/roles/alikins.role-awx/tasks ]
+[ -f ~/.ansible/content/roles/alikins.role-awx/tasks/main.yml ]
+[ -d ~/.ansible/content/roles/alikins.role-awx/vars ]
+[ -f ~/.ansible/content/roles/alikins.role-awx/vars/RedHat.yml ]
 
 
 
@@ -128,7 +128,7 @@ tree ~/.ansible/content
 
 # install all from a scm url
 rm -rf ~/.ansible/content
-ansible-galaxy-cli install  git+https://github.com/atestuseraccount/ansible-testing-content.git
+mazer install  git+https://github.com/atestuseraccount/ansible-testing-content.git
 tree ~/.ansible/content
 
 # install from a scm url again without cleaning up (should fail)
@@ -259,17 +259,18 @@ mazer install -t module git+https://github.com/atestuseraccount/ansible-testing-
 
 # The following uses the Galaxy name to install the latest version of the role:
 
-mazer install alikins.ansible-role-awx
+# mazer install alikins.role-awx
+mazer install alikins.role-awx
 
 # Here we use the SCM+URL convention to install the latest version:
-mazer install git+https://github.com/geerlingguy/ansible-role-awx.git
+mazer install git+https://github.com/geerlingguy/role-awx.git
 
 # Install a specific version
 # Using the Galaxy name
 
 # Using the Galaxy name, the version can be passed using the following two methods:
 
-mazer install alikins.ansible-role-awx,1.0.0
+mazer install alikins.role-awx,1.0.0
 mazer install alikins.awx,version=1.0.0
 
 #Using the SCM+URL convention, the version can be passed using the following two methods:

@@ -282,6 +282,47 @@ def filter_members_by_content_meta(tar_file_obj, content_archive_type, content_m
     return filter_members_by_content_type(tar_file_obj, content_archive_type, content_type)
 
 
+def extract_file(tar_file, file_to_extract):
+    # TODO: should just be a object? ContentArchiveMember? ContentArchiveExtractData ?
+    archive_member = file_to_extract['archive_member']
+    dest_dir = file_to_extract['dest_dir']
+    dest_filename = file_to_extract['dest_filename']
+    force_overwrite = file_to_extract['force_overwrite']
+
+    orig_name = archive_member.name
+    if not archive_member.isreg() and not archive_member.issym():
+        return None
+
+    # TODO: raise from up a level in the stack?
+    # if os.path.exists(extract_to_path):
+    #    if not force_overwrite:
+    #        message = "The Galaxy content %s appears to already exist." % extract_to_path
+    #        raise exceptions.GalaxyClientError(message)
+
+    # change the tar file member name in place to just the filename ('myfoo.py') so that extract places that file in
+    # dest_dir directly instead of using adding the archive path as well
+    # like '$dest_dir/archive-roles/library/myfoo.py'
+    archive_member.name = dest_filename
+    tar_file.extract(archive_member, dest_dir) 
+
+
+    installed_path = os.path.join(dest_dir, dest_filename)
+
+    # reset the tar info object's name attr to the origin value in
+    # case something else references this
+    archive_member.name = orig_name
+    return installed_path
+
+
+def extract_files(tar_file, files_to_extract):
+    '''Process tar_file, extracting the files from files_to_extract'''
+
+    for file_to_extract in files_to_extract:
+        res = extract_file(tar_file, file_to_extract)
+        if res:
+            yield res
+
+
 # FIXME: persisting of content archives or subsets thereof
 # FIXME: currently does way too much, could be split into generic and special case classes
 # FIXME: some weirdness here is caused by tarfile API being a little strange. To extract a file
@@ -297,13 +338,8 @@ def extract_by_content_type(tar_file_obj,
                             file_name=None,
                             files_to_extract=None,
                             extract_to_path=None,
-                            content_archive_type=None,
-                            content_type=None,
-                            install_content_type=None,
                             display_callback=None,
-                            install_all_content=False,
-                            force_overwrite=False,
-                            content_type_requires_meta=True):
+                            force_overwrite=False):
     """
     Extract and write out files from the archive, this is a common operation
     needed for both old-roles and new-style galaxy content, the main

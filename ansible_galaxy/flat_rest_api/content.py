@@ -340,11 +340,17 @@ class GalaxyContent(object):
                                    content_sub_name=None,
                                    force_overwrite=False):
 
+        import pprint; log.debug('locals():\n%s', pprint.pformat(locals()))
         all_installed_paths = []
         content_types_to_install = content_types_to_install or []
         for install_content_type in content_types_to_install:
             log.debug('INSTALLING %s type content from %s', install_content_type, content_tar_file)
 
+            # TODO: install_for_content_type()  - handle one content type
+            #       _install_for_content_type_role() - role specific impl
+            # TODO:  install_contents()  - iterator over all the contents of a content type (ie, 'roles')
+            # TODO:   install_content()  - install a single content  (ie, a role)
+            #         _install_content_role()  - role specific impl of install_content
             member_matches = archive.filter_members_by_content_type(content_tar_file,
                                                                     content_archive_type,
                                                                     content_type=install_content_type)
@@ -363,7 +369,13 @@ class GalaxyContent(object):
                                                                    match_pattern)
             log.debug('content_meta: %s', content_meta)
             log.info('about to extract %s to %s', content_meta.name, content_meta.path)
+            log.info('content_sub_dir: %s', content_sub_dir)
 
+            log.debug('member_matches: %s', pprint.pformat(member_matches))
+            # archive_extract_root = os.path.join(content_sub_dir, content_meta.content_sub_dir)
+            # log.debug('archive_extract_root: %s', archive_extract_root)
+
+            # TODO: extract_file_list_to_path(content_tar_file, files_to_extract, extract_to_path, force_overwrite)
             installed_paths = archive.extract_by_content_type(content_tar_file,
                                                               # archive_parent_dir,
                                                               content_sub_dir,
@@ -516,9 +528,9 @@ class GalaxyContent(object):
 
         log.info('Installing content from archive type: %s', archive_meta.archive_type)
 
-        content_types_to_install = [self.content_install_type]
-        if self.content_install_type == 'all':
-            content_types_to_install = CONTENT_TYPES
+        # content_types_to_install = [self.content_install_type]
+        # if self.content_install_type == 'all':
+        #    content_types_to_install = CONTENT_TYPES
 
         if archive_meta.archive_type == 'multi-content':
             # if content_meta.content_type == 'all':
