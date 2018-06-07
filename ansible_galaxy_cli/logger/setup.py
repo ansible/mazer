@@ -9,7 +9,7 @@ LOG_FILE = os.path.expandvars(os.path.expanduser('~/.ansible/mazer.log')),
 DEFAULT_CONSOLE_LEVEL = os.getenv('MAZER_LOG_LEVEL', 'WARNING').upper()
 DEFAULT_LEVEL = 'DEBUG'
 
-DEFAULT_DEBUG_FORMAT = '[%(asctime)s,%(msecs)03d %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)d - %(message)s'
+DEFAULT_DEBUG_FORMAT = '[%(asctime)s,%(msecs)03d %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)-3d - %(message)s'
 # DEFAULT_HANDLERS = ['console', 'file']
 DEFAULT_HANDLERS = ['file']
 
@@ -29,7 +29,7 @@ DEFAULT_LOGGING_CONFIG = {
             'format': '%(message)s',
         },
         'file_verbose': {
-            'format': '[%(asctime)s %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)d - %(message)s',
+            'format': '[%(asctime)s %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)-3d - %(message)s',
         },
     },
 
@@ -77,7 +77,7 @@ DEFAULT_LOGGING_CONFIG = {
             'level': 'INFO',
             'handlers': DEFAULT_HANDLERS,
             # to log verbose debug level logging to http_file handler:
-            # 'propagate': False,
+            'propagate': False,
             # 'level': 'DEBUG',
             # 'handlers': ['http_file'],
         },
