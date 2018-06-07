@@ -80,52 +80,52 @@ class GalaxyAPI(object):
 
     # TODO: raise an API/net specific exception?
     @g_connect
-    def __call_galaxy(self, url, args=None, headers=None, method=None):
+    def __call_galaxy(self, url, args=None, headers=None, http_method=None):
+        http_method = http_method or 'GET'
         headers = headers or {}
-
         try:
-            http_log.info('%s %s', method, url)
-            request_log.debug('%s %s args=%s', method, url, args)
-            request_log.debug('%s %s headers=%s', method, url, headers)
+            http_log.info('"%s %s"', http_method, url)
+            request_log.debug('"%s %s" args=%s', http_method, url, args)
+            request_log.debug('"%s %s" headers=%s', http_method, url, headers)
 
             resp = open_url(url, data=args, validate_certs=self._validate_certs,
-                            headers=headers, method=method,
+                            headers=headers, method=http_method,
                             timeout=20)
 
-            http_log.info('%s %s http_status=%s', method, url, resp.getcode())
+            http_log.info('"%s %s" http_status=%s', http_method, url, resp.getcode())
 
             final_url = resp.geturl()
             if final_url != url:
-                http_log.debug('%s %s Redirected to: %s', method, url, resp.geturl())
+                http_log.debug('"%s %s" Redirected to: %s', http_method, url, resp.geturl())
 
             resp_info = resp.info()
-            response_log.debug('%s %s info:\n%s', method, url, resp_info)
+            response_log.debug('"%s %s" info:\n%s', http_method, url, resp_info)
 
             # FIXME: making the request and loading the response should be sep try/except blocks
             response_body = to_text(resp.read(), errors='surrogate_or_strict')
 
             # debug log the raw response body
-            response_log.debug('%s %s response body:\n%s', method, url, response_body)
+            response_log.debug('"%s %s" response body:\n%s', http_method, url, response_body)
 
             data = json.loads(response_body)
 
             # debug log a json version of the data that was created from the response
-            response_log.debug('%s %s data:\n%s', method, url, json.dumps(data, indent=2))
+            response_log.debug('"%s %s" data:\n%s', http_method, url, json.dumps(data, indent=2))
         except HTTPError as e:
-            self.log.debug('Exception on %s %s', method, url)
+            self.log.debug('Exception on "%s %s"', http_method, url)
             self.log.exception(e)
 
             # FIXME: probably need a try/except here if the response body isnt json which
             #        can happen if a proxy mangles the response
             res = json.loads(to_text(e.fp.read(), errors='surrogate_or_strict'))
 
-            http_log.error('%s %s data from server error response:\n%s', method, url, res)
+            http_log.error('%s %s data from server error response:\n%s', http_method, url, res)
 
             raise exceptions.GalaxyClientError(res['detail'])
         except (ssl.SSLError, socket.error) as e:
-            self.log.debug('Connection error to Galaxy API for request "%s %s": %s', method, url, e)
+            self.log.debug('Connection error to Galaxy API for request "%s %s": %s', http_method, url, e)
             self.log.exception(e)
-            raise exceptions.GalaxyClientAPIConnectionError('Connection error to Galaxy API for request "%s %s": %s' % (method, url, e))
+            raise exceptions.GalaxyClientAPIConnectionError('Connection error to Galaxy API for request "%s %s": %s' % (http_method, url, e))
 
         return data
 
@@ -167,7 +167,7 @@ class GalaxyAPI(object):
         namespace = urlquote(namespace)
         name = urlquote(name)
         url = '%s/repositories/?name=%s&provider_namespace__namespace__name=%s' % (self.baseurl, name, namespace)
-        data = self.__call_galaxy(url)
+        data = self.__call_galaxy(url, http_method='GET')
         if len(data["results"]) != 0:
             return data["results"][0]
         return None
@@ -187,7 +187,7 @@ class GalaxyAPI(object):
             self.log.info("- downloading content '%s', type '%s',repo_name '%s'  owned by %s", content_name, content_type, repo_name, namespace)
 
         url = '%s/content/?name=%s&namespace__name=%s' % (self.baseurl, content_name, namespace)
-        data = self.__call_galaxy(url)
+        data = self.__call_galaxy(url, http_method='GET')
         if len(data["results"]) != 0:
             return data["results"][0]
         return None
@@ -211,7 +211,7 @@ class GalaxyAPI(object):
             raise exceptions.GalaxyClientError("Invalid role name (%s). Specify role as format: username.rolename" % role_name)
 
         url = '%s/roles/?owner__username=%s&name=%s' % (self.baseurl, user_name, role_name)
-        data = self.__call_galaxy(url)
+        data = self.__call_galaxy(url, http_method='GET')
         if len(data["results"]) != 0:
             return data["results"][0]
         return None
@@ -226,7 +226,7 @@ class GalaxyAPI(object):
 
         try:
             url = '%s%s?page_size=50' % (self._api_server, related_url)
-            data = self.__call_galaxy(url)
+            data = self.__call_galaxy(url, http_method='GET')
             results = data.get('results', None)
             if results is None:
                 # not a results list, just return the item
@@ -235,7 +235,7 @@ class GalaxyAPI(object):
             done = (data.get('next_link', None) is None)
             while not done:
                 url = '%s%s' % (self._api_server, data['next_link'])
-                data = self.__call_galaxy(url)
+                data = self.__call_galaxy(url, http_method='GET')
                 results += data['results']
                 done = (data.get('next_link', None) is None)
             return results
@@ -252,7 +252,7 @@ class GalaxyAPI(object):
 
         try:
             url = '%s/%s/?page_size' % (self.baseurl, what)
-            data = self.__call_galaxy(url)
+            data = self.__call_galaxy(url, http_method='GET')
             if "results" in data:
                 results = data['results']
             else:
@@ -262,7 +262,7 @@ class GalaxyAPI(object):
                 done = (data.get('next_link', None) is None)
             while not done:
                 url = '%s%s' % (self._api_server, data['next_link'])
-                data = self.__call_galaxy(url)
+                data = self.__call_galaxy(url, http_method='GET')
                 results += data['results']
                 done = (data.get('next_link', None) is None)
             return results
@@ -279,5 +279,5 @@ class GalaxyAPI(object):
             "github_repo": github_repo,
             "secret": secret
         })
-        data = self.__call_galaxy(url, args=args)
+        data = self.__call_galaxy(url, args=args, method='POST')
         return data
