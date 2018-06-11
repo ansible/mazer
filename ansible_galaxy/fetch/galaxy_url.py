@@ -179,7 +179,7 @@ class GalaxyUrlFetch(base.BaseFetch):
                              'specified_content_spec': self.content_spec,
                              'repository_data': repo_data}
 
-        results['content'] = {'fetched_version': _repoversion.get('name'),
+        results['content'] = {'fetched_version': _repoversion.get('version'),
                               'repo_name': repo_name,
                               'content_name': content_name}
         return results
