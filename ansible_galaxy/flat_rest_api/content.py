@@ -380,8 +380,6 @@ class GalaxyContent(object):
                                                               # archive_parent_dir,
                                                               content_sub_dir,
                                                               content_meta,
-                                                              content_archive_type=content_archive_type,
-                                                              install_content_type=install_content_type,
                                                               files_to_extract=member_matches,
                                                               extract_to_path=content_meta.path,
                                                               force_overwrite=force_overwrite)
