@@ -1,6 +1,5 @@
 import pytest
 
-from ansible_galaxy.models.context import GalaxyContext
 
 
 @pytest.fixture
@@ -10,4 +9,5 @@ def galaxy_context(tmpdir):
     server = {'url': 'http://localhost:8000',
               'ignore_certs': False}
     content = tmpdir.mkdir('content')
+    from ansible_galaxy.models.context import GalaxyContext
     return GalaxyContext(server=server, content_path=content.strpath)
