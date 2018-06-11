@@ -24,13 +24,11 @@ __metaclass__ = type
 
 import logging
 import json
-import six
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.parse import quote as urlquote, urlencode
 import socket
 import ssl
 
-from ansible_galaxy.flat_rest_api.token import GalaxyToken
 from ansible_galaxy import exceptions
 from ansible_galaxy.utils.text import to_native, to_text
 
@@ -68,7 +66,6 @@ class GalaxyAPI(object):
     # FIXME: just pass in server_url
     def __init__(self, galaxy):
         self.galaxy = galaxy
-        self.token = GalaxyToken()
         log.debug('galaxy: %s', galaxy)
         log.debug('galaxy.server: %s', galaxy.server)
         self._validate_certs = not galaxy.server['ignore_certs']
@@ -81,17 +78,11 @@ class GalaxyAPI(object):
         self._api_server = galaxy.server['url']
         self.log.debug('Validate TLS certificates for %s: %s', self._api_server, self._validate_certs)
 
-    def __auth_header(self):
-        token = self.token.get()
-        if token is None:
-            raise exceptions.GalaxyClientError("No access token. You must first use login to authenticate and obtain an access token.")
-        return {'Authorization': 'Token ' + token}
-
     # TODO: raise an API/net specific exception?
     @g_connect
     def __call_galaxy(self, url, args=None, headers=None, method=None):
-        if args and not headers:
-            headers = self.__auth_header()
+        headers = headers or {}
+
         try:
             http_log.info('%s %s', method, url)
             request_log.debug('%s %s args=%s', method, url, args)
@@ -170,65 +161,6 @@ class GalaxyAPI(object):
         return data['current_version']
 
     @g_connect
-    def authenticate(self, github_token):
-        """
-        Retrieve an authentication token
-        """
-        self.log.debug('authenticate')
-
-        url = '%s/tokens/' % self.baseurl
-        args = urlencode({"github_token": github_token})
-        resp = open_url(url, data=args, validate_certs=self._validate_certs, method="POST")
-        data = json.loads(to_text(resp.read(), errors='surrogate_or_strict'))
-        return data
-
-    @g_connect
-    def create_import_task(self, github_user, github_repo, reference=None, role_name=None):
-        """
-        Post an import request
-        """
-
-        self.log.debug('github_user=%s', github_user)
-        self.log.debug('github_repo=%s', github_repo)
-        self.log.debug('reference=%s', reference)
-        self.log.debug('role_name=%s', role_name)
-
-        url = '%s/imports/' % self.baseurl
-        args = {
-            "github_user": github_user,
-            "github_repo": github_repo,
-            "github_reference": reference if reference else ""
-        }
-        if role_name:
-            args['alternate_role_name'] = role_name
-        elif github_repo.startswith('ansible-role'):
-            args['alternate_role_name'] = github_repo[len('ansible-role') + 1:]
-        data = self.__call_galaxy(url, args=urlencode(args), method='POST')
-        if data.get('results', None):
-            return data['results']
-        return data
-
-    @g_connect
-    def get_import_task(self, task_id=None, github_user=None, github_repo=None):
-        """
-        Check the status of an import task.
-        """
-        self.log.debug('task_id=%s', task_id)
-        self.log.debug('github_user=%s', github_user)
-        self.log.debug('github_repo=%s', github_repo)
-
-        url = '%s/imports/' % self.baseurl
-        if task_id is not None:
-            url = "%s?id=%d" % (url, task_id)
-        elif github_user is not None and github_repo is not None:
-            url = "%s?github_user=%s&github_repo=%s" % (url, github_user, github_repo)
-        else:
-            raise exceptions.GalaxyClientError("Expected task_id or github_user and github_repo")
-
-        data = self.__call_galaxy(url)
-        return data['results']
-
-    @g_connect
     def lookup_repo_by_name(self, namespace, name):
         self.log.debug('user_name=%s', namespace)
         self.log.debug('name=%s', name)
@@ -283,16 +215,6 @@ class GalaxyAPI(object):
         if len(data["results"]) != 0:
             return data["results"][0]
         return None
-
-    # @g_connect
-    # def fetch_content_related(self, related_url):
-    #    "Fetch a related item for the given content"
-    #    self.log.debug('related_url=%s', related_url)
-    #    url = '%s%s' % (self._api_server, related_url)
-    #    data = self.__call_galaxy(url)
-    #    if len(data["results"]) != 0:
-    #        return data["results"][0]
-    #    return None
 
     @g_connect
     def fetch_content_related(self, related_url):
@@ -349,42 +271,6 @@ class GalaxyAPI(object):
             raise exceptions.GalaxyClientError("Failed to download the %s list: %s" % (what, str(error)))
 
     @g_connect
-    def search_content(self, search, **kwargs):
-        self.log.debug('search=%s', search)
-        self.log.debug('kwargs=%s', kwargs)
-
-        search_url = self.baseurl + '/search/content/?'
-
-        if search:
-            search_url += '&autocomplete=' + urlquote(search)
-
-        tags = kwargs.get('tags', None)
-        platforms = kwargs.get('platforms', None)
-        page_size = kwargs.get('page_size', None)
-        author = kwargs.get('author', None)
-
-        if tags and isinstance(tags, six.string_types):
-            tags = tags.split(',')
-
-            # TODO: the autocomplete search seems pretty vague...
-            #       maybe except a wildcard or option for exact match?
-            # searchs=' + '+'.join(tags)
-            search_url += '&tags_autocomplete=' + '+'.join(tags)
-
-        if platforms and isinstance(platforms, six.string_types):
-            platforms = platforms.split(',')
-            search_url += '&platforms_autocomplete=' + '+'.join(platforms)
-
-        if page_size:
-            search_url += '&page_size=%s' % page_size
-
-        if author:
-            search_url += '&username_autocomplete=%s' % author
-
-        data = self.__call_galaxy(search_url, method='GET')
-        return data
-
-    @g_connect
     def add_secret(self, source, github_user, github_repo, secret):
         url = "%s/notification_secrets/" % self.baseurl
         args = urlencode({
@@ -394,22 +280,4 @@ class GalaxyAPI(object):
             "secret": secret
         })
         data = self.__call_galaxy(url, args=args)
-        return data
-
-    @g_connect
-    def list_secrets(self):
-        url = "%s/notification_secrets" % self.baseurl
-        data = self.__call_galaxy(url, headers=self.__auth_header())
-        return data
-
-    @g_connect
-    def remove_secret(self, secret_id):
-        url = "%s/notification_secrets/%s/" % (self.baseurl, secret_id)
-        data = self.__call_galaxy(url, headers=self.__auth_header(), method='DELETE')
-        return data
-
-    @g_connect
-    def delete_role(self, github_user, github_repo):
-        url = "%s/removerole/?github_user=%s&github_repo=%s" % (self.baseurl, github_user, github_repo)
-        data = self.__call_galaxy(url, headers=self.__auth_header(), method='DELETE')
         return data

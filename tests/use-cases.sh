@@ -38,11 +38,6 @@ tree ~/.ansible/content
 
 # mazer list -p ~/.ansible/test-roles
 
-# mazer search  --author=alikins
-
-# mazer search  strategy
-
-# install 'all' from a multi-content repo
 rm -rf ~/.ansible/content
 mazer install alikins.ansible-testing-content
 tree ~/.ansible/content

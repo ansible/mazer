@@ -84,6 +84,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
     ''' code behind bin/ansible* programs '''
 
     VALID_ACTIONS = []
+    VALID_ACTION_ALIASES = {}
 
     _ITALIC = re.compile(r"I\(([^)]+)\)")
     _BOLD = re.compile(r"B\(([^)]+)\)")
@@ -118,6 +119,10 @@ class CLI(six.with_metaclass(ABCMeta, object)):
             arg = self.args[i]
             if arg in self.VALID_ACTIONS:
                 self.action = arg
+                del self.args[i]
+                break
+            if arg in self.VALID_ACTION_ALIASES:
+                self.action = self.VALID_ACTION_ALIASES[arg]
                 del self.args[i]
                 break
 

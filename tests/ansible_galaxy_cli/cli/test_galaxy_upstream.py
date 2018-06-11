@@ -44,10 +44,6 @@ from ansible_galaxy import exceptions
 
 from ansible_galaxy_cli.cli.galaxy import GalaxyCLI
 from ansible_galaxy_cli import exceptions as cli_exceptions
-# from ansible.compat.tests import unittest
-# from ansible.compat.tests.mock import call, patch
-# from ansible.errors import AnsibleError, AnsibleOptionsError
-# from ansible.module_utils.six import PY3
 
 log = logging.getLogger(__name__)
 
@@ -208,23 +204,18 @@ class TestGalaxy(unittest.TestCase):
             self.assertIsInstance(galaxycli_obj.parser, ansible_galaxy_cli.cli.SortedOptParser)
             # self.assertIsInstance(galaxycli_obj.galaxy, ansible_galaxy.models.context.GalaxyContext)
             formatted_call = {
-                'import': 'usage: %prog import [options] github_user github_repo',
-                'delete': 'usage: %prog delete [options] github_user github_repo',
                 'info': 'usage: %prog info [options] role_name[,version]',
                 'init': 'usage: %prog init [options] role_name',
                 'install': 'usage: %prog install [options] [-r FILE | role_name(s)[,version] | scm+role_repo_url[,version] | tar_file(s)]',
                 'list': 'usage: %prog list [role_name]',
-                'login': 'usage: %prog login [options]',
                 'remove': 'usage: %prog remove role1 role2 ...',
-                'search': ('usage: %prog search [searchterm1 searchterm2] [--galaxy-tags galaxy_tag1,galaxy_tag2] [--platforms platform1,platform2] '
-                           '[--author username]'),
-                'setup': 'usage: %prog setup [options] source github_user github_repo secret',
+                'version': 'usage: %prog version',
             }
 
-            first_call = 'usage: %prog [delete|import|info|init|install|list|login|remove|search|setup] [--help] [options] ...'
+            first_call = 'usage: %prog [info|init|install|list|remove|version] [--help] [options] ...'
             second_call = formatted_call[action]
             calls = [call(first_call), call(second_call)]
-            # mocked_usage.assert_has_calls(calls)
+            mocked_usage.assert_has_calls(calls)
 
     def test_parse_no_action(self):
         ''' testing the options parser when no action is given '''
@@ -235,21 +226,6 @@ class TestGalaxy(unittest.TestCase):
         ''' testing the options parser when an invalid action is given '''
         gc = GalaxyCLI(args=["ansible-galaxy", "NOT_ACTION"])
         self.assertRaises(cli_exceptions.CliOptionsError, gc.parse)
-
-    def test_parse_delete(self):
-        ''' testing the options parser when the action 'delete' is given '''
-        gc = GalaxyCLI(args=["ansible-galaxy", "delete"])
-        self.run_parse_common(gc, "delete")
-        self.assertEqual(gc.options.verbosity, 0)
-
-    def test_parse_import(self):
-        ''' testing the options parser when the action 'import' is given '''
-        gc = GalaxyCLI(args=["ansible-galaxy", "import"])
-        self.run_parse_common(gc, "import")
-        self.assertEqual(gc.options.wait, True)
-        self.assertEqual(gc.options.reference, None)
-        self.assertEqual(gc.options.check_status, False)
-        self.assertEqual(gc.options.verbosity, 0)
 
     def test_parse_info(self):
         ''' testing the options parser when the action 'info' is given '''
@@ -279,35 +255,17 @@ class TestGalaxy(unittest.TestCase):
         self.run_parse_common(gc, "list")
         self.assertEqual(gc.options.verbosity, 0)
 
-    def test_parse_login(self):
-        ''' testing the options parser when the action 'login' is given '''
-        gc = GalaxyCLI(args=["ansible-galaxy", "login"])
-        self.run_parse_common(gc, "login")
-        self.assertEqual(gc.options.verbosity, 0)
-        self.assertEqual(gc.options.token, None)
-
     def test_parse_remove(self):
         ''' testing the options parser when the action 'remove' is given '''
         gc = GalaxyCLI(args=["ansible-galaxy", "remove"])
         self.run_parse_common(gc, "remove")
         self.assertEqual(gc.options.verbosity, 0)
 
-    def test_parse_search(self):
-        ''' testing the options parswer when the action 'search' is given '''
-        gc = GalaxyCLI(args=["ansible-galaxy", "search"])
-        self.run_parse_common(gc, "search")
-        self.assertEqual(gc.options.platforms, None)
-        self.assertEqual(gc.options.galaxy_tags, None)
-        self.assertEqual(gc.options.author, None)
-
-    def test_parse_setup(self):
-        ''' testing the options parser when the action 'setup' is given '''
-        gc = GalaxyCLI(args=["ansible-galaxy", "setup"])
-        self.run_parse_common(gc, "setup")
-
+    def test_parse_version(self):
+        ''' testing the options parser when the action 'version' is given '''
+        gc = GalaxyCLI(args=["ansible-galaxy", "version"])
+        self.run_parse_common(gc, "version")
         self.assertEqual(gc.options.verbosity, 0)
-        self.assertEqual(gc.options.remove_id, None)
-        self.assertEqual(gc.options.setup_list, False)
 
 
 class ValidRoleTests(object):
@@ -438,8 +396,8 @@ class ValidRoleTests(object):
 class TestGalaxyInitDefault(unittest.TestCase, ValidRoleTests):
     content_type = 'role'
 
-    #@classmethod
-    #def setup_class(cls):
+    # @classmethod
+    # def setup_class(cls):
     #    cls.setUpRole(role_name='delete_me', skeleton_path=cls._test_role_skeleton_path)
 
     def test_metadata_contents(self):
@@ -450,8 +408,8 @@ class TestGalaxyInitDefault(unittest.TestCase, ValidRoleTests):
 
 class TestGalaxyInitAPB(unittest.TestCase, ValidRoleTests):
     content_type = 'apb'
-    #@classmethod
-    #def setUpClass(cls):
+    # @classmethod
+    # def setUpClass(cls):
     #    log.debug('_test_role_skeleton_path: %s', cls._test_role_skeleton_path)
     #    cls.setUpRole('delete_me_apb', galaxy_args=['--type=apb', '--role-skeleton=%s' % cls._test_role_skeleton_path],
     #                  skeleton_path=cls._test_role_skeleton_path)
