@@ -1,4 +1,5 @@
 
+import glob
 import logging
 import os
 
@@ -34,59 +35,66 @@ def list(galaxy_context,
 
     full_role_paths = []
     # show all valid roles in the roles_path directory
-    for path in roles_path:
-        role_path = os.path.expanduser(path)
-        if not os.path.exists(role_path):
-            raise exceptions.GalaxyError("- the path %s does not exist. Please specify a valid path with --roles-path" % role_path)
-        elif not os.path.isdir(role_path):
-            raise exceptions.GalaxyError("- %s exists, but it is not a directory. Please specify a valid path with --roles-path" % role_path)
-        full_role_paths.append(role_path)
+    content_paths = roles_path
+
+    for content_path_ in content_paths:
+        log.debug('content_path_: %s', content_path_)
+        content_path = os.path.expanduser(content_path_)
+        namespace_paths = os.listdir(content_path)
+        log.debug('namespace_paths: %s', namespace_paths)
+
+        for namespace_path in namespace_paths:
+            namespace_full_path = os.path.join(content_path, namespace_path)
+            # log.debug('namespace_full_path: %s', namespace_full_path)
+            # log.debug('glob=%s', '%s/roles/*' % namespace_full_path)
+            namespaced_roles_dirs = glob.glob('%s/roles/*' % namespace_full_path)
+            # log.debug('namespaced_roles_paths: %s', namespaced_roles_dirs)
+
+            for namespaced_roles_path in namespaced_roles_dirs:
+                full_role_paths.append(namespaced_roles_path)
 
     log.debug('full_role_paths: %s', full_role_paths)
 
     content_infos = []
 
-    for path in full_role_paths:
-        path_files = os.listdir(role_path)
+    for role_full_path in full_role_paths:
+        log.debug('role_full_path: %s', role_full_path)
+        path_file = os.path.basename(role_full_path)
+        # log.debug('path_file / name: %s', path_file)
 
-        for path_file in path_files:
-            role_full_path = os.path.join(role_path, path_file)
-
-            log.debug('role_full_path: %s', role_full_path)
-            log.debug('path_file / name: %s', path_file)
-
-            gr = GalaxyContent(galaxy_context, path_file, path=role_full_path)
+        gr = GalaxyContent(galaxy_context, path_file, path=role_full_path)
 
 
 
-            # FIXME: not so much a kluge, but a sure sign that GalaxyContent.path
-            #        (or its alias GalaxyContent.content_meta.path) have different meanings
-            #        in diff parts of the code  (sometimes for the root dir where content lives
-            #        (.ansible/content) sometimes for the path the dir to the content
-            #        (.ansible/content/roles/test-role-a for ex)
-            gr.content_meta.path = role_full_path
+        # FIXME: not so much a kluge, but a sure sign that GalaxyContent.path
+        #        (or its alias GalaxyContent.content_meta.path) have different meanings
+        #        in diff parts of the code  (sometimes for the root dir where content lives
+        #        (.ansible/content) sometimes for the path the dir to the content
+        #        (.ansible/content/roles/test-role-a for ex)
+        gr.content_meta.path = role_full_path
 
 
 
-            log.debug('gr: %s', gr)
-            log.debug('gr.metadata: %s', gr.metadata)
+        log.debug('gr: %s', gr)
+        log.debug('gr.metadata: %s', gr.metadata)
 
-            version = None
+        version = None
 
-            log.debug('gr.install_info: %s', gr.install_info)
+        log.debug('gr.install_info: %s', gr.install_info)
 
-            if gr.metadata:
-                install_info = gr.install_info
-                if install_info:
-                    version = install_info.get("version", None)
-                if not version:
-                    version = "(unknown version)"
-                # display_callback("- %s, %s" % (path_file, version))
+        if gr.metadata:
+            install_info = gr.install_info
+            if install_info:
+                version = install_info.get("version", None)
+            if not version:
+                version = "(unknown version)"
+            # display_callback("- %s, %s" % (path_file, version))
 
-            if match_filter(gr):
-                content_infos.append({'path': path_file,
-                                      'content_data': gr,
-                                      'version': version})
+        if match_filter(gr):
+            content_infos.append({'path': path_file,
+                                  'content_data': gr,
+                                  'version': version,
+                                  })
 
     log.debug('content_infos: %s', content_infos)
     for content_info in content_infos:

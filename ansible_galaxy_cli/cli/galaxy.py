@@ -352,7 +352,7 @@ class GalaxyCLI(cli.CLI):
         """
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
-        roles_path = [os.path.join(galaxy_context.content_path, 'roles')]
+        # roles_path = [os.path.join(galaxy_context.content_path, 'roles')]
 
         match_filter = list_action.match_all
 
@@ -362,7 +362,7 @@ class GalaxyCLI(cli.CLI):
 
         # TODO: eventually, loop over content types
 
-        return list_action.list(galaxy_context, roles_path,
+        return list_action.list(galaxy_context, [galaxy_context.content_path],
                                 match_filter=match_filter,
                                 display_callback=self.display)
 
