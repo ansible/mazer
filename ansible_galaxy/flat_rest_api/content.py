@@ -400,6 +400,9 @@ class GalaxyContent(object):
             log.debug('content_names: %s', content_names)
 
             parent_dir_slash = '%s/' % parent_dir
+
+            namespace_repo_name = content_meta.src
+
             # extract each content individually
             for content_name in content_names:
                 files_to_extract = []
@@ -412,7 +415,11 @@ class GalaxyContent(object):
 
                 # log.debug('member_matches for content_name=%s: %s', content_name, pprint.pformat(member_matches))
 
+                namespaced_content_path = '%s/%s/%s' % (namespace_repo_name,
+                                                        content_sub_dir,
+                                                        content_name)
                 log.debug('namespace: %s', content_meta.namespace)
+                log.debug('namespaced_content_path: %s', namespaced_content_path)
 
                 for member_match in member_matches:
                     # archive_member, dest_dir, dest_filename, force_overwrite
@@ -422,12 +429,12 @@ class GalaxyContent(object):
 
                     # need to replace the role name in the archive with the role name
                     # that includes the galaxy namespace
-                    # roles/foobar/meta/main.yml, after_roles -> foobar/meta/main.yml
-                    after_roles = rel_path[len(content_sub_dir) + 1:]
 
-                    namespaced_role_rel_path = rel_path.replace('roles/%s' % content_name,
-                                                                'roles/%s.%s' % (content_meta.namespace, content_name),
+                    namespaced_role_rel_path = rel_path.replace('%s/%s' % (content_sub_dir,
+                                                                           content_name),
+                                                                namespaced_content_path,
                                                                 1)
+                    log.debug('namespaced_role_rel_path: %s', namespaced_role_rel_path)
                     extract_info = {'archive_member': member_match,
                                     'dest_dir': content_meta.path,
                                     # 'dest_dir': os.path.join(content_meta.path,
@@ -435,7 +442,8 @@ class GalaxyContent(object):
                                     #                         content_name),
                                     # 'dest_filename': os.path.join(content_sub_dir, content_name, member_match.name),
                                     # +1 to include the '/' at end of parent dir
-                                    'dest_filename': member_match.name[len(parent_dir) + 1:],
+                                    # 'dest_filename': member_match.name[len(parent_dir) + 1:],
+                                    'dest_filename': namespaced_role_rel_path,
                                     'force_overwrite': force_overwrite}
                     files_to_extract.append(extract_info)
 
@@ -457,8 +465,7 @@ class GalaxyContent(object):
 
                 if install_content_type in self.REQUIRES_META_MAIN:
                     info_path = os.path.join(content_meta.path,
-                                             content_sub_dir,
-                                             content_name,
+                                             namespaced_content_path,
                                              self.META_INSTALL)
                     self._write_galaxy_install_info(content_meta, info_path)
 
