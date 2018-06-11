@@ -36,19 +36,19 @@ def get_download_url(repo_data=None, external_url=None, repoversion=None):
 
     # server response didn't suggest a download_url, take a guess and make one up
     if external_url and repoversion:
-        archive_url = '%s/archive/%s.tar.gz' % (external_url, repoversion['name'])
+        archive_url = '%s/archive/%s.tar.gz' % (external_url, repoversion['version'])
         return archive_url
 
 
 def select_repository_version(repoversions, version):
-    # repository_versions name is 'not null' so should always exist
+    # repository_versions 'version' is 'not null' so should always exist
 
     # we could build a map/dict first and search in it, but we only use this
     # once, so this linear search is ok, since building the map would be that
     # plus the getitem
-    results = [x for x in repoversions if x['name'] == version]
+    results = [x for x in repoversions if x['version'] == version]
 
-    # repository_versions is uniq on (name, repo.id) so for any given repo,
+    # repository_versions is uniq on (version, repo.id) so for any given repo,
     # there should only be one result here
     repoversion = results.pop()
     return repoversion
@@ -110,9 +110,6 @@ class GalaxyUrlFetch(base.BaseFetch):
         # FIXME: exception handling
         repoversions = api.fetch_content_related(repo_versions_url)
 
-        # repo_versions is uniq on (name, repository_id), so for a particular
-        # repository_id, we can build a map of repositoryversion.name -> repository.id
-
         # related_repo_url = related.get('repository', None)
         # log.debug('related_repo_url: %s', related_repo_url)
         # related_content_url = related.get('content', None)
@@ -121,7 +118,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         # content_repo = None
         # if related_content_url:
         #     content_repo = api.fetch_content_related(related_content_url)
-        content_repo_versions = [a.get('name') for a in repoversions if a.get('name', None)]
+        content_repo_versions = [a.get('version') for a in repoversions if a.get('version', None)]
 
         # log.debug('content_repo: %s', content_repo)
         # FIXME: mv to it's own method
