@@ -215,7 +215,9 @@ class GalaxyContent(object):
                 log.debug('content_meta.path: %s', self.content_meta.path)
                 log.debug('archive.META_MAIN: %s', archive.META_MAIN)
 
-                meta_path = os.path.join(self.content_meta.path, archive.META_MAIN)
+                meta_path = os.path.join(self.content_meta.path,
+                                         self.content_meta.content_sub_dir,
+                                         archive.META_MAIN)
 
                 log.debug('meta_path: %s', meta_path)
 
@@ -261,7 +263,7 @@ class GalaxyContent(object):
         return self._install_info
 
     # FIXME: should probably be a GalaxyInfoInfo class
-    def _write_galaxy_install_info(self, content_meta):
+    def _write_galaxy_install_info(self, content_meta, info_path):
         """
         Writes a YAML-formatted file to the role's meta/ directory
         (named .galaxy_install_info) which contains some information
@@ -284,10 +286,10 @@ class GalaxyContent(object):
         if not os.path.exists(os.path.join(content_meta.path, 'meta')):
             os.makedirs(os.path.join(content_meta.path, 'meta'))
 
-        info_path = os.path.join(content_meta.path,
-                                 content_meta.content_dir or '',
-                                 content_meta.content_sub_dir or '',
-                                 self.META_INSTALL)
+        #info_path = os.path.join(content_meta.path,
+        #                         content_meta.content_dir or '',
+        #                         content_meta.content_sub_dir or '',
+        #                         self.META_INSTALL)
         log.debug('info_path: %s', info_path)
 
         with open(info_path, 'w+') as f:
@@ -351,9 +353,9 @@ class GalaxyContent(object):
             # TODO:  install_contents()  - iterator over all the contents of a content type (ie, 'roles')
             # TODO:   install_content()  - install a single content  (ie, a role)
             #         _install_content_role()  - role specific impl of install_content
-            member_matches = archive.filter_members_by_content_type(content_tar_file,
-                                                                    content_archive_type,
-                                                                    content_type=install_content_type)
+            content_type_member_matches = archive.filter_members_by_content_type(content_tar_file,
+                                                                                 content_archive_type,
+                                                                                 content_type=install_content_type)
 
             # filter by path built from sub_dir and sub_name for 'modules/elasticsearch_plugin.py'
             content_sub_dir = content_meta.content_sub_dir or content.CONTENT_TYPE_DIR_MAP.get(install_content_type, '')
@@ -371,22 +373,80 @@ class GalaxyContent(object):
             log.info('about to extract %s to %s', content_meta.name, content_meta.path)
             log.info('content_sub_dir: %s', content_sub_dir)
 
-            log.debug('member_matches: %s', pprint.pformat(member_matches))
+            log.debug('content_type_member_matches: %s', pprint.pformat(content_type_member_matches))
             # archive_extract_root = os.path.join(content_sub_dir, content_meta.content_sub_dir)
             # log.debug('archive_extract_root: %s', archive_extract_root)
 
             # TODO: extract_file_list_to_path(content_tar_file, files_to_extract, extract_to_path, force_overwrite)
-            installed_paths = archive.extract_by_content_type(content_tar_file,
-                                                              # archive_parent_dir,
-                                                              content_sub_dir,
-                                                              content_meta,
-                                                              files_to_extract=member_matches,
-                                                              extract_to_path=content_meta.path,
-                                                              force_overwrite=force_overwrite)
-            all_installed_paths.extend(installed_paths)
+            # TODO: split into lists of each content objects (ie, each role, instead of all roles) and
+            #       install them one by one
 
-            if install_content_type in self.REQUIRES_META_MAIN:
-                self._write_galaxy_install_info(content_meta)
+            parent_dir = content_tar_file.members[0].name
+            # parent_dir = archive.find_archive_parent_dir(member_matches, install_content_type, content_sub_dir)
+            subdir = content.CONTENT_TYPE_DIR_MAP.get(install_content_type, '')
+            log.debug('parent_dir: %s', parent_dir)
+            log.debug('subdir: %s', subdir)
+            log.debug('parent_dir/content_sub_dir %s', os.path.join(parent_dir, subdir))
+            content_names = set()
+            for content_type_member_match in content_type_member_matches:
+                path_parts = content_type_member_match.name.split('/')
+                # 0 is archive parent dir, 1 is content type (roles, modules, etc)
+                # 2 is the content_name (role name, pluginfoo.py etc)
+                content_names.add(path_parts[2])
+
+            # content_names is all of the diffierent contents of install_content_type
+            log.debug('content_names: %s', content_names)
+
+            parent_dir_slash = '%s/' % parent_dir
+            # extract each content individually
+            for content_name in content_names:
+                files_to_extract = []
+
+                match_pattern = '%s/%s/%s*' % (parent_dir, content_sub_dir, content_name)
+                # log.debug('MATCH_PATTERNS: %s', match_pattern)
+
+                member_matches = archive.filter_members_by_fnmatch(content_tar_file,
+                                                                   match_pattern)
+
+                log.debug('member_matches for content_name=%s: %s', content_name, pprint.pformat(member_matches))
+
+                for member_match in member_matches:
+                    log.debug('dest_filename: %s', member_match.name[len(parent_dir) + 1:])
+                    # archive_member, dest_dir, dest_filename, force_overwrite
+                    extract_info = {'archive_member': member_match,
+                                    'dest_dir': content_meta.path,
+                                    # 'dest_dir': os.path.join(content_meta.path,
+                                    #                         content_sub_dir,
+                                    #                         content_name),
+                                    # 'dest_filename': os.path.join(content_sub_dir, content_name, member_match.name),
+                                    # +1 to include the '/' at end of parent dir
+                                    'dest_filename': member_match.name[len(parent_dir) + 1:],
+                                    'force_overwrite': force_overwrite}
+                    files_to_extract.append(extract_info)
+
+                log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
+
+                file_extractor = archive.extract_files(content_tar_file, files_to_extract)
+                log.debug('file_extracter: %s', file_extractor)
+
+                installed_paths = [x for x in file_extractor]
+                log.debug('installed_paths: %s', pprint.pformat(installed_paths))
+            # installed_paths = archive.extract_by_content_type(content_tar_file,
+            #                                                  # archive_parent_dir,
+            #                                                  content_sub_dir,
+            #                                                  content_meta,
+            #                                                  files_to_extract=member_matches,
+            #                                                  extract_to_path=content_meta.path,
+            #                                                  force_overwrite=force_overwrite)
+                all_installed_paths.extend(installed_paths)
+
+                if install_content_type in self.REQUIRES_META_MAIN:
+                    info_path = os.path.join(content_meta.path,
+                                             content_sub_dir,
+                                             content_name,
+                                             self.META_INSTALL)
+                    log.debug('info_path: %s', info_path)
+                    self._write_galaxy_install_info(content_meta, info_path)
 
         return all_installed_paths
 
