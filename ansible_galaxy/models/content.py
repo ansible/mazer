@@ -1,3 +1,7 @@
+import logging
+
+log = logging.getLogger(__name__)
+
 
 VALID_ROLE_SPEC_KEYS = [
     'src',
@@ -42,7 +46,8 @@ class GalaxyContentMeta(object):
                  src=None, scm=None,
                  content_type=None,
                  path=None, requires_meta_main=None,
-                 content_dir=None, content_sub_dir=None):
+                 content_dir=None, content_sub_dir=None,
+                 namespace=None):
 
         self.name = name
         self.version = version
@@ -53,7 +58,11 @@ class GalaxyContentMeta(object):
         self.requires_meta_main = requires_meta_main
         self.content_dir = content_dir
         self.content_sub_dir = content_sub_dir
+        self.namespace = namespace
         self._data = {}
+
+
+#         log.debug('%s locals: %s', self.__class__.__name__, locals())
 
     @classmethod
     def from_data(cls, data):
@@ -61,17 +70,19 @@ class GalaxyContentMeta(object):
         return inst
 
     def __eq__(self, other):
-        return (self.name, self.version, self.src, self.scm,
+        return (self.name, self.namespace, self.version, self.src, self.scm,
                 self.content_type, self.content_dir, self.path) == \
-            (other.name, other.version, other.src, other.scm,
+            (other.name, other.namespace, other.version, other.src, other.scm,
              other.content_type, other.content_dir, other.path)
 
     def __repr__(self):
-        return 'GalaxyContentMeta(name=%s, version=%s, src=%s, scm=%s, content_type=%s, content_dir=%s, content_sub_dir=%s, path=%s, requires_meta_main=%s)' \
-            % (self.name, self.version, self.src, self.scm, self.content_type, self.content_dir, self.content_sub_dir, self.path, self.requires_meta_main)
+        return 'GalaxyContentMeta(name=%s, namespace=%s, version=%s, src=%s, scm=%s, content_type=%s, content_dir=%s, content_sub_dir=%s, path=%s, requires_meta_main=%s)' \
+            % (self.name, self.namespace, self.version, self.src, self.scm,
+               self.content_type, self.content_dir, self.content_sub_dir, self.path, self.requires_meta_main)
 
     def _as_dict(self):
         return {'name': self.name,
+                'namespace': self.namespace,
                 'version': self.version,
                 'src': self.src,
                 'scm': self.scm,
@@ -96,7 +107,9 @@ class RoleContentMeta(GalaxyContentMeta):
         self.content_type = 'role'
         self.content_dir = CONTENT_TYPE_DIR_MAP.get('role', None)
         self.content_sub_dir = self.name
+
         # self.requires_meta_main = True
+        log.debug('%s self.__dict__: %s', self.__class__.__name__, self.__dict__)
 
 
 class APBContentArchiveMeta(GalaxyContentMeta):

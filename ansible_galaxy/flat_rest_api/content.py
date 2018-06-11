@@ -210,31 +210,36 @@ class GalaxyContent(object):
         """
         Returns role metadata for type role, errors otherwise
         """
-        if self.content_type in ["role", "all"]:
-            if self._metadata is None:
-                log.debug('content_meta.path: %s', self.content_meta.path)
-                log.debug('archive.META_MAIN: %s', archive.META_MAIN)
-
-                meta_path = os.path.join(self.content_meta.path,
-                                         self.content_meta.content_sub_dir,
-                                         archive.META_MAIN)
-
-                log.debug('meta_path: %s', meta_path)
-
-                if os.path.isfile(meta_path):
-                    try:
-                        f = open(meta_path, 'r')
-                        self._metadata = yaml.safe_load(f)
-                    except Exception as e:
-                        log.exception(e)
-                        log.debug("Unable to load metadata for %s", self.content_meta.name)
-                        return False
-                    finally:
-                        f.close()
-
-            return self._metadata
-        else:
+        if self.content_meta.content_type not in ('role', 'all'):
+            log.debug('content_type not role %s', self.content_meta.content_type)
             return {}
+
+        if self._metadata is not None:
+            log.debug('self.metadata already set, returning %s', self._metadata)
+            return self._metadata
+
+        log.debug('content_meta.path: %s', self.content_meta.path)
+        log.debug('self.path: %s', self.path)
+        log.debug('archive.META_MAIN: %s', archive.META_MAIN)
+        log.debug('content_dir: %s', self.content_dir)
+
+        meta_path = os.path.join(self.path,
+                                 archive.META_MAIN)
+
+        log.debug('meta_path: %s', meta_path)
+
+        if os.path.isfile(meta_path):
+            try:
+                f = open(meta_path, 'r')
+                self._metadata = yaml.safe_load(f)
+            except Exception as e:
+                log.exception(e)
+                log.debug("Unable to load metadata for %s", self.content_meta.name)
+                return False
+            finally:
+                f.close()
+
+        return self._metadata
 
     # TODO: class/module for ContentInstallInfo
     @property
@@ -280,8 +285,8 @@ class GalaxyContent(object):
             install_date_iso=install_date
         )
 
-        import pprint
-        log.debug('content.content_meta.__dict__ %s', pprint.pformat(content_meta.__dict__))
+        # import pprint
+        # log.debug('content.content_meta.__dict__ %s', pprint.pformat(content_meta.__dict__))
 
         if not os.path.exists(os.path.join(content_meta.path, 'meta')):
             os.makedirs(os.path.join(content_meta.path, 'meta'))
@@ -290,7 +295,6 @@ class GalaxyContent(object):
         #                         content_meta.content_dir or '',
         #                         content_meta.content_sub_dir or '',
         #                         self.META_INSTALL)
-        log.debug('info_path: %s', info_path)
 
         with open(info_path, 'w+') as f:
             # FIXME: just return the install_info dict (or better, build it elsewhere and pass in)
@@ -302,6 +306,7 @@ class GalaxyContent(object):
                 log.exception(e)
                 return False
 
+        log.debug('wrote %s to %s', yaml.safe_dump(info, default_flow_style=False), info_path)
         return True
 
     def remove(self):
@@ -384,9 +389,6 @@ class GalaxyContent(object):
             parent_dir = content_tar_file.members[0].name
             # parent_dir = archive.find_archive_parent_dir(member_matches, install_content_type, content_sub_dir)
             subdir = content.CONTENT_TYPE_DIR_MAP.get(install_content_type, '')
-            log.debug('parent_dir: %s', parent_dir)
-            log.debug('subdir: %s', subdir)
-            log.debug('parent_dir/content_sub_dir %s', os.path.join(parent_dir, subdir))
             content_names = set()
             for content_type_member_match in content_type_member_matches:
                 path_parts = content_type_member_match.name.split('/')
@@ -408,11 +410,24 @@ class GalaxyContent(object):
                 member_matches = archive.filter_members_by_fnmatch(content_tar_file,
                                                                    match_pattern)
 
-                log.debug('member_matches for content_name=%s: %s', content_name, pprint.pformat(member_matches))
+                # log.debug('member_matches for content_name=%s: %s', content_name, pprint.pformat(member_matches))
+
+                log.debug('namespace: %s', content_meta.namespace)
 
                 for member_match in member_matches:
-                    log.debug('dest_filename: %s', member_match.name[len(parent_dir) + 1:])
                     # archive_member, dest_dir, dest_filename, force_overwrite
+
+                    # rel_path ~  roles/some-role/meta/main.yml for ex
+                    rel_path = member_match.name[len(parent_dir) + 1:]
+
+                    # need to replace the role name in the archive with the role name
+                    # that includes the galaxy namespace
+                    # roles/foobar/meta/main.yml, after_roles -> foobar/meta/main.yml
+                    after_roles = rel_path[len(content_sub_dir) + 1:]
+
+                    namespaced_role_rel_path = rel_path.replace('roles/%s' % content_name,
+                                                                'roles/%s.%s' % (content_meta.namespace, content_name),
+                                                                1)
                     extract_info = {'archive_member': member_match,
                                     'dest_dir': content_meta.path,
                                     # 'dest_dir': os.path.join(content_meta.path,
@@ -424,13 +439,13 @@ class GalaxyContent(object):
                                     'force_overwrite': force_overwrite}
                     files_to_extract.append(extract_info)
 
-                log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
+                # log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
 
                 file_extractor = archive.extract_files(content_tar_file, files_to_extract)
                 log.debug('file_extracter: %s', file_extractor)
 
                 installed_paths = [x for x in file_extractor]
-                log.debug('installed_paths: %s', pprint.pformat(installed_paths))
+                # log.debug('installed_paths: %s', pprint.pformat(installed_paths))
             # installed_paths = archive.extract_by_content_type(content_tar_file,
             #                                                  # archive_parent_dir,
             #                                                  content_sub_dir,
@@ -445,7 +460,6 @@ class GalaxyContent(object):
                                              content_sub_dir,
                                              content_name,
                                              self.META_INSTALL)
-                    log.debug('info_path: %s', info_path)
                     self._write_galaxy_install_info(content_meta, info_path)
 
         return all_installed_paths
@@ -512,9 +526,6 @@ class GalaxyContent(object):
 
     def install(self, content_meta=None, force_overwrite=False):
         installed = []
-        archive_role_metadata = None
-
-        meta_file = None
         archive_parent_dir = None
 
         # FIXME: enum/constant/etc demagic
@@ -562,8 +573,10 @@ class GalaxyContent(object):
         content_tar_file, archive_meta = content_archive.load_archive(archive_path)
 
         log.debug('archive_meta: %s', archive_meta)
+        log.debug('fetch_results: %s', pprint.pformat(fetch_results))
         content_data = fetch_results.get('content', {})
         content_meta.version = content_data.get('fetched_version', content_meta.version)
+        content_meta.namespace = content_data.get('content_namespace', content_meta.namespace)
         log.debug('SET content.meta.version = %s', content_meta.version)
 
         log.debug('archive_meta: %s', archive_meta)
@@ -597,8 +610,8 @@ class GalaxyContent(object):
                      content_meta.name, archive_meta.archive_type, content_meta.content_type,
                      self.content_install_type)
 
-            log.info('about to extract content_type=%s %s to %s',
-                     content_meta.content_type, content_meta.name, content_meta.path)
+            log.info('about to extract content_type=%s %s version=%s to %s',
+                     content_meta.content_type, content_meta.name, content_meta.version, content_meta.path)
 
             log.debug('content_meta: %s', content_meta)
 

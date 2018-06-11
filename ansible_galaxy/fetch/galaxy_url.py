@@ -181,5 +181,6 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         results['content'] = {'fetched_version': _repoversion.get('version'),
                               'repo_name': repo_name,
-                              'content_name': content_name}
+                              'content_name': content_name,
+                              'content_namespace': content_username}
         return results

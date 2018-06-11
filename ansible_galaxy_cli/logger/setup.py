@@ -77,6 +77,7 @@ DEFAULT_LOGGING_CONFIG = {
             'level': 'INFO',
             'handlers': DEFAULT_HANDLERS,
             # to log verbose debug level logging to http_file handler:
+            # 'propagate': False,
             # 'level': 'DEBUG',
             # 'handlers': ['http_file'],
         },
