@@ -18,7 +18,6 @@ def test_info_empty(galaxy_context):
                                   # mock api
                                   mock.Mock(),
                                   [],
-                                  content_path=None,
                                   display_callback=display_callback,
                                   offline=True)
 
@@ -30,7 +29,6 @@ def test_info(galaxy_context):
                                   # mock api
                                   mock.Mock(),
                                   ['namespace.repo.content'],
-                                  content_path=None,
                                   display_callback=display_callback,
                                   offline=True)
 
