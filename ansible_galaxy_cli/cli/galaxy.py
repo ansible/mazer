@@ -258,7 +258,8 @@ class GalaxyCLI(cli.CLI):
             # the user needs to specify a role
             raise cli_exceptions.CliOptionsError("- you must specify a user/role name")
 
-        content_path = self.options.roles_path
+        # content_path = self.options.roles_path
+        content_path = self.options.content_path
 
         log.debug('args=%s', self.args)
 
@@ -267,7 +268,8 @@ class GalaxyCLI(cli.CLI):
         content_specs = self.args
 
         # FIXME: rc?
-        return info.info_content_specs(galaxy_context, self.api, content_specs, content_path,
+        return info.info_content_specs(galaxy_context, self.api, content_specs,
+                                       #content_path,
                                        display_callback=self.display,
                                        offline=self.options.offline)
 

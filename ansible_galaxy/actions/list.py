@@ -33,7 +33,10 @@ def list(galaxy_context,
     match_filter = match_filter or match_all
     log.debug('locals: %s', locals())
 
+    # TODO: make this into a Content iterator / database / name directory / index / etc
+
     full_role_paths = []
+
     # show all valid roles in the roles_path directory
     content_paths = roles_path
 
