@@ -104,7 +104,8 @@ class GalaxyCLI(cli.CLI):
             self.parser.add_option('-g', '--keep-scm-meta', dest='keep_scm_meta', action='store_true',
                                    default=False, help='Use tar instead of the scm archive option when packaging the role')
             self.parser.add_option('-t', '--type', dest='content_type', default="all", help='A type of Galaxy Content to install: role, module, etc')
-            # FIXME: rm when tests are updated
+            self.parser.add_option('--namespace', dest='namespace', default=None,
+                                   help='The namespace to use when installing content (required for installs from local scm repo or archives)')
         elif self.action == "remove":
             self.parser.set_usage("usage: %prog remove role1 role2 ...")
         elif self.action == "list":
@@ -313,6 +314,7 @@ class GalaxyCLI(cli.CLI):
             rc = install.install_content_specs(galaxy_context,
                                                content_specs=requested_content_specs,
                                                install_content_type=install_content_type,
+                                               namespace=self.options.namespace,
                                                display_callback=self.display,
                                                ignore_errors=self.options.ignore_errors,
                                                no_deps=self.options.no_deps,

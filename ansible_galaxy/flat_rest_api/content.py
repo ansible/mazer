@@ -98,7 +98,7 @@ class GalaxyContent(object):
     # FIXME(alikins): Not a fan of vars/args with names like 'type', but leave it for now
     def __init__(self, galaxy, name,
                  src=None, version=None, scm=None, path=None, type="role",
-                 content_meta=None, sub_name=None,
+                 content_meta=None, sub_name=None, namespace=None,
                  display_callback=None):
         """
         The GalaxyContent type is meant to supercede the old GalaxyRole type,
@@ -151,6 +151,7 @@ class GalaxyContent(object):
         self.content_meta = content_meta or \
             content.GalaxyContentMeta(name=name, src=src, version=version,
                                       scm=scm, path=primary_galaxy_content_path,
+                                      namespace=namespace,
                                       # requires_meta_main=requires_meta_main,
                                       content_type=content_type,
                                       content_dir=CONTENT_TYPE_DIR_MAP.get(content_type, None))
@@ -288,8 +289,9 @@ class GalaxyContent(object):
         # import pprint
         # log.debug('content.content_meta.__dict__ %s', pprint.pformat(content_meta.__dict__))
 
-        if not os.path.exists(os.path.join(content_meta.path, 'meta')):
-            os.makedirs(os.path.join(content_meta.path, 'meta'))
+        # if not os.path.exists(os.path.join(content_meta.path, 'meta')):
+        if not os.path.exists(os.path.dirname(info_path)):
+            os.makedirs(os.path.dirname(info_path))
 
         #info_path = os.path.join(content_meta.path,
         #                         content_meta.content_dir or '',
@@ -434,17 +436,14 @@ class GalaxyContent(object):
                                                                            content_name),
                                                                 namespaced_content_path,
                                                                 1)
+
                     log.debug('namespaced_role_rel_path: %s', namespaced_role_rel_path)
+
                     extract_info = {'archive_member': member_match,
                                     'dest_dir': content_meta.path,
-                                    # 'dest_dir': os.path.join(content_meta.path,
-                                    #                         content_sub_dir,
-                                    #                         content_name),
-                                    # 'dest_filename': os.path.join(content_sub_dir, content_name, member_match.name),
-                                    # +1 to include the '/' at end of parent dir
-                                    # 'dest_filename': member_match.name[len(parent_dir) + 1:],
                                     'dest_filename': namespaced_role_rel_path,
                                     'force_overwrite': force_overwrite}
+
                     files_to_extract.append(extract_info)
 
                 # log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
@@ -453,14 +452,6 @@ class GalaxyContent(object):
                 log.debug('file_extracter: %s', file_extractor)
 
                 installed_paths = [x for x in file_extractor]
-                # log.debug('installed_paths: %s', pprint.pformat(installed_paths))
-            # installed_paths = archive.extract_by_content_type(content_tar_file,
-            #                                                  # archive_parent_dir,
-            #                                                  content_sub_dir,
-            #                                                  content_meta,
-            #                                                  files_to_extract=member_matches,
-            #                                                  extract_to_path=content_meta.path,
-            #                                                  force_overwrite=force_overwrite)
                 all_installed_paths.extend(installed_paths)
 
                 if install_content_type in self.REQUIRES_META_MAIN:
@@ -487,30 +478,63 @@ class GalaxyContent(object):
         installed = [(content_meta, all_installed_paths)]
         return installed
 
+    # FIXME: This should really be shared with the bulk of install_for_content_type()
+    #        and like a content type specific impl in a GalaxyContent subclass
     def _install_role_archive(self, content_tar_file, archive_meta, content_meta,
                               force_overwrite=False):
 
-        member_matches = archive.filter_members_by_content_meta(content_tar_file,
-                                                                content_archive_type='role',
-                                                                content_meta=content_meta)
+        log.debug('content_meta: %s', content_meta)
 
-        # log.debug('member_matches: %s' % member_matches)
+        if not content_meta.namespace:
+            raise exceptions.GalaxyError('While installing a role from %s, no namespace was found. Try providing one with --namespace' %
+                                         content_meta.src)
+
         log.debug('content_meta: %s', content_meta)
         log.info('about to extract %s to %s', content_meta.name, content_meta.path)
 
-        installed_paths = archive.extract_by_content_type(content_tar_file,
-                                                          archive_meta.top_dir,
-                                                          content_meta,
-                                                          content_archive_type='role',
-                                                          install_content_type='role',
-                                                          files_to_extract=member_matches,
-                                                          extract_to_path=content_meta.path,
-                                                          force_overwrite=force_overwrite)
+        tar_members = content_tar_file.members
+        parent_dir = tar_members[0].name
 
+        # repo_name = content_meta.name
+        # namespace = content_meta.namespace
+        namespace_repo_name = "%s.%s" % (content_meta.namespace, content_meta.name)
+
+        log.debug('namespace_repo_name: %s', namespace_repo_name)
+
+        namespaced_content_path = '%s/%s/%s' % (namespace_repo_name,
+                                                'roles',
+                                                content_meta.name)
+
+        log.debug('namespace: %s', content_meta.namespace)
+        log.debug('namespaced_content_path: %s', namespaced_content_path)
+
+        files_to_extract = []
+        for member in tar_members:
+            # rel_path ~  roles/some-role/meta/main.yml for ex
+            rel_path = member.name[len(parent_dir) + 1:]
+
+            namespaced_role_rel_path = os.path.join(namespace_repo_name, 'roles', content_meta.name, rel_path)
+
+            # log.debug('namespaced_role_rel_path: %s', namespaced_role_rel_path)
+
+            extract_info = {'archive_member': member,
+                            'dest_dir': content_meta.path,
+                            'dest_filename': namespaced_role_rel_path,
+                            'force_overwrite': force_overwrite}
+
+            files_to_extract.append(extract_info)
+
+        file_extractor = archive.extract_files(content_tar_file, files_to_extract)
+        log.debug('file_extracter: %s', file_extractor)
+
+        installed_paths = [x for x in file_extractor]
         installed = [(content_meta, installed_paths)]
 
-        # FIXME: seems oddly sideeffecty...
-        self._write_galaxy_install_info(content_meta)
+        info_path = os.path.join(content_meta.path,
+                                 namespaced_content_path,
+                                 self.META_INSTALL)
+
+        self._write_galaxy_install_info(content_meta, info_path)
 
         return installed
 
@@ -531,7 +555,7 @@ class GalaxyContent(object):
         installed = [(content_meta, installed_paths)]
         return installed
 
-    def install(self, content_meta=None, force_overwrite=False):
+    def install(self, content_meta=None, force_overwrite=False, namespace=None):
         installed = []
         archive_parent_dir = None
 

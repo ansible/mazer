@@ -27,7 +27,8 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
 # FIXME: install_content_type is wrong, should be option to GalaxyContent.install()?
 # TODO: this will eventually be replaced by a content_spec 'resolver' that may
 #       hit galaxy api
-def _build_content_set(content_specs, install_content_type, galaxy_context):
+def _build_content_set(content_specs, install_content_type, galaxy_context,
+                       namespace=None):
     # TODO: split this into methods that build GalaxyContent items from the content_specs
     #       and another that installs a set of GalaxyContents
     # roles were specified directly, so we'll just go out grab them
@@ -40,8 +41,8 @@ def _build_content_set(content_specs, install_content_type, galaxy_context):
         galaxy_content = yaml_parse(content_spec.strip())
 
         # FIXME: this is a InstallOption
-        galaxy_content["type"] = install_content_type
-
+        galaxy_content['type'] = install_content_type
+        galaxy_content['namespace'] = namespace
         log.info('content install galaxy_content: %s', galaxy_content)
 
         content_left.append(GalaxyContent(galaxy_context, **galaxy_content))
@@ -51,6 +52,7 @@ def _build_content_set(content_specs, install_content_type, galaxy_context):
 
 # pass a list of content_spec objects
 def install_content_specs(galaxy_context, content_specs, install_content_type,
+                          namespace=None,
                           display_callback=None,
                           # TODO: error handling callback ?
                           ignore_errors=False,
@@ -61,7 +63,8 @@ def install_content_specs(galaxy_context, content_specs, install_content_type,
 
     requested_contents = _build_content_set(content_specs=content_specs,
                                             install_content_type=install_content_type,
-                                            galaxy_context=galaxy_context)
+                                            galaxy_context=galaxy_context,
+                                            namespace=namespace)
 
     return install_contents(galaxy_context, requested_contents, install_content_type,
                             display_callback=display_callback,
