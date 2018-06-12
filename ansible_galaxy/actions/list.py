@@ -43,7 +43,14 @@ def list(galaxy_context,
     for content_path_ in content_paths:
         log.debug('content_path_: %s', content_path_)
         content_path = os.path.expanduser(content_path_)
-        namespace_paths = os.listdir(content_path)
+
+        namespace_paths = []
+        try:
+            namespace_paths = os.listdir(content_path)
+        except OSError as e:
+            log.exception(e)
+            raise exceptions.GalaxyError('The path %s did not exist', content_path)
+
         log.debug('namespace_paths: %s', namespace_paths)
 
         for namespace_path in namespace_paths:
