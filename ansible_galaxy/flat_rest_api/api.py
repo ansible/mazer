@@ -173,8 +173,8 @@ class GalaxyAPI(object):
         return None
 
     @g_connect
-    def lookup_content_by_name(self, user_name, repo_name, content_name, content_type=None, notify=True):
-        self.log.debug('user_name=%s', user_name)
+    def lookup_content_by_name(self, namespace, repo_name, content_name, content_type=None, notify=True):
+        self.log.debug('namespace=%s', namespace)
         self.log.debug('repo_name=%s', repo_name)
         self.log.debug('content_name=%s', content_name)
         self.log.debug('content_type=%s', content_type)
@@ -184,9 +184,9 @@ class GalaxyAPI(object):
         repo_name = urlquote(repo_name)
 
         if notify:
-            self.log.info("- downloading content '%s', type '%s',repo_name '%s'  owned by %s", content_name, content_type, repo_name, user_name)
+            self.log.info("- downloading content '%s', type '%s',repo_name '%s'  owned by %s", content_name, content_type, repo_name, namespace)
 
-        url = '%s/content/?owner__username=%s&name=%s' % (self.baseurl, user_name, content_name)
+        url = '%s/content/?name=%s&namespace__name=%s' % (self.baseurl, content_name, namespace)
         data = self.__call_galaxy(url)
         if len(data["results"]) != 0:
             return data["results"][0]
