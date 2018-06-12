@@ -294,17 +294,16 @@ def extract_file(tar_file, file_to_extract):
         return None
 
     # TODO: raise from up a level in the stack?
-    # if os.path.exists(extract_to_path):
-    #    if not force_overwrite:
-    #        message = "The Galaxy content %s appears to already exist." % extract_to_path
-    #        raise exceptions.GalaxyClientError(message)
+    if os.path.exists(dest_dir):
+        if not force_overwrite:
+            message = "The Galaxy content %s appears to already exist." % dest_dir
+            raise exceptions.GalaxyClientError(message)
 
     # change the tar file member name in place to just the filename ('myfoo.py') so that extract places that file in
     # dest_dir directly instead of using adding the archive path as well
     # like '$dest_dir/archive-roles/library/myfoo.py'
     archive_member.name = dest_filename
-    tar_file.extract(archive_member, dest_dir) 
-
+    tar_file.extract(archive_member, dest_dir)
 
     installed_path = os.path.join(dest_dir, dest_filename)
 

@@ -74,16 +74,12 @@ def list(galaxy_context,
 
         gr = GalaxyContent(galaxy_context, path_file, path=role_full_path)
 
-
-
         # FIXME: not so much a kluge, but a sure sign that GalaxyContent.path
         #        (or its alias GalaxyContent.content_meta.path) have different meanings
         #        in diff parts of the code  (sometimes for the root dir where content lives
         #        (.ansible/content) sometimes for the path the dir to the content
         #        (.ansible/content/roles/test-role-a for ex)
         gr.content_meta.path = role_full_path
-
-
 
         log.debug('gr: %s', gr)
         log.debug('gr.metadata: %s', gr.metadata)

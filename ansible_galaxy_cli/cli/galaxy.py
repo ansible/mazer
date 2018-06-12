@@ -26,7 +26,6 @@ import json
 import logging
 import os
 import sys
-import time
 
 from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
@@ -258,9 +257,6 @@ class GalaxyCLI(cli.CLI):
             # the user needs to specify a role
             raise cli_exceptions.CliOptionsError("- you must specify a user/role name")
 
-        # content_path = self.options.roles_path
-        content_path = self.options.content_path
-
         log.debug('args=%s', self.args)
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
@@ -269,7 +265,6 @@ class GalaxyCLI(cli.CLI):
 
         # FIXME: rc?
         return info.info_content_specs(galaxy_context, self.api, content_specs,
-                                       #content_path,
                                        display_callback=self.display,
                                        offline=self.options.offline)
 

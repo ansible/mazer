@@ -1,6 +1,5 @@
 
 import logging
-import pprint
 
 # mv details of this here
 from ansible_galaxy import exceptions

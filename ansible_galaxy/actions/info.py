@@ -72,7 +72,6 @@ def _repr_role_info(role_info):
 def info_content_specs(galaxy_context,
                        api,
                        content_specs,
-#                       base_content_path,
                        display_callback=None,
                        offline=None):
 

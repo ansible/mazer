@@ -76,9 +76,12 @@ class GalaxyContentMeta(object):
              other.content_type, other.content_dir, other.path)
 
     def __repr__(self):
-        return 'GalaxyContentMeta(name=%s, namespace=%s, version=%s, src=%s, scm=%s, content_type=%s, content_dir=%s, content_sub_dir=%s, path=%s, requires_meta_main=%s)' \
-            % (self.name, self.namespace, self.version, self.src, self.scm,
-               self.content_type, self.content_dir, self.content_sub_dir, self.path, self.requires_meta_main)
+        format_ = 'GalaxyContentMeta(name=%s, namespace=%s, version=%s, src=%s, scm=%s, ' + \
+            'content_type=%s, content_dir=%s, content_sub_dir=%s, path=%s, requires_meta_main=%s)'
+
+        return format_ % (self.name, self.namespace, self.version, self.src, self.scm,
+                          self.content_type, self.content_dir, self.content_sub_dir,
+                          self.path, self.requires_meta_main)
 
     def _as_dict(self):
         return {'name': self.name,

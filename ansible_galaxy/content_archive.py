@@ -78,7 +78,6 @@ def load_archive(archive_path):
     # if not meta_file and not galaxy_file and self.content_type == "role":
     #    raise exceptions.GalaxyClientError("this role does not appear to have a meta/main.yml file or ansible-galaxy.yml.")
 
-
     # metadata_ = archive.load_archive_role_metadata(content_tar_file,
     #                                               meta_file)
 
