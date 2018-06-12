@@ -142,12 +142,12 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
             installed = content.install(force_overwrite=force_overwrite)
         except exceptions.GalaxyError as e:
             log.warning("- %s was NOT installed successfully: %s ", content.name, str(e))
-            raise_without_ignore(e)
+            raise_without_ignore(ignore_errors, e)
             continue
 
         if not installed:
             log.warning("- %s was NOT installed successfully.", content.name)
-            raise_without_ignore()
+            raise_without_ignore(ignore_errors)
 
         if no_deps:
             log.warning('- %s was installed but any deps will not be installed because of no_deps',
