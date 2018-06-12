@@ -30,6 +30,7 @@ from abc import ABCMeta, abstractmethod
 
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import runtime
+from ansible_galaxy import display
 from ansible_galaxy.utils.text import to_text
 from ansible_galaxy_cli import exceptions as cli_exceptions
 
@@ -250,7 +251,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
     # FIXME: replace with output callback
     def display(self, *args, **kwargs):
         kwargs.pop('color', None)
-        print(*args, **kwargs)
+        display.display_callback(*args, **kwargs)
 
     @classmethod
     def tty_ify(cls, text):
