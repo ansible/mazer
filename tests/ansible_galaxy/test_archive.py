@@ -1,10 +1,12 @@
 
-import glob
 import logging
 import mock
 import os
 import tarfile
 import tempfile
+import pprint
+
+import pytest
 
 from ansible_galaxy import archive
 from ansible_galaxy.models.content import GalaxyContentMeta
@@ -35,22 +37,22 @@ def test_extract_file_empty():
     tmp_dir = tempfile.mkdtemp()
 
     tar_file = tarfile.TarFile(name='some-top-level',
-                               mode='r',
+                               mode='w',
                                fileobj=tmp_tar)
 
-    files_to_extract = []
     # for pathname in tar_example1:
     pathname = 'foo_blip.yml'
-    item = {'archive_member': tarfile.TarInfo(name='foo'),
-            'dest_dir': tmp_dir,
-            'dest_filename': pathname,
-            'force_overwrite': True}
+    file_to_extract = {'archive_member': tarfile.TarInfo(name='foo'),
+                       'dest_dir': tmp_dir,
+                       'dest_filename': pathname,
+                       'force_overwrite': True}
 
-    import pprint
-    log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
+    log.debug('files_to_extract: %s', pprint.pformat(file_to_extract))
+
+    read_tar_file = tar_file.open(name='some-top-level', mode='r')
 
     try:
-        archive.extract_file(tar_file, file_to_extract=item)
+        archive.extract_file(read_tar_file, file_to_extract=file_to_extract)
     except tarfile.ReadError as e:
         log.exception(e)
         return
@@ -58,7 +60,7 @@ def test_extract_file_empty():
 
 def test_extract_file_foo():
     tmp_tar_fo = tempfile.NamedTemporaryFile(delete=False)
-    tmp_member_fo = tempfile.NamedTemporaryFile()
+    tmp_member_fo = tempfile.NamedTemporaryFile(delete=False)
     # TODO: replace with tmpdir fixture
     tmp_dir = tempfile.mkdtemp()
 
@@ -79,17 +81,16 @@ def test_extract_file_foo():
             'dest_filename': pathname,
             'force_overwrite': True}
 
+    files_to_extract.append(item)
     import pprint
     log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
 
-    read_tmp_fo = open(tmp_tar_fo.name, 'r')
-    read_tar_file = tarfile.TarFile.open(name='some-top-level',
-                                         mode='r',
-                                         fileobj=read_tmp_fo)
+    read_tar_file = tar_file.open(name='some-top-level', mode='r')
     res = archive.extract_file(read_tar_file, file_to_extract=item)
     log.debug('res: %s', res)
 
 
+@pytest.mark.skip(reason="Need to either add a test tar or build one on the fly")
 def test_extract_file():
     # FIXME: rm out of tests tar file example
     # FIXME: generate a test tarfile
@@ -122,6 +123,7 @@ def test_extract_file():
     log.debug('%s contents: %s', tmp_dir, list(os.walk(dest_dir)))
 
 
+@pytest.mark.skip(reason="Need to either add a test tar or build one on the fly")
 def test_extract_files():
     # FIXME: rm out of tests tar file example
     # FIXME: generate a test tarfile
@@ -136,7 +138,6 @@ def test_extract_files():
 
     dest_dir = os.path.join(tmp_dir, 'extracted_stuff')
 
-    extract_file_list = []
     path_list = ['roles/test-role-d/handlers/main.yml',
                  'roles/test-role-a/handlers/main.yml']
 
@@ -162,19 +163,20 @@ def test_extract_files():
 
 
 foo = {'content_archive_type': 'multi-content',
-#       'content_meta': GalaxyContentMeta(name=alikins.ansible-testing-content, version=3.1.0, src=alikins.ansible-testing-content, scm=None, content_type=all, content_dir=None, content_sub_dir=None, path=/home/adrian/.ansible/content, requires_meta_main=None),
+       #       'content_meta': GalaxyContentMeta(name=alikins.ansible-testing-content, version=3.1.0, src=alikins.ansible-testing-content,
+       #                       scm=None, content_type=all, content_dir=None, content_sub_dir=None, path=/home/adrian/.ansible/content, requires_meta_main=None),
        'content_type': None,
        'content_type_requires_meta': True,
        'display_callback': None,
        'extract_to_path': '/home/adrian/.ansible/content',
        'file_name': None,
- #      'files_to_extract': [<TarInfo 'ansible-testing-content-3.1.0/library/elasticsearch_plugin.py' at 0x7f5b549c9c90>,
- #                           <TarInfo 'ansible-testing-content-3.1.0/library/riak.py' at 0x7f5b549c9e50>],
+       #      'files_to_extract': [<TarInfo 'ansible-testing-content-3.1.0/library/elasticsearch_plugin.py' at 0x7f5b549c9c90>,
+       #                           <TarInfo 'ansible-testing-content-3.1.0/library/riak.py' at 0x7f5b549c9e50>],
        'force_overwrite': True,
        'install_all_content': False,
        'install_content_type': 'module',
        'parent_dir': None,
- #      'tar_file_obj': <tarfile.TarFile object at 0x7f5b549c9950>
+       #      'tar_file_obj': <tarfile.TarFile object at 0x7f5b549c9950>
        }
 
 
@@ -193,8 +195,6 @@ def test_extract_by_content_type():
                                                                          content_sub_dir=None,
                                                                          path="/home/adrian/.ansible/content",
                                                                          requires_meta_main=None),
-#                                        install_content_type="module",
-#                                          install_all_content=False,
                                           files_to_extract=members,
                                           extract_to_path='/home/adrian/.ansible/content')
 
