@@ -1,6 +1,7 @@
 import logging
 import os
-import tempfile
+
+import pytest
 
 from ansible_galaxy.actions import init
 
@@ -11,7 +12,22 @@ def display_callback(msg, **kwargs):
     log.debug(msg)
 
 
-def test_init(tmpdir):
+role_types = \
+    [
+        'default',
+        'container',
+        'apb',
+        'network',
+    ]
+
+
+@pytest.fixture(scope='module',
+                params=role_types)
+def role_type(request):
+    yield request.param
+
+
+def test_init(tmpdir, role_type):
     role_name = 'test-role'
     # FIXME: needs lots of mocking
     init_path = tmpdir.mkdir('init_path')
@@ -19,7 +35,6 @@ def test_init(tmpdir):
     # role_path = os.path.join(init_path, role_name)
     role_skeleton_path = tmpdir.mkdir('role_skeleton').strpath
     skeleton_ignore_expressions = []
-    role_type = 'default'
     ret = init.init(role_name,
                     init_path,
                     role_path,
