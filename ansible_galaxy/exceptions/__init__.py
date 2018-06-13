@@ -39,3 +39,12 @@ class GalaxyConfigFileError(GalaxyClientError):
         config_file_path = kwargs.pop('config_file_path', None)
         super(GalaxyConfigFileError, self).__init__(*args, **kwargs)
         self.config_file_path = config_file_path
+
+
+class GalaxyArchiveError(GalaxyClientError):
+    '''Raised for errors related to content archive (tar) files'''
+
+    def __init__(self, *args, **kwargs):
+        archive_path = kwargs.pop('archive_path', None)
+        super(GalaxyArchiveError, self).__init__(*args, **kwargs)
+        self.archive_path = archive_path

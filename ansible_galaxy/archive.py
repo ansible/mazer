@@ -299,10 +299,17 @@ def extract_file(tar_file, file_to_extract):
             message = "The Galaxy content %s appears to already exist." % dest_dir
             raise exceptions.GalaxyClientError(message)
 
+    try:
+        tar_file.getmember(archive_member.name)
+    except KeyError:
+        raise exceptions.GalaxyArchiveError('The archive "%s" has no file "%s"' % (tar_file.name, archive_member.name),
+                                            archive_path=tar_file.name)
+
     # change the tar file member name in place to just the filename ('myfoo.py') so that extract places that file in
     # dest_dir directly instead of using adding the archive path as well
     # like '$dest_dir/archive-roles/library/myfoo.py'
     archive_member.name = dest_filename
+
     tar_file.extract(archive_member, dest_dir)
 
     installed_path = os.path.join(dest_dir, dest_filename)

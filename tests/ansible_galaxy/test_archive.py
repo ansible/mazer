@@ -2,6 +2,7 @@
 import logging
 import mock
 import os
+import shutil
 import tarfile
 import tempfile
 import pprint
@@ -9,13 +10,17 @@ import pprint
 import pytest
 
 from ansible_galaxy import archive
+from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import GalaxyContentMeta
+
 
 log = logging.getLogger(__name__)
 
+TMP_PREFIX = 'tmp_mazer_test_archive_'
+
 
 def test_find_content_type_subdirs_empty():
-    tmp_tar = tempfile.TemporaryFile()
+    tmp_tar = tempfile.TemporaryFile(prefix=TMP_PREFIX)
 
     tar_file = tarfile.TarFile(name='some-top-level',
                                mode='w',
@@ -29,19 +34,25 @@ def test_find_content_type_subdirs_empty():
     assert isinstance(res, list)
     assert res == []
     assert not res
+    tmp_tar.close()
 
 
 def test_extract_file_empty():
-    tmp_tar = tempfile.TemporaryFile()
+    tmp_tar = tempfile.TemporaryFile(prefix=TMP_PREFIX)
     # TODO: replace with tmpdir fixture
-    tmp_dir = tempfile.mkdtemp()
+    tmp_dir = tempfile.mkdtemp(prefix=TMP_PREFIX)
 
-    tar_file = tarfile.TarFile(name='some-top-level',
+    tar_file = tarfile.TarFile(
+                               # name='some-top-level',
                                mode='w',
                                fileobj=tmp_tar)
 
+    log.debug('tar_file.members: %s', tar_file.members)
+
+    tar_file.close()
+
     # for pathname in tar_example1:
-    pathname = 'foo_blip.yml'
+    pathname = 'this_should_not_be_in_empty_tar.yml'
     file_to_extract = {'archive_member': tarfile.TarInfo(name='foo'),
                        'dest_dir': tmp_dir,
                        'dest_filename': pathname,
@@ -49,32 +60,43 @@ def test_extract_file_empty():
 
     log.debug('files_to_extract: %s', pprint.pformat(file_to_extract))
 
-    read_tar_file = tar_file.open(name='some-top-level', mode='r')
+    read_tar_file = tarfile.TarFile.open(fileobj=tmp_tar, mode='r')
 
     try:
-        archive.extract_file(read_tar_file, file_to_extract=file_to_extract)
+        res = archive.extract_file(read_tar_file, file_to_extract=file_to_extract)
+        log.debug('res: %s', res)
+        log.debug('listdir(%s): %s', tmp_dir, os.listdir(tmp_dir))
+    except exceptions.GalaxyArchiveError as e:
+        log.exception(e)
+        return
     except tarfile.ReadError as e:
         log.exception(e)
         return
+    finally:
+        tmp_tar.close()
+        read_tar_file.close()
+        shutil.rmtree(tmp_dir)
 
 
 def test_extract_file_foo():
-    tmp_tar_fo = tempfile.NamedTemporaryFile(delete=False)
-    tmp_member_fo = tempfile.NamedTemporaryFile(delete=False)
+    tmp_tar_fo = tempfile.NamedTemporaryFile(delete=False, prefix='dddddddddddddd')
+    tmp_member_fo = tempfile.NamedTemporaryFile(delete=False, prefix='cccccccccc')
     # TODO: replace with tmpdir fixture
-    tmp_dir = tempfile.mkdtemp()
+    tmp_dir = tempfile.mkdtemp(prefix='fffffcccc')
 
-    tar_file = tarfile.TarFile.open(name='some-top-level',
-                                    mode='w',
+    tar_file = tarfile.TarFile.open(mode='w',
                                     fileobj=tmp_tar_fo)
     # fileobj=tmp_tar)
 
     files_to_extract = []
 
-    member = tarfile.TarInfo('foo')
-    tar_file.addfile(member, tmp_member_fo)
     # for pathname in tar_example1:
     pathname = 'foo_blip.yml'
+    member = tarfile.TarInfo(pathname)
+    tar_file.addfile(member, tmp_member_fo)
+
+    log.debug('tar_file2 members: %s', tar_file.getmembers())
+    tar_file.close()
 
     item = {'archive_member': member,
             'dest_dir': tmp_dir,
@@ -85,9 +107,19 @@ def test_extract_file_foo():
     import pprint
     log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
 
-    read_tar_file = tar_file.open(name='some-top-level', mode='r')
+    read_tar_file = tarfile.TarFile.open(name=tmp_tar_fo.name, mode='r')
     res = archive.extract_file(read_tar_file, file_to_extract=item)
     log.debug('res: %s', res)
+
+    log.debug('listdir: %s', os.listdir(tmp_dir))
+    assert pathname in os.listdir(tmp_dir)
+
+    os.unlink(tmp_tar_fo.name)
+    read_tar_file.close()
+    tmp_tar_fo.close()
+    tmp_member_fo.close()
+    os.unlink(tmp_member_fo.name)
+    shutil.rmtree(tmp_dir)
 
 
 @pytest.mark.skip(reason="Need to either add a test tar or build one on the fly")
@@ -97,7 +129,7 @@ def test_extract_file():
     tar_file = tarfile.TarFile.open(name='/tmp/alikins.testing-content.tar.gz',
                                     mode='r')
     # TODO: replace with tmpdir fixture
-    tmp_dir = tempfile.mkdtemp()
+    tmp_dir = tempfile.mkdtemp(prefix=TMP_PREFIX)
 
     files_to_extract = []
     # for pathname in tar_example1:
@@ -121,6 +153,7 @@ def test_extract_file():
     log.debug('res: %s', res)
     # log.debug('%s contents: %s', tmp_dir, glob.glob(dest_dir, '**', recursive=True))
     log.debug('%s contents: %s', tmp_dir, list(os.walk(dest_dir)))
+    shutil.rmtree(tmp_dir)
 
 
 @pytest.mark.skip(reason="Need to either add a test tar or build one on the fly")
@@ -130,7 +163,7 @@ def test_extract_files():
     tar_file = tarfile.TarFile.open(name='/tmp/alikins.testing-content.tar.gz',
                                     mode='r')
     # TODO: replace with tmpdir fixture
-    tmp_dir = tempfile.mkdtemp()
+    tmp_dir = tempfile.mkdtemp(prefix=TMP_PREFIX)
 
     files_to_extract = []
     # for pathname in tar_example1:
@@ -160,6 +193,7 @@ def test_extract_files():
     log.debug('res: %s', list(res))
     # log.debug('%s contents: %s', tmp_dir, glob.glob(dest_dir, '**', recursive=True))
     log.debug('%s contents: %s', tmp_dir, list(os.walk(dest_dir)))
+    shutil.rmtree(tmp_dir)
 
 
 foo = {'content_archive_type': 'multi-content',
