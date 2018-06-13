@@ -29,7 +29,6 @@ import six
 from abc import ABCMeta, abstractmethod
 
 from ansible_galaxy.config import defaults
-from ansible_galaxy.config import runtime
 from ansible_galaxy import display
 from ansible_galaxy.utils.text import to_text
 from ansible_galaxy_cli import exceptions as cli_exceptions
@@ -164,25 +163,6 @@ class CLI(six.with_metaclass(ABCMeta, object)):
             log.info(u"Using %s as config file", to_text(self.config_file_path))
         else:
             log.info(u"No config file found; using defaults")
-
-    # FIXME: doesn't make sense without real config yet
-    # NOTE: not used at the moment
-    def _validate_config(self):
-        # warn about deprecated config options
-        for deprecated in runtime.config.DEPRECATED:
-            name = deprecated[0]
-            why = deprecated[1]['why']
-            if 'alternatives' in deprecated[1]:
-                alt = ', use %s instead' % deprecated[1]['alternatives']
-            else:
-                alt = ''
-            ver = deprecated[1]['version']
-            # deprecation notice
-            log.warn("%s option, %s %s (version=%s)", name, why, alt, ver)
-
-        # warn about typing issues with configuration entries
-        for unable in runtime.config.UNABLE:
-            log.warn("Unable to set correct type for configuration entry: %s", unable)
 
     def validate_conflicts(self, vault_opts=False, runas_opts=False, fork_opts=False, vault_rekey_opts=False):
         ''' check for conflicting options '''
