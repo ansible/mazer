@@ -111,6 +111,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
         self.action = None
         self.callback = callback
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self.config_file_path = None
 
     def set_action(self):
         """
