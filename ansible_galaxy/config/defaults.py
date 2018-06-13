@@ -19,4 +19,4 @@ DEFAULTS = [
 
 # FIXME: replace with logging config
 VERBOSITY = 0
-CONFIG_FILE = '~/.ansible/galaxy.yml'
+CONFIG_FILE = '~/.ansible/mazer.yml'
