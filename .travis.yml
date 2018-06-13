@@ -1,0 +1,13 @@
+language: python
+
+python:
+  - "2.7"
+  - "3.6"
+
+install:
+  - pip install -r requirements.txt
+  - pip install -r requirements_test.txt
+
+script:
+  - flake8 ansible_galaxy_cli ansible_galaxy
+  - python setup.py pytest
