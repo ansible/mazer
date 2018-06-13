@@ -24,7 +24,7 @@ def stdout_display_callback(*args, **kwargs):
     level_arg = kwargs.get('level', None)
     level_prefix = DISPLAY_LEVEL_MAP.get(level_arg, INFO_LEVEL)['prefix']
 
-    print('%s%s' % (level_prefix, *args))
+    print('%s%s' % (level_prefix, str(*args)))
 
 
 # will log whatever is display with display callback to the ansible_galaxy.display logger

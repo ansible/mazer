@@ -23,13 +23,11 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-import copy
 import datetime
 import logging
 import os
 import pprint
 from shutil import rmtree
-import tarfile
 import yaml
 
 from ansible_galaxy import exceptions
@@ -216,20 +214,13 @@ class GalaxyContent(object):
             return {}
 
         if self._metadata is not None:
-            log.debug('self.metadata already set, returning %s', self._metadata)
             return self._metadata
-
-        log.debug('content_meta.path: %s', self.content_meta.path)
-        log.debug('self.path: %s', self.path)
-        log.debug('archive.META_MAIN: %s', archive.META_MAIN)
-        log.debug('content_dir: %s', self.content_dir)
 
         meta_path = os.path.join(self.path,
                                  archive.META_MAIN)
 
-        log.debug('meta_path: %s', meta_path)
-
         if os.path.isfile(meta_path):
+            log.debug('loading content metadata from meta_path: %s', meta_path)
             try:
                 f = open(meta_path, 'r')
                 self._metadata = yaml.safe_load(f)
@@ -286,17 +277,9 @@ class GalaxyContent(object):
             install_date_iso=install_date
         )
 
-        # import pprint
-        # log.debug('content.content_meta.__dict__ %s', pprint.pformat(content_meta.__dict__))
-
         # if not os.path.exists(os.path.join(content_meta.path, 'meta')):
         if not os.path.exists(os.path.dirname(info_path)):
             os.makedirs(os.path.dirname(info_path))
-
-        #info_path = os.path.join(content_meta.path,
-        #                         content_meta.content_dir or '',
-        #                         content_meta.content_sub_dir or '',
-        #                         self.META_INSTALL)
 
         with open(info_path, 'w+') as f:
             # FIXME: just return the install_info dict (or better, build it elsewhere and pass in)
@@ -308,7 +291,7 @@ class GalaxyContent(object):
                 log.exception(e)
                 return False
 
-        log.debug('wrote %s to %s', yaml.safe_dump(info, default_flow_style=False), info_path)
+        log.debug('wrote %s galaxy_install_info to %s', content_meta.name, info_path)
         return True
 
     def remove(self):
@@ -349,7 +332,6 @@ class GalaxyContent(object):
                                    content_sub_name=None,
                                    force_overwrite=False):
 
-        import pprint; log.debug('locals():\n%s', pprint.pformat(locals()))
         all_installed_paths = []
         content_types_to_install = content_types_to_install or []
         for install_content_type in content_types_to_install:
@@ -380,18 +362,15 @@ class GalaxyContent(object):
             log.info('about to extract %s to %s', content_meta.name, content_meta.path)
             log.info('content_sub_dir: %s', content_sub_dir)
 
-            log.debug('content_type_member_matches: %s', pprint.pformat(content_type_member_matches))
-            # archive_extract_root = os.path.join(content_sub_dir, content_meta.content_sub_dir)
-            # log.debug('archive_extract_root: %s', archive_extract_root)
+            # log.debug('content_type_member_matches: %s', pprint.pformat(content_type_member_matches))
 
             # TODO: extract_file_list_to_path(content_tar_file, files_to_extract, extract_to_path, force_overwrite)
             # TODO: split into lists of each content objects (ie, each role, instead of all roles) and
             #       install them one by one
 
             parent_dir = content_tar_file.members[0].name
-            # parent_dir = archive.find_archive_parent_dir(member_matches, install_content_type, content_sub_dir)
-            subdir = content.CONTENT_TYPE_DIR_MAP.get(install_content_type, '')
             content_names = set()
+
             for content_type_member_match in content_type_member_matches:
                 path_parts = content_type_member_match.name.split('/')
                 # 0 is archive parent dir, 1 is content type (roles, modules, etc)
@@ -401,8 +380,6 @@ class GalaxyContent(object):
             # content_names is all of the diffierent contents of install_content_type
             log.debug('content_names: %s', content_names)
 
-            parent_dir_slash = '%s/' % parent_dir
-
             namespace_repo_name = content_meta.src
 
             # extract each content individually
@@ -410,17 +387,14 @@ class GalaxyContent(object):
                 files_to_extract = []
 
                 match_pattern = '%s/%s/%s*' % (parent_dir, content_sub_dir, content_name)
-                # log.debug('MATCH_PATTERNS: %s', match_pattern)
 
                 member_matches = archive.filter_members_by_fnmatch(content_tar_file,
                                                                    match_pattern)
 
-                # log.debug('member_matches for content_name=%s: %s', content_name, pprint.pformat(member_matches))
-
                 namespaced_content_path = '%s/%s/%s' % (namespace_repo_name,
                                                         content_sub_dir,
                                                         content_name)
-                log.debug('namespace: %s', content_meta.namespace)
+
                 log.debug('namespaced_content_path: %s', namespaced_content_path)
 
                 for member_match in member_matches:
@@ -437,8 +411,6 @@ class GalaxyContent(object):
                                                                 namespaced_content_path,
                                                                 1)
 
-                    log.debug('namespaced_role_rel_path: %s', namespaced_role_rel_path)
-
                     extract_info = {'archive_member': member_match,
                                     'dest_dir': content_meta.path,
                                     'dest_filename': namespaced_role_rel_path,
@@ -449,7 +421,6 @@ class GalaxyContent(object):
                 # log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
 
                 file_extractor = archive.extract_files(content_tar_file, files_to_extract)
-                log.debug('file_extracter: %s', file_extractor)
 
                 installed_paths = [x for x in file_extractor]
                 all_installed_paths.extend(installed_paths)
@@ -593,8 +564,6 @@ class GalaxyContent(object):
             fetch_results = fetcher.fetch()
 
             archive_path = fetch_results['archive_path']
-            log.debug('fetch_results=%s', pprint.pformat(fetch_results))
-            # log.debug('content_archive=%s', fetch_results.archive_path)
 
         if not archive_path:
             raise exceptions.GalaxyClientError('No valid content data found for %s', self.src)
@@ -603,12 +572,9 @@ class GalaxyContent(object):
 
         content_tar_file, archive_meta = content_archive.load_archive(archive_path)
 
-        log.debug('archive_meta: %s', archive_meta)
-        log.debug('fetch_results: %s', pprint.pformat(fetch_results))
         content_data = fetch_results.get('content', {})
         content_meta.version = content_data.get('fetched_version', content_meta.version)
         content_meta.namespace = content_data.get('content_namespace', content_meta.namespace)
-        log.debug('SET content.meta.version = %s', content_meta.version)
 
         log.debug('archive_meta: %s', archive_meta)
 
@@ -664,12 +630,14 @@ class GalaxyContent(object):
             installed.append((content_meta, res))
 
         # now branch based on archive type
+        # FIXME/TODO: not really used at the moment
         elif archive_meta.archive_type == 'galaxy':
             log.info('Installing %s as a archive_type=%s content_type=%s (galaxy_file)',
                      content_meta.name, archive_meta, content_meta.content_type)
             # log.debug('galaxy_file=%s', galaxy_file)
             # log.debug('galaxy_metadata=%s', pprint.pformat(galaxy_metadata))
 
+            galaxy_metadata = None
             # Parse the ansible-galaxy.yml file and install things
             # as necessary
             installed_from_galaxy_metadata =  \
