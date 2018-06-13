@@ -294,9 +294,11 @@ def extract_file(tar_file, file_to_extract):
         return None
 
     # TODO: raise from up a level in the stack?
-    if os.path.exists(dest_dir):
+    log.debug('dest_path %s', os.path.join(dest_dir, dest_filename))
+    dest_path = os.path.join(dest_dir, dest_filename)
+    if os.path.exists(dest_path):
         if not force_overwrite:
-            message = "The Galaxy content %s appears to already exist." % dest_dir
+            message = "The Galaxy content %s appears to already exist." % dest_path
             raise exceptions.GalaxyClientError(message)
 
     try:
