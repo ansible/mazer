@@ -167,7 +167,7 @@ class TestGalaxy(unittest.TestCase):
 
     def test_exit_without_ignore_without_flag(self):
         ''' tests that GalaxyCLI exits with the error specified if the --ignore-errors flag is not used '''
-        gc = GalaxyCLI(args=["ansible-galaxy", "install", "--server=None", "fake_role_name"])
+        gc = GalaxyCLI(args=["ansible-galaxy", "install", "--server=None", "testing.fake_role_name"])
         gc.parse()
         # testing that error expected is raised
         self.assertRaises(exceptions.GalaxyError, gc.run)
@@ -176,7 +176,7 @@ class TestGalaxy(unittest.TestCase):
     def test_exit_without_ignore_with_flag(self):
         ''' tests that GalaxyCLI exits without the error specified if the --ignore-errors flag is used  '''
         # testing with --ignore-errors flag
-        gc = GalaxyCLI(args=["ansible-galaxy", "install", "--server=None", "fake_role_name", "--ignore-errors"])
+        gc = GalaxyCLI(args=["ansible-galaxy", "install", "--server=None", "testing.fake_role_name", "--ignore-errors"])
         gc.parse()
         gc.run()
         #    self.assertTrue(mocked_display.called_once_with("- downloading role 'fake_role_name', owned by "))

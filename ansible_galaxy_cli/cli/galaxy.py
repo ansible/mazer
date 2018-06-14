@@ -309,7 +309,7 @@ class GalaxyCLI(cli.CLI):
 
         try:
             rc = install.install_content_specs(galaxy_context,
-                                               content_specs=requested_content_specs,
+                                               content_spec_strings=requested_content_specs,
                                                install_content_type=install_content_type,
                                                namespace=self.options.namespace,
                                                display_callback=self.display,

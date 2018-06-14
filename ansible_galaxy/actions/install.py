@@ -2,7 +2,8 @@ import logging
 
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
-from ansible_galaxy.utils.yaml_parse import yaml_parse
+from ansible_galaxy import content_spec
+from ansible_galaxy.utils import yaml_parse
 
 # FIXME: get rid of flat_rest_api
 from ansible_galaxy.flat_rest_api.content import GalaxyContent
@@ -27,7 +28,7 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
 # FIXME: install_content_type is wrong, should be option to GalaxyContent.install()?
 # TODO: this will eventually be replaced by a content_spec 'resolver' that may
 #       hit galaxy api
-def _build_content_set(content_specs, install_content_type, galaxy_context,
+def _build_content_set(content_spec_strings, install_content_type, galaxy_context,
                        namespace=None):
     # TODO: split this into methods that build GalaxyContent items from the content_specs
     #       and another that installs a set of GalaxyContents
@@ -37,31 +38,40 @@ def _build_content_set(content_specs, install_content_type, galaxy_context,
     # FIXME: could be a generator...
     content_left = []
 
-    for content_spec in content_specs:
-        galaxy_content = yaml_parse(content_spec.strip())
+    for content_spec_string in content_spec_strings:
+        content_spec_ = content_spec.content_spec_from_string(content_spec_string.strip())
 
         # FIXME: this is a InstallOption
-        galaxy_content['type'] = install_content_type
-        galaxy_content['namespace'] = namespace
-        log.info('content install galaxy_content: %s', galaxy_content)
+        # content_spec['type'] = install_content_type
+        if namespace:
+            content_spec_.namespace = namespace
+        log.info('content install content_spec: %s', content_spec_)
 
-        content_left.append(GalaxyContent(galaxy_context, **galaxy_content))
+        # TODO: a content spec resolver to extend this info, find it, build a GalaxyContent
+        #       and return it.
+        content_left.append(GalaxyContent(galaxy_context,
+                                          namespace=content_spec_.namespace,
+                                          name=content_spec_.name,
+                                          src=content_spec_.src,
+                                          scm=content_spec_.scm,
+                                          version=content_spec_.version,
+                                          ))
 
     return content_left
 
 
 # pass a list of content_spec objects
-def install_content_specs(galaxy_context, content_specs, install_content_type,
+def install_content_specs(galaxy_context, content_spec_strings, install_content_type,
                           namespace=None,
                           display_callback=None,
                           # TODO: error handling callback ?
                           ignore_errors=False,
                           no_deps=False,
                           force_overwrite=False):
-    log.debug('contents: %s', content_specs)
+    log.debug('content_spec_strings: %s', content_spec_strings)
     log.debug('install_content_type: %s', install_content_type)
 
-    requested_contents = _build_content_set(content_specs=content_specs,
+    requested_contents = _build_content_set(content_spec_strings=content_spec_strings,
                                             install_content_type=install_content_type,
                                             galaxy_context=galaxy_context,
                                             namespace=namespace)
@@ -173,7 +183,7 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
                     role_dependencies = content.metadata.get('dependencies') or []
                     for dep in role_dependencies:
                         log.debug('Installing dep %s', dep)
-                        dep_info = yaml_parse(dep)
+                        dep_info = yaml_parse.yaml_parse(dep)
                         dep_role = GalaxyContent(galaxy_context, **dep_info)
                         if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
                             # we know we can skip this, as it's not going to

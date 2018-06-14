@@ -4,8 +4,8 @@ import mock
 import tempfile
 
 from ansible_galaxy.actions import install
+from ansible_galaxy import exceptions
 from ansible_galaxy.models.context import GalaxyContext
-from ansible_galaxy.flat_rest_api.content import GalaxyContent
 
 log = logging.getLogger(__name__)
 
@@ -72,8 +72,11 @@ def test_build_content_set_empty(galaxy_context):
 
 # even though 'blrp' isnt a valid spec, _build_content_set return something for now
 def test_build_content_set_malformed(galaxy_context):
-    ret = install._build_content_set(['blrp'], 'role', galaxy_context)
-    log.debug('ret: %s', ret)
-    # TODO: eventually this should fail, depending on where it looks it up
-    assert isinstance(ret[0], GalaxyContent)
-    assert ret[0].name == 'blrp'
+    content_spec = 'no_namespace_here'
+    try:
+        install._build_content_set([content_spec], 'role', galaxy_context)
+    except exceptions.GalaxyError as e:
+        log.exception(e)
+        return
+
+    assert False, 'Expected a GalaxyError to be raised here since the content_spec %s has no namespace or dots' % content_spec
