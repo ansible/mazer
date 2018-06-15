@@ -380,7 +380,9 @@ class GalaxyContent(object):
             # content_names is all of the diffierent contents of install_content_type
             log.debug('content_names: %s', content_names)
 
-            namespace_repo_name = content_meta.src
+            # namespace_repo_name = content_meta.src
+            namespace_repo_name = '%s.%s' % (content_meta.namespace, content_meta.name)
+            log.debug('namespace_repo_name: %s', namespace_repo_name)
 
             # extract each content individually
             for content_name in content_names:

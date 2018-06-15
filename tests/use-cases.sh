@@ -24,29 +24,16 @@ ROLE_NAME="some_role1"
 [ -d ~/.ansible/test-roles/${ROLE_NAME}/vars ]
 
 
-# install a single role from a multi-content archive from galaxy
-rm -rf ~/.ansible/content
-mazer install -t role testing.ansible-testing-content.test-role-c
-tree ~/.ansible/content
-[ -d ~/.ansible/content/roles ]
-[ -d "${HOME}/.ansible/content/roles/test-role-c" ]
-[ -d "${HOME}/.ansible/content/roles/test-role-c/meta" ]
-[ -f "${HOME}/.ansible/content/roles/test-role-c/meta/main.yml" ]
-[ -d "${HOME}/.ansible/content/roles/test-role-c/vars" ]
-[ -f "${HOME}/.ansible/content/roles/test-role-c/vars/main.yml" ]
-[ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
-
 # mazer list -p ~/.ansible/test-roles
 
 rm -rf ~/.ansible/content
 mazer install alikins.ansible-testing-content
 tree ~/.ansible/content
-[ -d ~/.ansible/content/roles ]
-[ -d "${HOME}/.ansible/content/roles/test-role-b" ]
-[ -d ~/.ansible/content/library ]
-[ -d ~/.ansible/content/strategy_plugins ]
-[ -d ~/.ansible/content/filter_plugins ]
-[ -d ~/.ansible/content/module_utils ]
+[ -d "${HOME}/.ansible/content/alikins.ansible-testing-content/roles/test-role-b" ]
+# [ -d ~/.ansible/content/library ]
+# [ -d ~/.ansible/content/strategy_plugins ]
+# [ -d ~/.ansible/content/filter_plugins ]
+# [ -d ~/.ansible/content/module_utils ]
 # not yet
 # [ -f ~/.ansible/content/library/.galaxy_install_info ]
 
@@ -54,77 +41,11 @@ tree ~/.ansible/content
 rm -rf ~/.ansible/content
 mazer install alikins.role-awx
 tree ~/.ansible/content
-[ -d ~/.ansible/content/roles ]
-[ -d ~/.ansible/content/roles/alikins.role-awx ]
-[ -d ~/.ansible/content/roles/alikins.role-awx/meta ]
-[ -f ~/.ansible/content/roles/alikins.role-awx/meta/main.yml ]
-[ -d ~/.ansible/content/roles/alikins.role-awx/tasks ]
-[ -f ~/.ansible/content/roles/alikins.role-awx/tasks/main.yml ]
-[ -d ~/.ansible/content/roles/alikins.role-awx/vars ]
-[ -f ~/.ansible/content/roles/alikins.role-awx/vars/RedHat.yml ]
-
-
-
-# install modules from a multi-content repo
-rm -rf ~/.ansible/content
-mazer install -t module alikins.ansible-testing-content
-tree ~/.ansible/content
-[ -d ~/.ansible/content/library ]
-# not all the modules, but at least more than one
-for module_file in elasticsearch_plugin.py kibana_plugin.py redis.py ;
-do
-    echo
-    # [ -f "${HOME}/.ansible/content/library/${module_file}" ]
-done
-
-# install 'all' from a repo with plugins and modules but not roles or meta repo
-rm -rf ~/.ansible/content
-mazer install alikins.ansible-content-no-meta
-tree ~/.ansible/content
-[ -d ~/.ansible/content/library ]
-[ -d ~/.ansible/content/callback_plugins ]
-[ -d ~/.ansible/content/action_plugins ]
-# not yet
-# [ -f ~/.ansible/content/library/.galaxy_install_info ]
-
-
-# install strategy plugins from a multi-content repo
-rm -rf ~/.ansible/content
-mazer install -t strategy_plugin alikins.ansible-testing-content
-tree ~/.ansible/content
-[ -d ~/.ansible/content/strategy_plugins ]
-for strat_file in debug.py free.py linear.py ;
-do
-    [ -f "${HOME}/.ansible/content/strategy_plugins/${strat_file}" ]
-done
-
-
-# install a single module
-rm -rf ~/.ansible/content
-mazer install -t module testing.ansible-testing-content.elasticsearch_plugin
-tree ~/.ansible/content
-[ -d ~/.ansible/content/library/ ]
-[ -f ~/.ansible/content/library/elasticsearch_plugin.py ]
-
-# FIXME
-# [ ! -e ~/.ansible/content/library/kibana_plugin.py ]
-
-
-
-
-
-
-# install a signle module
-# mazer install -t module atestuseraccount.testing-content.elasticsearch_plugin.py
-# tree ~/.ansible/content
-# [ -d ~/.ansible/content/library/alikins.testing-content ]
-
-
-
-# install modules from a scm url
-rm -rf ~/.ansible/content
-mazer install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git
-tree ~/.ansible/content
+# [ -d ~/.ansible/content/roles ]
+[ -d ~/.ansible/content/alikins.role-awx/roles/role-awx ]
+[ -d ~/.ansible/content/alikins.role-awx/roles/role-awx/meta ]
+[ -f ~/.ansible/content/alikins.role-awx/roles/role-awx/meta/main.yml ]
+[ -f ~/.ansible/content/alikins.role-awx/roles/role-awx/meta/.galaxy_install_info ]
 
 # install all from a scm url
 rm -rf ~/.ansible/content
@@ -175,6 +96,58 @@ tree ~/.ansible/content
 [ -d "${HOME}/.ansible/content/roles/test-role-b/vars" ]
 [ -f "${HOME}/.ansible/content/roles/test-role-b/vars/main.yml" ]
 [ ! -d "${HOME}/.ansible/content/roles/alikins.testing-content" ]
+
+
+# install 'all' from a repo with plugins and modules but not roles or meta repo
+rm -rf ~/.ansible/content
+mazer install alikins.ansible-content-no-meta
+tree ~/.ansible/content
+
+# install modules from a multi-content repo
+rm -rf ~/.ansible/content
+mazer install -t module alikins.ansible-testing-content
+tree ~/.ansible/content
+[ -d ~/.ansible/content/library ]
+# not all the modules, but at least more than one
+for module_file in elasticsearch_plugin.py kibana_plugin.py redis.py ;
+do
+    echo
+    # [ -f "${HOME}/.ansible/content/library/${module_file}" ]
+done
+
+
+
+
+# install strategy plugins from a multi-content repo
+rm -rf ~/.ansible/content
+mazer install -t strategy_plugin alikins.ansible-testing-content
+tree ~/.ansible/content
+[ -d ~/.ansible/content/strategy_plugins ]
+for strat_file in debug.py free.py linear.py ;
+do
+    [ -f "${HOME}/.ansible/content/strategy_plugins/${strat_file}" ]
+done
+
+
+# FIXME
+# [ ! -e ~/.ansible/content/library/kibana_plugin.py ]
+
+
+
+
+
+
+# install a signle module
+# mazer install -t module atestuseraccount.testing-content.elasticsearch_plugin.py
+# tree ~/.ansible/content
+# [ -d ~/.ansible/content/library/alikins.testing-content ]
+
+
+
+# install modules from a scm url
+rm -rf ~/.ansible/content
+mazer install -t module git+https://github.com/atestuseraccount/ansible-testing-content.git
+tree ~/.ansible/content
 
 # install an apb archive from galaxy
 rm -rf ~/.ansible/content
