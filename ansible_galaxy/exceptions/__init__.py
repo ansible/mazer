@@ -38,6 +38,14 @@ class GalaxyDownloadError(GalaxyError):
         return '%s(url=%s, %s)' % (self.__class__.__name__, self.url, self.args)
 
 
+class GalaxyContentSpecError(GalaxyClientError):
+    '''Raised if the content_spec was invalid'''
+    def __init__(self, *args, **kwargs):
+        content_spec = kwargs.pop('content_spec', None)
+        super(GalaxyContentSpecError, self).__init__(*args, **kwargs)
+        self.content_spec = content_spec
+
+
 class GalaxyClientAPIConnectionError(GalaxyClientError):
     '''Raised if there were errors connecting to the Galaxy REST API'''
     pass

@@ -47,6 +47,11 @@ def _build_content_set(content_spec_strings, install_content_type, galaxy_contex
             content_spec_.namespace = namespace
         log.info('content install content_spec: %s', content_spec_)
 
+        if not content_spec_.namespace:
+            raise exceptions.GalaxyContentSpecError(
+                'The content spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % content_spec_.spec_string,
+                content_spec=content_spec_)
+
         # TODO: a content spec resolver to extend this info, find it, build a GalaxyContent
         #       and return it.
         content_left.append(GalaxyContent(galaxy_context,
