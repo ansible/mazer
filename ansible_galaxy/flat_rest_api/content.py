@@ -219,6 +219,8 @@ class GalaxyContent(object):
         meta_path = os.path.join(self.path,
                                  content_archive.META_MAIN)
 
+        log.debug('looking for content meta data from meta_path: %s', meta_path)
+
         if os.path.isfile(meta_path):
             log.debug('loading content metadata from meta_path: %s', meta_path)
             try:
@@ -301,6 +303,10 @@ class GalaxyContent(object):
         ansible-galaxy.yml file at this path so the user doesn't blow away
         random directories.
         """
+        log.debug('remove content_type: %s', self.content_type)
+        log.debug('remove metadata: %s', self.metadata)
+        log.debug('remove path: %s', self.path)
+
         # FIXME - not yet implemented for non-role types
         if self.content_type == "role":
             if self.metadata:

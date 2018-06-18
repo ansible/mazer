@@ -1,7 +1,6 @@
 import pytest
 
 
-
 @pytest.fixture
 def galaxy_context(tmpdir):
     # tmp_content_path = tempfile.mkdtemp()

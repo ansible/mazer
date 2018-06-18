@@ -333,7 +333,10 @@ class GalaxyCLI(cli.CLI):
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
         for role_name in self.args:
+            log.debug('looking for content %s to remove', role_name)
             role = GalaxyContent(galaxy_context, role_name)
+
+            log.debug('content to remove: %s %s', role, type(role))
             try:
                 if role.remove():
                     self.display('- successfully removed %s' % role_name)
