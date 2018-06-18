@@ -26,26 +26,7 @@ class MatchNames(object):
         return other.name in self.names
 
 
-def installed_content_iterator(galaxy_context,
-                               content_type=None,
-                               match_filter=None):
-
-    match_filter = match_filter or match_all
-    log.debug('locals: %s', locals())
-
-    # TODO: make this into a Content iterator / database / name directory / index / etc
-
-    content_type = content_type or 'roles'
-    full_content_paths = []
-
-    content_path = galaxy_context.content_path
-    # show all valid content in the content_path directory
-
-    log.debug('content_path: %s', content_path)
-    content_path = os.path.expanduser(content_path)
-
-    namespace_paths = []
-
+def installed_namespace_iterator(content_path):
     try:
         # TODO: filter on any rules for what a namespace path looks like
         #       may one being 'somenamespace.somename' (a dot sep ns and name)
@@ -65,13 +46,33 @@ def installed_content_iterator(galaxy_context,
         # log.debug('namespaced_roles_paths: %s', namespaced_roles_dirs)
 
         for namespaced_roles_path in namespaced_roles_dirs:
-            full_content_paths.append(namespaced_roles_path)
+            # full_content_paths.append(namespaced_roles_path)
+            yield namespaced_roles_path
 
-    log.debug('full_content_paths: %s', full_content_paths)
+
+def installed_content_iterator(galaxy_context,
+                               content_type=None,
+                               match_filter=None):
+
+    match_filter = match_filter or match_all
+    log.debug('locals: %s', locals())
+
+    # TODO: make this into a Content iterator / database / name directory / index / etc
+
+    content_type = content_type or 'roles'
+    full_content_paths = []
+
+    content_path = galaxy_context.content_path
+    # show all valid content in the content_path directory
+
+    log.debug('content_path: %s', content_path)
+    content_path = os.path.expanduser(content_path)
+
+    namespace_paths_iterator = installed_namespace_iterator(content_path)
 
     content_infos = []
 
-    for content_full_path in full_content_paths:
+    for content_full_path in namespace_paths_iterator:
         log.debug('content_full_path: %s', content_full_path)
         path_file = os.path.basename(content_full_path)
         # log.debug('path_file / name: %s', path_file)

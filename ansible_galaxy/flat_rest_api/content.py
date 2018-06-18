@@ -82,7 +82,12 @@ def choose_content_fetch_method(scm_url=None, src=None):
 
 #        fetch_method = ScmUrlFetch(scm_url=scm_url, scm_spec=spec)
 #        return fetch_method
-
+# TODO: add InstalledContent
+#       get rid of GalaxyContent.metadata / GalaxyContent.install_info
+#       for InstalledContent add a from_install_info() to build it from file at creation
+#        get rid of deferred install_info load? or maybe a special InstallInfo instance?
+#       ditto for 'self.metadata'
+#
 # FIXME: really just three methods here, install, remove, fetch. install -> save, fetch -> load
 #       remove -> delete
 class GalaxyContent(object):
@@ -97,6 +102,10 @@ class GalaxyContent(object):
     def __init__(self, galaxy, name,
                  src=None, version=None, scm=None, path=None, type="role",
                  content_meta=None, sub_name=None, namespace=None,
+                 # metadata is the info in roles meta/main.yml for ex
+                 metadata=None,
+                 # install_info is info in meta/.galaxy_install_info for installed content packages
+                 install_info=None,
                  display_callback=None):
         """
         The GalaxyContent type is meant to supercede the old GalaxyRole type,
@@ -119,9 +128,9 @@ class GalaxyContent(object):
         self.content_install_type = type
         content_type = type
 
-        self._metadata = None
+        self._metadata = metadata
 
-        self._install_info = None
+        self._install_info = install_info
 
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
@@ -206,59 +215,10 @@ class GalaxyContent(object):
 
     @property
     def metadata(self):
-        """
-        Returns role metadata for type role, errors otherwise
-        """
-        if self.content_meta.content_type not in ('role', 'all'):
-            log.debug('content_type not role %s', self.content_meta.content_type)
-            return {}
-
-        if self._metadata is not None:
-            return self._metadata
-
-        meta_path = os.path.join(self.path,
-                                 content_archive.META_MAIN)
-
-        log.debug('looking for content meta data from meta_path: %s', meta_path)
-
-        if os.path.isfile(meta_path):
-            log.debug('loading content metadata from meta_path: %s', meta_path)
-            try:
-                f = open(meta_path, 'r')
-                self._metadata = yaml.safe_load(f)
-            except Exception as e:
-                log.exception(e)
-                log.debug("Unable to load metadata for %s", self.content_meta.name)
-                return False
-            finally:
-                f.close()
-
         return self._metadata
 
-    # TODO: class/module for ContentInstallInfo
     @property
     def install_info(self):
-        """
-        Returns Galaxy Content install info
-        """
-        # FIXME: Do we want to have this for galaxy content?
-        if self._install_info is None:
-            log.debug('self.path: %s', self.path)
-            log.debug('self.META_INSTALL: %s', self.META_INSTALL)
-
-            info_path = os.path.join(self.path, self.META_INSTALL)
-
-            log.debug('info_path: %s', info_path)
-            if os.path.isfile(info_path):
-                try:
-                    f = open(info_path, 'r')
-                    self._install_info = yaml.safe_load(f)
-                except Exception as e:
-                    log.exception(e)
-                    self.debug("Unable to load Galaxy install info for %s", self.content_meta.name)
-                    return False
-                finally:
-                    f.close()
         return self._install_info
 
     # FIXME: should probably be a GalaxyInfoInfo class
@@ -297,40 +257,7 @@ class GalaxyContent(object):
         return True
 
     def remove(self):
-        """
-        Removes the specified content from the content path.
-        There is a sanity check to make sure there's a meta/main.yml or
-        ansible-galaxy.yml file at this path so the user doesn't blow away
-        random directories.
-        """
-        log.debug('remove content_type: %s', self.content_type)
-        log.debug('remove metadata: %s', self.metadata)
-        log.debug('remove path: %s', self.path)
-
-        # FIXME - not yet implemented for non-role types
-        if self.content_type == "role":
-            if self.metadata:
-                try:
-                    rmtree(self.path)
-                    return True
-                except Exception as e:
-                    log.warn('unable to rmtree for path=%s', self.path)
-                    log.exception(e)
-                    pass
-
-        else:
-            raise exceptions.GalaxyClientError("Removing Galaxy Content not yet implemented")
-
-        return False
-
-    def _build_download_url(self, src, external_url=None, version=None):
-        if external_url and version:
-            archive_url = '%s/archive/%s.tar.gz' % (external_url, version)
-            return archive_url
-
-        archive_url = src
-
-        return archive_url
+        raise exceptions.GalaxyError('Calling remove() on a GalaxyContent (not InstalledGalaxyContent) doesnt mean anything')
 
     def _install_for_content_types(self, content_tar_file, archive_parent_dir,
                                    content_archive_type=None, content_meta=None,
@@ -742,3 +669,90 @@ class GalaxyContent(object):
         }
         """
         return dict(scm=self.scm, src=self.src, version=self.version, name=self.content_meta.name)
+
+
+# TODO/FIXME: revist a Content base class
+class InstalledContent(GalaxyContent):
+    @property
+    def metadata(self):
+        """
+        Returns role metadata for type role, errors otherwise
+        """
+        if self.content_meta.content_type not in ('role', 'all'):
+            log.debug('content_type not role %s', self.content_meta.content_type)
+            return {}
+
+        if self._metadata is not None:
+            return self._metadata
+
+        meta_path = os.path.join(self.path,
+                                 content_archive.META_MAIN)
+
+        log.debug('looking for content meta data from meta_path: %s', meta_path)
+
+        if os.path.isfile(meta_path):
+            log.debug('loading content metadata from meta_path: %s', meta_path)
+            try:
+                f = open(meta_path, 'r')
+                self._metadata = yaml.safe_load(f)
+            except Exception as e:
+                log.exception(e)
+                log.debug("Unable to load metadata for %s", self.content_meta.name)
+                return False
+            finally:
+                f.close()
+
+        return self._metadata
+
+    # TODO: class/module for ContentInstallInfo
+    @property
+    def install_info(self):
+        """
+        Returns Galaxy Content install info
+        """
+        # FIXME: Do we want to have this for galaxy content?
+        if self._install_info is None:
+            log.debug('self.path: %s', self.path)
+            log.debug('self.META_INSTALL: %s', self.META_INSTALL)
+
+            info_path = os.path.join(self.path, self.META_INSTALL)
+
+            log.debug('info_path: %s', info_path)
+            if os.path.isfile(info_path):
+                try:
+                    f = open(info_path, 'r')
+                    self._install_info = yaml.safe_load(f)
+                except Exception as e:
+                    log.exception(e)
+                    self.debug("Unable to load Galaxy install info for %s", self.content_meta.name)
+                    return False
+                finally:
+                    f.close()
+        return self._install_info
+
+    def remove(self):
+        """
+        Removes the specified content from the content path.
+        There is a sanity check to make sure there's a meta/main.yml or
+        ansible-galaxy.yml file at this path so the user doesn't blow away
+        random directories.
+        """
+        log.debug('remove content_type: %s', self.content_type)
+        log.debug('remove metadata: %s', self.metadata)
+        log.debug('remove path: %s', self.path)
+
+        # FIXME - not yet implemented for non-role types
+        if self.content_type == "role":
+            if self.metadata:
+                try:
+                    rmtree(self.path)
+                    return True
+                except Exception as e:
+                    log.warn('unable to rmtree for path=%s', self.path)
+                    log.exception(e)
+                    pass
+
+        else:
+            raise exceptions.GalaxyClientError("Removing Galaxy Content not yet implemented")
+
+        return False
