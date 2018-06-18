@@ -33,6 +33,7 @@ from ansible_galaxy.actions import install
 from ansible_galaxy.actions import info
 from ansible_galaxy.actions import init
 from ansible_galaxy.actions import list as list_action
+from ansible_galaxy.actions import remove
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
 from ansible_galaxy import installed_content_db
@@ -333,21 +334,12 @@ class GalaxyCLI(cli.CLI):
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
-        for role_name in self.args:
-            log.debug('looking for content %s to remove', role_name)
-            role = GalaxyContent(galaxy_context, role_name)
+        if self.args:
+            match_filter = installed_content_db.MatchNames(self.args)
 
-            log.debug('content to remove: %s %s', role, type(role))
-            try:
-                if role.remove():
-                    self.display('- successfully removed %s' % role_name)
-                else:
-                    self.display('- %s is not installed, skipping.' % role_name)
-            except Exception as e:
-                log.exception(e)
-                raise cli_exceptions.GalaxyCliError("Failed to remove role %s: %s" % (role_name, str(e)))
-
-        return 0
+        return remove.remove(galaxy_context,
+                             match_filter=match_filter,
+                             display_callback=self.display)
 
     def execute_list(self):
         """
@@ -365,7 +357,7 @@ class GalaxyCLI(cli.CLI):
 
         # TODO: eventually, loop over content types
 
-        return list_action.list(galaxy_context, [galaxy_context.content_path],
+        return list_action.list(galaxy_context,
                                 match_filter=match_filter,
                                 display_callback=self.display)
 

@@ -40,7 +40,7 @@ def split_comma(spec_string, valid_keywords):
     comma_parts = spec_string.split(',')
     for comma_part in comma_parts:
         kw_parts = split_kwarg(comma_part, valid_keywords)
-        log.debug('kw_parts: %s', kw_parts)
+#        log.debug('kw_parts: %s', kw_parts)
         yield kw_parts
 
 
@@ -152,12 +152,12 @@ def resolve(data):
 def spec_data_from_string(content_spec_string, resolver=None):
     fetch_method = choose_content_fetch_method(content_spec_string)
 
-    log.debug('fetch_method: %s', fetch_method)
+#    log.debug('fetch_method: %s', fetch_method)
 
     spec_data = parse_string(content_spec_string)
     spec_data['fetch_method'] = fetch_method
 
-    log.debug('spec_data: %s', spec_data)
+#    log.debug('spec_data: %s', spec_data)
 
     # use passed in resolver if provided, otherwise assume 'resolve' is correct
     # but override if it looks like a galaxy requests
@@ -166,9 +166,9 @@ def spec_data_from_string(content_spec_string, resolver=None):
         if fetch_method == FetchMethods.GALAXY_URL:
             resolver = galaxy_content_spec.resolve
 
-    log.debug('resolver: %s', resolver)
+#    log.debug('resolver: %s', resolver)
     resolved_name = resolver(spec_data)
-    log.debug('resolved_name: %s', resolved_name)
+#    log.debug('resolved_name: %s', resolved_name)
     spec_data.update(resolved_name)
 
     return spec_data

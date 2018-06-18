@@ -50,5 +50,20 @@ def load(data_or_file_object):
 
 
 class ContentRepository(object):
-    def __init__(self):
-        pass
+    def __init__(self,
+                 namespace=None,
+                 name=None,
+                 path=None):
+        self.namespace = namespace
+        self.name = name
+        self.path = path
+
+    @classmethod
+    def from_content_spec_data(cls, content_spec_data):
+        return cls(namespace=content_spec_data.get('namespace'),
+                   name=content_spec_data.get('name'))
+
+    def __repr__(self):
+        return '%s(namespace="%s", name="%s", path="%s")' % \
+            (self.__class__.__name__, self.namespace,
+             self.name, self.path)

@@ -11,7 +11,6 @@ def match_all(galaxy_content):
 
 
 def list(galaxy_context,
-         roles_path,
          match_filter=None,
          display_callback=None):
 

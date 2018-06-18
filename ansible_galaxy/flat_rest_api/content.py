@@ -709,8 +709,8 @@ class InstalledContent(GalaxyContent):
     def _load_install_info(self):
         '''loads, yaml parses, and returns the data from .galaxy_install_info'''
 
-        log.debug('self.path: %s', self.path)
-        log.debug('self.META_INSTALL: %s', self.META_INSTALL)
+#        log.debug('self.path: %s', self.path)
+#        log.debug('self.META_INSTALL: %s', self.META_INSTALL)
 
         info_path = os.path.join(self.path, self.META_INSTALL)
 

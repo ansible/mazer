@@ -1,5 +1,6 @@
 import logging
 import os
+import fnmatch
 
 from ansible_galaxy import installed_content_db
 
@@ -16,8 +17,8 @@ def test_installed_content_db(galaxy_context):
 def test_installed_content_db_match_names(galaxy_context):
     icd = installed_content_db.InstalledContentDatabase(galaxy_context)
 
-    match_filter = installed_content_db.MatchNames(['foo.bar'])
-    for x in icd.select(match_filter):
+    match_filter = installed_content_db.MatchContentNames(['foo.bar'])
+    for x in icd.select(content_match_filter=match_filter):
         log.debug('x: %s', x)
 
 
@@ -29,16 +30,30 @@ def test_installed_content_iterator(galaxy_context):
         log.debug(i)
 
 
+class MatchContentNamesFnmatch(object):
+    def __init__(self, fnmatch_patterns):
+        self.fnmatch_patterns = fnmatch_patterns
+
+    def __call__(self, other):
+        return self.match(other)
+
+    def match(self, other):
+        log.debug('self.fnmatch_patterns: %s other.name: %s', self.fnmatch_patterns, other.name)
+        # log.debug('fnm: %s', fnmatch.fnmatch(other.name, self.fnmatch_patterns[0]))
+        # return fnmatch.fnmatch(other.name, self.fnmatch_patterns[0])
+        return any([fnmatch.fnmatch(other.name, x) for x in self.fnmatch_patterns])
+
+
 def test_installed_content_iterator_tmp_content(galaxy_context):
     ici = installed_content_db.installed_content_iterator(galaxy_context,
-                                                          content_type='role')
+                                                          content_type='roles')
 
     content_path = galaxy_context.content_path
 
     # make some 'namespace_paths' in temp content_path
     tmp_namespace_paths = ['ns1.repo1', 'ns1.repo2', 'ns2.repo1']
     content_type_dirs = ['roles']
-    content_names = ['role1', 'role2', 'role3']
+    content_names = ['somerole1', 'somerole2', 'role3']
     role_subdirs = ['meta', 'tasks']
 
     # TODO/FIXME: replace file access/tmp stuff with mocking
@@ -60,4 +75,11 @@ def test_installed_content_iterator_tmp_content(galaxy_context):
                             fd.write('version: 1.2.3\n')
 
     for i in ici:
-        log.debug(i)
+        log.debug('ici stuff: %s', i)
+
+    ici2 = installed_content_db.installed_content_iterator(galaxy_context,
+                                                           content_match_filter=MatchContentNamesFnmatch(['somerole*', 'asdfsd']),
+                                                           content_type='roles')
+
+    for i in ici2:
+        log.debug('fnmatch match_filter: %s', i)

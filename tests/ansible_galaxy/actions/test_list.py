@@ -15,26 +15,21 @@ def test_list_empty_roles_paths(galaxy_context):
 
     # galaxy_context = _galaxy_context(tmpdir)
 
-    role_paths = []
     try:
         list_action.list(galaxy_context,
-                         role_paths,
                          display_callback=display_callback)
     except exceptions.GalaxyError as e:
         log.debug(e, exc_info=True)
         raise
-        return
 
 
-def test_list_no_roles_dir(galaxy_context):
-    role_paths = [os.path.join(galaxy_context.content_path, 'roles')]
+def test_list_no_content_dir(galaxy_context):
+    galaxy_context.content_path = os.path.join(galaxy_context.content_path, 'doesntexist')
     try:
         list_action.list(galaxy_context,
-                         role_paths,
                          display_callback=display_callback)
     except exceptions.GalaxyError as e:
         log.debug(e, exc_info=True)
         return
 
-    assert False, 'Expected a GalaxyError for no dir %s but didnt get one' % role_paths
-    # log.debug('ret: %s', ret)
+    assert False, 'Expected a GalaxyError for no dir %s but didnt get one' % galaxy_context.content_path
