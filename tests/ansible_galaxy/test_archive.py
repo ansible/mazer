@@ -19,24 +19,6 @@ log = logging.getLogger(__name__)
 TMP_PREFIX = 'tmp_mazer_test_archive_'
 
 
-def test_find_content_type_subdirs_empty():
-    tmp_tar = tempfile.TemporaryFile(prefix=TMP_PREFIX)
-
-    tar_file = tarfile.TarFile(name='some-top-level',
-                               mode='w',
-                               fileobj=tmp_tar)
-
-    tar_file_members = tar_file.getmembers()
-
-    res = archive.find_content_type_subdirs(tar_file_members)
-    log.debug('res: %s', res)
-
-    assert isinstance(res, list)
-    assert res == []
-    assert not res
-    tmp_tar.close()
-
-
 def test_extract_file_empty():
     tmp_tar = tempfile.TemporaryFile(prefix=TMP_PREFIX)
     # TODO: replace with tmpdir fixture
@@ -101,7 +83,7 @@ def test_extract_file_foo():
     item = {'archive_member': member,
             'dest_dir': tmp_dir,
             'dest_filename': pathname,
-            'force_overwrite': True}
+            'force_overwrite': False}
 
     files_to_extract.append(item)
     import pprint
@@ -109,6 +91,55 @@ def test_extract_file_foo():
 
     read_tar_file = tarfile.TarFile.open(name=tmp_tar_fo.name, mode='r')
     res = archive.extract_file(read_tar_file, file_to_extract=item)
+    log.debug('res: %s', res)
+
+    log.debug('listdir: %s', os.listdir(tmp_dir))
+    assert pathname in os.listdir(tmp_dir)
+
+    os.unlink(tmp_tar_fo.name)
+    read_tar_file.close()
+    tmp_tar_fo.close()
+    tmp_member_fo.close()
+    os.unlink(tmp_member_fo.name)
+    shutil.rmtree(tmp_dir)
+
+
+def test_extract_files():
+    tmp_tar_fo = tempfile.NamedTemporaryFile(delete=False, prefix='dddddddddddddd')
+    tmp_member_fo = tempfile.NamedTemporaryFile(delete=False, prefix='cccccccccc')
+    # TODO: replace with tmpdir fixture
+    tmp_dir = tempfile.mkdtemp(prefix='fffffcccc')
+
+    tar_file = tarfile.TarFile.open(mode='w',
+                                    fileobj=tmp_tar_fo)
+    # fileobj=tmp_tar)
+
+    files_to_extract = []
+
+    # for pathname in tar_example1:
+    pathnames = ['foo_blip.yml',
+                 'bar_foo.yml']
+
+    for pathname in pathnames:
+        member = tarfile.TarInfo(pathname)
+        tar_file.addfile(member, tmp_member_fo)
+
+        item = {'archive_member': member,
+                'dest_dir': tmp_dir,
+                'dest_filename': pathname,
+                'force_overwrite': False}
+
+        files_to_extract.append(item)
+
+    log.debug('tar_file2 members: %s', tar_file.getmembers())
+    tar_file.close()
+
+    import pprint
+    log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
+
+    read_tar_file = tarfile.TarFile.open(name=tmp_tar_fo.name, mode='r')
+    res_gen = archive.extract_files(read_tar_file, files_to_extract=files_to_extract)
+    res = list(res_gen)
     log.debug('res: %s', res)
 
     log.debug('listdir: %s', os.listdir(tmp_dir))
@@ -157,7 +188,7 @@ def test_extract_file():
 
 
 @pytest.mark.skip(reason="Need to either add a test tar or build one on the fly")
-def test_extract_files():
+def test_extract_files_tmp():
     # FIXME: rm out of tests tar file example
     # FIXME: generate a test tarfile
     tar_file = tarfile.TarFile.open(name='/tmp/alikins.testing-content.tar.gz',
@@ -361,18 +392,53 @@ tar_example1 = [
     'ansible-testing-content-master/strategy_plugins/linear.py']
 
 
-# def test_foo():
-#
-#    members = []
-#    for file_name in tar_example1:
-#        members.append(tarfile.TarInfo(name=file_name))
-#
-#    res = archive.find_content_type_subdirs(members)
-#    import pprint
-#    log.debug('res: %s', pprint.pformat(res))
+def _tar_members(file_list):
+    members = []
+    for file_name in file_list:
+        members.append(tarfile.TarInfo(name=file_name))
 
-#    assert isinstance(res, list)
-#    assert 'roles' in res
-#    assert 'action_plugins' in res
-#    assert 'library' in res
-#    assert 'modules' not in res
+    return members
+
+
+def test_find_members_by_fnmatch():
+    members = _tar_members(tar_example1)
+
+    len_members = len(members)
+    match_pattern = '*'
+    res = archive.filter_members_by_fnmatch(members, match_pattern)
+
+    assert len(res) == len_members, 'filtering on "*" missed some archive members'
+    assert isinstance(res, list)
+
+    action_match_pattern = '*/action_plugins/*'
+    res = archive.filter_members_by_fnmatch(members, action_match_pattern)
+
+    assert len(res) == 1, 'filtering on "%s" should find one action plugin' % action_match_pattern
+
+
+def test_find_members_by_content_type():
+    members = _tar_members(tar_example1)
+
+    res = archive.filter_members_by_content_type(members, 'multi-content', 'role')
+
+    import pprint
+    log.debug('res: %s', pprint.pformat(res))
+
+    filenames = [x.name for x in res]
+    assert 'ansible-testing-content-master/roles/test-role-d/vars/main.yml' in filenames
+    assert 'ansible-testing-content-master/strategy_plugins/free.py' not in filenames
+
+
+def test_find_members_by_content_type_role_archive():
+    members = _tar_members(tar_example1)
+    len_members = len(members)
+
+    res = archive.filter_members_by_content_type(members, 'role', 'role')
+
+    import pprint
+    log.debug('res: %s', pprint.pformat(res))
+
+    filenames = [x.name for x in res]
+    assert 'ansible-testing-content-master/roles/test-role-d/vars/main.yml' in filenames
+    # a role archive should not having anything filtered out
+    assert len_members == len(res)

@@ -217,7 +217,7 @@ class GalaxyContent(object):
             return self._metadata
 
         meta_path = os.path.join(self.path,
-                                 archive.META_MAIN)
+                                 content_archive.META_MAIN)
 
         if os.path.isfile(meta_path):
             log.debug('loading content metadata from meta_path: %s', meta_path)
@@ -334,6 +334,9 @@ class GalaxyContent(object):
 
         all_installed_paths = []
         content_types_to_install = content_types_to_install or []
+
+        tar_file_members = content_tar_file.getmembers()
+
         for install_content_type in content_types_to_install:
             log.debug('INSTALLING %s type content from %s', install_content_type, content_tar_file)
 
@@ -342,7 +345,7 @@ class GalaxyContent(object):
             # TODO:  install_contents()  - iterator over all the contents of a content type (ie, 'roles')
             # TODO:   install_content()  - install a single content  (ie, a role)
             #         _install_content_role()  - role specific impl of install_content
-            content_type_member_matches = archive.filter_members_by_content_type(content_tar_file,
+            content_type_member_matches = archive.filter_members_by_content_type(tar_file_members,
                                                                                  content_archive_type,
                                                                                  content_type=install_content_type)
 
@@ -356,7 +359,7 @@ class GalaxyContent(object):
                 match_pattern = '*/%s/%s*' % (content_sub_dir, content_sub_name)
                 # log.debug('MATCH_PATTERNS: %s', match_pattern)
 
-                member_matches = archive.filter_members_by_fnmatch(content_tar_file,
+                member_matches = archive.filter_members_by_fnmatch(tar_file_members,
                                                                    match_pattern)
             log.debug('content_meta: %s', content_meta)
             log.info('about to extract %s to %s', content_meta.name, content_meta.path)
@@ -390,7 +393,7 @@ class GalaxyContent(object):
 
                 match_pattern = '%s/%s/%s*' % (parent_dir, content_sub_dir, content_name)
 
-                member_matches = archive.filter_members_by_fnmatch(content_tar_file,
+                member_matches = archive.filter_members_by_fnmatch(tar_file_members,
                                                                    match_pattern)
 
                 namespaced_content_path = '%s/%s/%s' % (namespace_repo_name,
