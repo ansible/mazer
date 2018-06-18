@@ -5,7 +5,7 @@ import os
 from ansible_galaxy import content_db
 from ansible_galaxy import exceptions
 
-from ansible_galaxy.flat_rest_api.content import GalaxyContent
+from ansible_galaxy.flat_rest_api.content import InstalledContent
 
 log = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def installed_content_iterator(galaxy_context,
         # log.debug('path_file / name: %s', path_file)
 
         # TODO: create and use a InstalledGalaxyContent
-        gr = GalaxyContent(galaxy_context, path_file, path=content_full_path)
+        gr = InstalledContent(galaxy_context, path_file, path=content_full_path)
 
         # FIXME: not so much a kluge, but a sure sign that GalaxyContent.path
         #        (or its alias GalaxyContent.content_meta.path) have different meanings

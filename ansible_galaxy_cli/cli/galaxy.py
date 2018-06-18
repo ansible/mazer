@@ -35,6 +35,7 @@ from ansible_galaxy.actions import init
 from ansible_galaxy.actions import list as list_action
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
+from ansible_galaxy import installed_content_db
 from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.utils.text import to_text
@@ -356,11 +357,11 @@ class GalaxyCLI(cli.CLI):
         galaxy_context = self._get_galaxy_context(self.options, self.config)
         # roles_path = [os.path.join(galaxy_context.content_path, 'roles')]
 
-        match_filter = list_action.match_all
+        match_filter = installed_content_db.match_all
 
         # if len(self.args) == 1:
         if self.args:
-            match_filter = list_action.MatchNames(self.args)
+            match_filter = installed_content_db.MatchNames(self.args)
 
         # TODO: eventually, loop over content types
 

@@ -221,6 +221,7 @@ class GalaxyContent(object):
     def install_info(self):
         return self._install_info
 
+    # TODO: this is pretty much the persist/save method
     # FIXME: should probably be a GalaxyInfoInfo class
     def _write_galaxy_install_info(self, content_meta, info_path):
         """
@@ -673,6 +674,24 @@ class GalaxyContent(object):
 
 # TODO/FIXME: revist a Content base class
 class InstalledContent(GalaxyContent):
+    def _load_metadata_yaml(self):
+        meta_path = os.path.join(self.path,
+                                 content_archive.META_MAIN)
+
+        log.debug('looking for content meta data from meta_path: %s', meta_path)
+
+        if os.path.isfile(meta_path):
+            log.debug('loading content metadata from meta_path: %s', meta_path)
+            try:
+                f = open(meta_path, 'r')
+                return yaml.safe_load(f)
+            except Exception as e:
+                log.exception(e)
+                log.debug("Unable to load metadata for %s", self.content_meta.name)
+                return False
+            finally:
+                f.close()
+
     @property
     def metadata(self):
         """
@@ -683,26 +702,29 @@ class InstalledContent(GalaxyContent):
             return {}
 
         if self._metadata is not None:
-            return self._metadata
+            self._metadata = self._load_metadata_yaml()
 
-        meta_path = os.path.join(self.path,
-                                 content_archive.META_MAIN)
+        return self._metadata
 
-        log.debug('looking for content meta data from meta_path: %s', meta_path)
+    def _load_install_info(self):
+        '''loads, yaml parses, and returns the data from .galaxy_install_info'''
 
-        if os.path.isfile(meta_path):
-            log.debug('loading content metadata from meta_path: %s', meta_path)
+        log.debug('self.path: %s', self.path)
+        log.debug('self.META_INSTALL: %s', self.META_INSTALL)
+
+        info_path = os.path.join(self.path, self.META_INSTALL)
+
+        log.debug('info_path: %s', info_path)
+        if os.path.isfile(info_path):
             try:
-                f = open(meta_path, 'r')
-                self._metadata = yaml.safe_load(f)
+                f = open(info_path, 'r')
+                return yaml.safe_load(f)
             except Exception as e:
                 log.exception(e)
-                log.debug("Unable to load metadata for %s", self.content_meta.name)
+                self.debug("Unable to load Galaxy install info for %s", self.content_meta.name)
                 return False
             finally:
                 f.close()
-
-        return self._metadata
 
     # TODO: class/module for ContentInstallInfo
     @property
@@ -712,22 +734,7 @@ class InstalledContent(GalaxyContent):
         """
         # FIXME: Do we want to have this for galaxy content?
         if self._install_info is None:
-            log.debug('self.path: %s', self.path)
-            log.debug('self.META_INSTALL: %s', self.META_INSTALL)
-
-            info_path = os.path.join(self.path, self.META_INSTALL)
-
-            log.debug('info_path: %s', info_path)
-            if os.path.isfile(info_path):
-                try:
-                    f = open(info_path, 'r')
-                    self._install_info = yaml.safe_load(f)
-                except Exception as e:
-                    log.exception(e)
-                    self.debug("Unable to load Galaxy install info for %s", self.content_meta.name)
-                    return False
-                finally:
-                    f.close()
+            self._install_info = self._load_install_info()
         return self._install_info
 
     def remove(self):
