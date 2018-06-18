@@ -53,10 +53,12 @@ class ContentRepository(object):
     def __init__(self,
                  namespace=None,
                  name=None,
+                 label=None,
                  path=None):
         self.namespace = namespace
         self.name = name
         self.path = path
+        self.label = label or '%s.%s' % (self.namespace, self.name)
 
     @classmethod
     def from_content_spec_data(cls, content_spec_data):
@@ -64,6 +66,7 @@ class ContentRepository(object):
                    name=content_spec_data.get('name'))
 
     def __repr__(self):
-        return '%s(namespace="%s", name="%s", path="%s")' % \
-            (self.__class__.__name__, self.namespace,
+        return '%s(label="%s", namespace="%s", name="%s", path="%s")' % \
+            (self.__class__.__name__,
+             self.label, self.namespace,
              self.name, self.path)

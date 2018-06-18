@@ -2,6 +2,7 @@ import logging
 
 from ansible_galaxy.flat_rest_api.content import GalaxyContent
 from ansible_galaxy import installed_content_db
+from ansible_galaxy import matchers
 from ansible_galaxy_cli import exceptions as cli_exceptions
 
 log = logging.getLogger(__name__)
@@ -28,20 +29,15 @@ def remove_role(galaxy_context,
     # FIXME: return code?  was always returning 0
 
 
-# for remove don't match anything if nothing is specified
-def match_none():
-    return False
-
-
 def remove(galaxy_context,
-           match_filter=None,
+           repository_match_filter=None,
            display_callback=None):
 
-    match_filter = match_filter or match_none
+    repository_match_filter = repository_match_filter or matchers.MatchNone()
 
     icdb = installed_content_db.InstalledContentDatabase(galaxy_context)
 
-    for content_info in icdb.select(match_filter):
+    for content_info in icdb.select(repository_match_filter=repository_match_filter):
         log.debug('removing %s', content_info)
         content_info['content_data'].remove()
 

@@ -36,15 +36,14 @@ from ansible_galaxy.actions import list as list_action
 from ansible_galaxy.actions import remove
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
-from ansible_galaxy import installed_content_db
 from ansible_galaxy_cli import exceptions as cli_exceptions
+from ansible_galaxy import matchers
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.utils.text import to_text
 
 # FIXME: importing class, fix name collision later or use this style
 # TODO: replace flat_rest_api with a OO interface
 from ansible_galaxy.flat_rest_api.api import GalaxyAPI
-from ansible_galaxy.flat_rest_api.content import GalaxyContent
 
 # FIXME: not a model...
 from ansible_galaxy.models.content import CONTENT_TYPES
@@ -335,7 +334,7 @@ class GalaxyCLI(cli.CLI):
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
         if self.args:
-            match_filter = installed_content_db.MatchNames(self.args)
+            match_filter = matchers.MatchNames(self.args)
 
         return remove.remove(galaxy_context,
                              match_filter=match_filter,
@@ -347,18 +346,14 @@ class GalaxyCLI(cli.CLI):
         """
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
-        # roles_path = [os.path.join(galaxy_context.content_path, 'roles')]
 
-        match_filter = installed_content_db.match_all
+        match_filter = matchers.MatchAll()
 
-        # if len(self.args) == 1:
         if self.args:
-            match_filter = installed_content_db.MatchNames(self.args)
-
-        # TODO: eventually, loop over content types
+            match_filter = matchers.MatchNamespacesOrLabels(self.args)
 
         return list_action.list(galaxy_context,
-                                match_filter=match_filter,
+                                repository_match_filter=match_filter,
                                 display_callback=self.display)
 
     def execute_version(self):

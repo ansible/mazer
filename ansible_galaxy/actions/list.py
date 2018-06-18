@@ -2,24 +2,21 @@
 import logging
 
 from ansible_galaxy import installed_content_db
+from ansible_galaxy import matchers
 
 log = logging.getLogger(__name__)
 
 
-def match_all(galaxy_content):
-    return True
-
-
 def list(galaxy_context,
-         match_filter=None,
+         repository_match_filter=None,
          display_callback=None):
 
-    match_filter = match_filter or match_all
+    repository_match_filter = repository_match_filter or matchers.MatchAll()
     log.debug('locals: %s', locals())
 
     icdb = installed_content_db.InstalledContentDatabase(galaxy_context)
 
-    for content_info in icdb.select(match_filter):
+    for content_info in icdb.select(repository_match_filter=repository_match_filter):
         content_dict = content_info.copy()
         repo = content_dict.pop('installed_repository')
 

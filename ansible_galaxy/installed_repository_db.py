@@ -13,18 +13,6 @@ def repository_match_all(content_repository):
     return True
 
 
-class MatchRepositoryNames(object):
-    def __init__(self, names):
-        self.names = names
-
-    def __call__(self, other):
-        return self.match(other)
-
-    def match(self, other):
-        log.debug('self.names: %s other.name: %s', self.names, other.name)
-        return other.name in self.names
-
-
 def installed_repository_iterator(galaxy_context,
                                   match_filter=None):
 
