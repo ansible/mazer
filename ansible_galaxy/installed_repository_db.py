@@ -2,6 +2,7 @@ import logging
 import os
 
 from ansible_galaxy import content_spec_parse
+from ansible_galaxy import matchers
 from ansible_galaxy.models.content_repository import ContentRepository
 
 log = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ def get_repository_paths(content_path):
 def installed_repository_iterator(galaxy_context,
                                   match_filter=None):
 
+    repository_match_filter = match_filter or matchers.MatchAll()
     content_path = galaxy_context.content_path
 
     repository_paths = get_repository_paths(content_path)
@@ -40,16 +42,19 @@ def installed_repository_iterator(galaxy_context,
     log.debug('repository_paths for content_path=%s: %s', content_path, repository_paths)
 
     for repository_path in repository_paths:
-
+        # log.debug('repo_path: %s', repository_path)
         # use the default 'local' style content_spec_parse and name resolver
         spec_data = content_spec_parse.spec_data_from_string(repository_path)
 
         repository_full_path = os.path.join(content_path, repository_path)
+        # log.debug('repo_fll_path: %s', repository_full_path)
         content_repository = ContentRepository(namespace=spec_data.get('namespace'),
                                                name=spec_data.get('name'),
                                                path=repository_full_path)
 
-        if match_filter(content_repository):
+        # log.debug('content_repo: %s', content_repository)
+        # log.debug('match: %s(%s) %s', repository_match_filter, content_repository, repository_match_filter(content_repository))
+        if repository_match_filter(content_repository):
             yield content_repository
 
 

@@ -3,26 +3,10 @@ import logging
 import os
 
 from ansible_galaxy import installed_repository_db
-
+from ansible_galaxy import matchers
 from ansible_galaxy.flat_rest_api.content import InstalledContent
 
 log = logging.getLogger(__name__)
-
-
-def match_all(galaxy_content):
-    return True
-
-
-class MatchContentNames(object):
-    def __init__(self, names):
-        self.names = names
-
-    def __call__(self, other):
-        return self.match(other)
-
-    def match(self, other):
-        log.debug('self.names: %s other.name: %s', self.names, other.name)
-        return other.name in self.names
 
 
 # need a content_type matcher?
@@ -43,27 +27,12 @@ def installed_content_iterator(galaxy_context,
                                content_match_filter=None):
 
     # match_all works for all types
-    content_match_filter = content_match_filter or match_all
-    repository_match_filter = repository_match_filter or match_all
-    # log.debug('locals: %s', locals())
-
-    # TODO: make this into a Content iterator / database / name directory / index / etc
+    content_match_filter = content_match_filter or matchers.MatchAll()
+    repository_match_filter = repository_match_filter or matchers.MatchAll()
 
     content_type = content_type or 'roles'
-    # full_content_paths = []
-
-    content_path = galaxy_context.content_path
-    # show all valid content in the content_path directory
-
-    log.debug('content_path: %s', content_path)
-    content_path = os.path.expanduser(content_path)
 
     installed_repo_db = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-
-    # for x in repository_iterator.select():
-    #    log.debug('repo: %s', x)
-
-    # content_infos = []
 
     # for namespace_full_path in namespace_paths_iterator:
     for installed_repository in installed_repo_db.select(repository_match_filter=repository_match_filter):
@@ -85,9 +54,7 @@ def installed_content_iterator(galaxy_context,
         installed_repository_content_iterator = installed_repository_content_iterator_method(installed_repository_full_path)
 
         for installed_content_full_path in installed_repository_content_iterator:
-            # log.debug('installed_content_full_path: %s', installed_content_full_path)
             path_file = os.path.basename(installed_content_full_path)
-            # log.debug('path_file / name: %s', path_file)
 
             gr = InstalledContent(galaxy_context, path_file, path=installed_content_full_path)
 
@@ -98,13 +65,10 @@ def installed_content_iterator(galaxy_context,
             #        (.ansible/content/roles/test-role-a for ex)
             gr.content_meta.path = installed_content_full_path
 
-    #         log.debug('gr: %s', gr)
-    #        log.debug('gr.metadata: %s', gr.metadata)
-
             version = None
 
-            log.debug('gr.install_info: %s', gr.install_info)
-
+            # TODO: should probably sep the generator for getting the InstalledContent objects from the generator that
+            #       creates the content_info returns instead of intertwining them
             if gr.metadata or gr.install_info:
                 install_info = gr.install_info
                 if install_info:
@@ -135,8 +99,8 @@ class InstalledContentDatabase(object):
     # select content based on matching the installed namespace.repository and/or the content itself
     def select(self, repository_match_filter=None, content_match_filter=None):
         # ie, default to select * more or less
-        repository_match_filter = repository_match_filter or match_all
-        content_match_filter = content_match_filter or match_all
+        repository_match_filter = repository_match_filter or matchers.MatchAll()
+        content_match_filter = content_match_filter or matchers.MatchAll()
 
         roles_content_iterator = installed_content_iterator(self.installed_context,
                                                             content_type='roles',

@@ -3,6 +3,7 @@ import os
 import fnmatch
 
 from ansible_galaxy import installed_content_db
+from ansible_galaxy import matchers
 
 log = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ def test_installed_content_db(galaxy_context):
 def test_installed_content_db_match_names(galaxy_context):
     icd = installed_content_db.InstalledContentDatabase(galaxy_context)
 
-    match_filter = installed_content_db.MatchContentNames(['foo.bar'])
+    match_filter = matchers.MatchNames(['foo.bar'])
     for x in icd.select(content_match_filter=match_filter):
         log.debug('x: %s', x)
 
@@ -38,10 +39,25 @@ class MatchContentNamesFnmatch(object):
         return self.match(other)
 
     def match(self, other):
-        log.debug('self.fnmatch_patterns: %s other.name: %s', self.fnmatch_patterns, other.name)
+        # log.debug('self.fnmatch_patterns: %s other.name: %s', self.fnmatch_patterns, other.name)
         # log.debug('fnm: %s', fnmatch.fnmatch(other.name, self.fnmatch_patterns[0]))
-        # return fnmatch.fnmatch(other.name, self.fnmatch_patterns[0])
         return any([fnmatch.fnmatch(other.name, x) for x in self.fnmatch_patterns])
+
+
+def test_installed_content_iterator_empty(galaxy_context, mocker):
+    mocker.patch('ansible_galaxy.installed_repository_db.get_repository_paths',
+                 return_value=iter(['foo.bar', 'blip.baz']))
+
+    # The content type specific content iterator is determined at runtime, so we need to patch the value
+    # of the 'roles' item in installed_repository_content_iterator_map to patch the right method used
+    mocker.patch.dict('ansible_galaxy.installed_content_db.installed_repository_content_iterator_map',
+                      {'roles': mocker.Mock(return_value=iter(['/dev/null/content/foo.bar/roles/role-1', '/dev/null/content/blip.baz/roles/role-2']))})
+
+    ici = installed_content_db.installed_content_iterator(galaxy_context,
+                                                          content_type='roles')
+
+    installed_content = list(ici)
+    assert installed_content[0]['content_data'].name == 'role-1'
 
 
 def test_installed_content_iterator_tmp_content(galaxy_context):
@@ -82,4 +98,4 @@ def test_installed_content_iterator_tmp_content(galaxy_context):
                                                            content_type='roles')
 
     for i in ici2:
-        log.debug('fnmatch match_filter: %s', i)
+        log.debug('i2: %s', i)
