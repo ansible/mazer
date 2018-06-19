@@ -5,6 +5,7 @@ pip
 pytest
 pytest-cov
 pytest-runner
+pytest-mock
 tox
 # until test_galaxy_upstream tests are ported to pytest
 unittest2 ; python_version < '2.7'
