@@ -54,9 +54,9 @@ class InstalledRepositoryDatabase(repository_db.RepositoryDatabase):
         self.installed_context = installed_context
 
     # where clause being some sort of matcher object
-    def select(self, match_filter=None):
+    def select(self, repository_match_filter=None):
         # ie, default to select * more or less
-        repository_match_filter = match_filter or repository_match_all
+        repository_match_filter = repository_match_filter or repository_match_all
 
         installed_repositories = installed_repository_iterator(self.installed_context,
                                                                match_filter=repository_match_filter)

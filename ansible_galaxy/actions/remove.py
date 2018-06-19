@@ -1,30 +1,29 @@
 import logging
 
-from ansible_galaxy.flat_rest_api.content import GalaxyContent
-from ansible_galaxy import installed_content_db
+from ansible_galaxy.models import content_repository
+from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy_cli import exceptions as cli_exceptions
 
 log = logging.getLogger(__name__)
 
 
-def remove_role(galaxy_context,
-                role_name,
-                display_callback=None):
-    log.debug('looking for content %s to remove', role_name)
+def remove_repository(installed_repository,
+                      display_callback=None):
+    log.debug('looking for content %s to remove', installed_repository)
 
-    role = GalaxyContent(galaxy_context, role_name)
-
-    log.debug('content to remove: %s %s', role, type(role))
+    log.debug('content to remove: %s %s', installed_repository, type(installed_repository))
 
     try:
-        if role.remove():
-            display_callback('- successfully removed %s' % role_name)
+        res = content_repository.remove(installed_repository)
+        if res:
+            display_callback('- successfully removed %s' % installed_repository.label)
         else:
-            display_callback('- %s is not installed, skipping.' % role_name)
+            display_callback('- %s is not installed, skipping.' % installed_repository.label)
     except Exception as e:
         log.exception(e)
-        raise cli_exceptions.GalaxyCliError("Failed to remove role %s: %s" % (role_name, str(e)))
+        raise cli_exceptions.GalaxyCliError("Failed to remove installed repository %s: %s" %
+                                            (installed_repository.label, str(e)))
 
     # FIXME: return code?  was always returning 0
 
@@ -35,10 +34,12 @@ def remove(galaxy_context,
 
     repository_match_filter = repository_match_filter or matchers.MatchNone()
 
-    icdb = installed_content_db.InstalledContentDatabase(galaxy_context)
+    icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    for content_info in icdb.select(repository_match_filter=repository_match_filter):
-        log.debug('removing %s', content_info)
-        content_info['content_data'].remove()
+    for matched_repository in icdb.select(repository_match_filter=repository_match_filter):
+        log.debug('removing %s', matched_repository)
+        # content_info['content_data'].remove()
+        remove_repository(matched_repository,
+                          display_callback=display_callback)
 
     return 0

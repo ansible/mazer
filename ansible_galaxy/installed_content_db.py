@@ -88,7 +88,7 @@ def installed_content_iterator(galaxy_context,
     # content_infos = []
 
     # for namespace_full_path in namespace_paths_iterator:
-    for installed_repository in installed_repo_db.select(match_filter=repository_match_filter):
+    for installed_repository in installed_repo_db.select(repository_match_filter=repository_match_filter):
         installed_repository_full_path = installed_repository.path
         # log.debug('installed_repository_full_path: %s', installed_repository_full_path)
 

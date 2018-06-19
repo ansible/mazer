@@ -334,10 +334,10 @@ class GalaxyCLI(cli.CLI):
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
         if self.args:
-            match_filter = matchers.MatchNames(self.args)
+            match_filter = matchers.MatchLabels(self.args)
 
         return remove.remove(galaxy_context,
-                             match_filter=match_filter,
+                             repository_match_filter=match_filter,
                              display_callback=self.display)
 
     def execute_list(self):

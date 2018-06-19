@@ -48,5 +48,3 @@ class MatchNamespacesOrLabels(Match):
         log.debug('self.namespaces_or_labels: %s other.namespace: %s other.label: %s', self.namespaces_or_labels, other.namespace, other.label)
         return any([other.label in self.namespaces_or_labels,
                     other.namespace in self.namespaces_or_labels])
-
-
