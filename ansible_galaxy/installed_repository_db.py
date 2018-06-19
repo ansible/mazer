@@ -2,7 +2,6 @@ import logging
 import os
 
 from ansible_galaxy import content_spec_parse
-from ansible_galaxy import repository_db
 from ansible_galaxy.models.content_repository import ContentRepository
 
 log = logging.getLogger(__name__)
@@ -12,11 +11,7 @@ def repository_match_all(content_repository):
     return True
 
 
-def installed_repository_iterator(galaxy_context,
-                                  match_filter=None):
-
-    content_path = galaxy_context.content_path
-
+def get_repository_paths(content_path):
     # TODO: abstract this a bit?  one to make it easier to mock, but also
     #       possibly to prepare for nested dirs, multiple paths, various
     #       filters/whitelist/blacklist/excludes, caching, or respecting
@@ -32,28 +27,33 @@ def installed_repository_iterator(galaxy_context,
                  content_path)
         namespace_paths = []
 
-    log.debug('namespace_paths for content_path=%s: %s', content_path, namespace_paths)
+    return namespace_paths
 
-    for namespace_path in namespace_paths:
+
+def installed_repository_iterator(galaxy_context,
+                                  match_filter=None):
+
+    content_path = galaxy_context.content_path
+
+    repository_paths = get_repository_paths(content_path)
+
+    log.debug('repository_paths for content_path=%s: %s', content_path, repository_paths)
+
+    for repository_path in repository_paths:
 
         # use the default 'local' style content_spec_parse and name resolver
-        spec_data = content_spec_parse.spec_data_from_string(namespace_path)
+        spec_data = content_spec_parse.spec_data_from_string(repository_path)
 
-        namespace_full_path = os.path.join(content_path, namespace_path)
+        repository_full_path = os.path.join(content_path, repository_path)
         content_repository = ContentRepository(namespace=spec_data.get('namespace'),
                                                name=spec_data.get('name'),
-                                               path=namespace_full_path)
+                                               path=repository_full_path)
 
-        # if names
         if match_filter(content_repository):
-            # log.debug('namespace_full_path: %s', namespace_full_path)
-            # log.debug('glob=%s', '%s/roles/*' % namespace_full_path)
-            # yield namespace_full_path
             yield content_repository
 
 
-class InstalledRepositoryDatabase(repository_db.RepositoryDatabase):
-    database_type = 'base'
+class InstalledRepositoryDatabase(object):
 
     def __init__(self, installed_context=None):
         self.installed_context = installed_context

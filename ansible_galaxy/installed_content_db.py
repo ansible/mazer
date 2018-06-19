@@ -2,7 +2,6 @@ import glob
 import logging
 import os
 
-from ansible_galaxy import content_db
 from ansible_galaxy import installed_repository_db
 
 from ansible_galaxy.flat_rest_api.content import InstalledContent
@@ -128,8 +127,7 @@ def installed_content_iterator(galaxy_context,
             yield content_info
 
 
-class InstalledContentDatabase(content_db.ContentDatabase):
-    database_type = 'base'
+class InstalledContentDatabase(object):
 
     def __init__(self, installed_context=None):
         self.installed_context = installed_context
