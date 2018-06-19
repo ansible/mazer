@@ -3,7 +3,6 @@ import logging
 import os
 
 from ansible_galaxy import content_db
-from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
 
 from ansible_galaxy.flat_rest_api.content import InstalledContent
@@ -28,7 +27,7 @@ class MatchContentNames(object):
 
 
 # need a content_type matcher?
-def installed_namespace_role_iterator(namespace_path):
+def installed_repository_role_iterator(namespace_path):
 
     namespaced_roles_dirs = glob.glob('%s/%s/*' % (namespace_path, 'roles'))
     for namespaced_roles_path in namespaced_roles_dirs:
@@ -36,26 +35,7 @@ def installed_namespace_role_iterator(namespace_path):
         yield namespaced_roles_path
 
 
-namespace_content_iterator_map = {'roles': installed_namespace_role_iterator}
-
-
-def installed_namespace_iterator(content_path, content_type=None):
-    try:
-        # TODO: filter on any rules for what a namespace path looks like
-        #       may one being 'somenamespace.somename' (a dot sep ns and name)
-        #
-        namespace_paths = os.listdir(content_path)
-    except OSError as e:
-        log.exception(e)
-        raise exceptions.GalaxyError('The path %s did not exist', content_path)
-
-    log.debug('namespace_paths for content_path=%s: %s', content_path, namespace_paths)
-
-    for namespace_path in namespace_paths:
-        namespace_full_path = os.path.join(content_path, namespace_path)
-        # log.debug('namespace_full_path: %s', namespace_full_path)
-        # log.debug('glob=%s', '%s/roles/*' % namespace_full_path)
-        yield namespace_full_path
+installed_repository_content_iterator_map = {'roles': installed_repository_role_iterator}
 
 
 def installed_content_iterator(galaxy_context,
@@ -79,7 +59,6 @@ def installed_content_iterator(galaxy_context,
     log.debug('content_path: %s', content_path)
     content_path = os.path.expanduser(content_path)
 
-    # namespace_paths_iterator = installed_namespace_iterator(content_path)
     installed_repo_db = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
     # for x in repository_iterator.select():
@@ -98,7 +77,9 @@ def installed_content_iterator(galaxy_context,
 
         # since we will need a different iterator for each specific type of content, consult
         # a map of content_type->iterator_method however there is only a 'roles' iterator for now
-        installed_repository_content_iterator_method = namespace_content_iterator_map.get(content_type)
+        installed_repository_content_iterator_method = \
+            installed_repository_content_iterator_map.get(content_type)
+
         if installed_repository_content_iterator_method is None:
             continue
 
@@ -109,7 +90,6 @@ def installed_content_iterator(galaxy_context,
             path_file = os.path.basename(installed_content_full_path)
             # log.debug('path_file / name: %s', path_file)
 
-            # TODO: create and use a InstalledGalaxyContent
             gr = InstalledContent(galaxy_context, path_file, path=installed_content_full_path)
 
             # FIXME: not so much a kluge, but a sure sign that GalaxyContent.path
@@ -138,6 +118,7 @@ def installed_content_iterator(galaxy_context,
                 log.debug('%s was not matched by content_match_filter: %s', gr, content_match_filter)
                 continue
 
+            # this is sort of the 'join' of installed_repository and installed_content
             content_info = {'path': path_file,
                             'content_data': gr,
                             'installed_repository': installed_repository,

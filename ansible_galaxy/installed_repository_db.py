@@ -2,7 +2,6 @@ import logging
 import os
 
 from ansible_galaxy import content_spec_parse
-from ansible_galaxy import exceptions
 from ansible_galaxy import repository_db
 from ansible_galaxy.models.content_repository import ContentRepository
 
@@ -18,6 +17,10 @@ def installed_repository_iterator(galaxy_context,
 
     content_path = galaxy_context.content_path
 
+    # TODO: abstract this a bit?  one to make it easier to mock, but also
+    #       possibly to prepare for nested dirs, multiple paths, various
+    #       filters/whitelist/blacklist/excludes, caching, or respecting
+    #       fs ordering, etc
     try:
         # TODO: filter on any rules for what a namespace path looks like
         #       may one being 'somenamespace.somename' (a dot sep ns and name)
@@ -25,7 +28,9 @@ def installed_repository_iterator(galaxy_context,
         namespace_paths = os.listdir(content_path)
     except OSError as e:
         log.exception(e)
-        raise exceptions.GalaxyError('The path %s did not exist', content_path)
+        log.warn('The content path %s did not exist so no content or repositories were found.',
+                 content_path)
+        namespace_paths = []
 
     log.debug('namespace_paths for content_path=%s: %s', content_path, namespace_paths)
 
@@ -53,7 +58,6 @@ class InstalledRepositoryDatabase(repository_db.RepositoryDatabase):
     def __init__(self, installed_context=None):
         self.installed_context = installed_context
 
-    # where clause being some sort of matcher object
     def select(self, repository_match_filter=None):
         # ie, default to select * more or less
         repository_match_filter = repository_match_filter or repository_match_all

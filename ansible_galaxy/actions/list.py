@@ -14,6 +14,7 @@ def list(galaxy_context,
     repository_match_filter = repository_match_filter or matchers.MatchAll()
     log.debug('locals: %s', locals())
 
+    # We search for installed repos to list, and then display all the content in those installed repos
     icdb = installed_content_db.InstalledContentDatabase(galaxy_context)
 
     for content_info in icdb.select(repository_match_filter=repository_match_filter):
