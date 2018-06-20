@@ -5,6 +5,7 @@ include LICENSE
 include README.rst
 
 recursive-include tests *
+recursive-include ansible_galaxy_cli/data *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 
