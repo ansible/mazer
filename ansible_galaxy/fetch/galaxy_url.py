@@ -40,12 +40,23 @@ def get_download_url(repo_data=None, external_url=None, repoversion=None):
 
 
 def select_repository_version(repoversions, version):
-    # repository_versions 'version' is 'not null' so should always exist
+    # repository_version's 'version' is 'not null' so should always exist
+    # however, the list of repository_versions can be empty
+
+    # If the rest api returns a empty list for repo versions, return an
+    # empty dict for 'no version'
+    if not repoversions:
+        return {}
 
     # we could build a map/dict first and search in it, but we only use this
     # once, so this linear search is ok, since building the map would be that
     # plus the getitem
     results = [x for x in repoversions if x['version'] == version]
+
+    # no matching versions, return an empty dict
+    # TODO: raise VersionNotFoundError ? return some sort of NullRepositoryVersion instance?
+    if not results:
+        return {}
 
     # repository_versions is uniq on (version, repo.id) so for any given repo,
     # there should only be one result here
