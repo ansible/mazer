@@ -427,33 +427,6 @@ class TestGalaxyInitAPB(unittest.TestCase, ValidRoleTests):
         self.assertIsNone(test_playbook[0]['tasks'], msg='We\'re expecting an unset list of tasks in test.yml')
 
 
-class TestGalaxyInitContainer(unittest.TestCase, ValidRoleTests):
-    content_type = 'container'
-
-    def test_metadata_container_tag(self):
-        with open(os.path.join(self.role_dir, 'meta', 'main.yml'), 'r') as mf:
-            metadata = yaml.safe_load(mf)
-        self.assertIn('container', metadata.get('galaxy_info', dict()).get('galaxy_tags', []), msg='container tag not set in role metadata')
-
-    def test_metadata_contents(self):
-        with open(os.path.join(self.role_dir, 'meta', 'main.yml'), 'r') as mf:
-            metadata = yaml.safe_load(mf)
-        self.assertEqual(metadata.get('galaxy_info', dict()).get('author'), 'your name', msg='author was not set properly in metadata')
-
-    def test_meta_container_yml(self):
-        self.assertTrue(os.path.exists(os.path.join(self.role_dir, 'meta', 'container.yml')), msg='container.yml was not created')
-
-    def test_test_yml(self):
-        with open(os.path.join(self.role_dir, 'tests', 'test.yml'), 'r') as f:
-            test_playbook = yaml.safe_load(f)
-        log.debug('test_playbook: %s',  test_playbook)
-        self.assertEqual(len(test_playbook), 1)
-        self.assertEqual(test_playbook[0]['hosts'], 'localhost')
-        self.assertFalse(test_playbook[0]['gather_facts'])
-        self.assertEqual(test_playbook[0]['connection'], 'local')
-        self.assertIsNone(test_playbook[0]['tasks'], msg='We\'re expecting an unset list of tasks in test.yml')
-
-
 class TestGalaxyInitSkeleton(unittest.TestCase, ValidRoleTests):
     content_type = 'role'
 

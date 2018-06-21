@@ -1,5 +1,4 @@
 import logging
-import os
 
 import pytest
 
@@ -15,9 +14,7 @@ def display_callback(msg, **kwargs):
 role_types = \
     [
         'default',
-        'container',
         'apb',
-        'network',
     ]
 
 
@@ -29,12 +26,14 @@ def role_type(request):
 
 def test_init(tmpdir, role_type):
     role_name = 'test-role'
+
     # FIXME: needs lots of mocking
     init_path = tmpdir.mkdir('init_path')
     role_path = init_path.join(role_name).strpath
-    # role_path = os.path.join(init_path, role_name)
     role_skeleton_path = tmpdir.mkdir('role_skeleton').strpath
+
     skeleton_ignore_expressions = []
+
     ret = init.init(role_name,
                     init_path,
                     role_path,
@@ -43,5 +42,7 @@ def test_init(tmpdir, role_type):
                     skeleton_ignore_expressions,
                     role_type,
                     display_callback=display_callback)
+
+    # TODO: assert something
 
     log.debug('ret: %s', ret)
