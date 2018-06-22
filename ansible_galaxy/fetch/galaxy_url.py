@@ -6,7 +6,7 @@ from ansible_galaxy import exceptions
 from ansible_galaxy import download
 from ansible_galaxy.fetch import base
 from ansible_galaxy.rest_api import GalaxyAPI
-from ansible_galaxy.models import content_version
+from ansible_galaxy import content_version
 from ansible_galaxy.utils.content_name import parse_content_name
 
 log = logging.getLogger(__name__)
@@ -125,13 +125,13 @@ class GalaxyUrlFetch(base.BaseFetch):
         # log.debug('content_repo: %s', content_repo)
         # FIXME: mv to it's own method
         # FIXME: pass these to fetch() if it really needs it
-        _repo_version_name = content_version.get_content_version(repo_data,
-                                                                 version=self.content_version,
-                                                                 content_versions=content_repo_versions,
-                                                                 content_content_name=content_name)
+        repo_version_best = content_version.get_content_version(repo_data,
+                                                                version=self.content_version,
+                                                                content_versions=content_repo_versions,
+                                                                content_content_name=content_name)
 
         # get the RepositoryVersion obj (or its data anyway)
-        _repoversion = select_repository_version(repoversions, _repo_version_name)
+        _repoversion = select_repository_version(repoversions, repo_version_best)
         # FIXME: stop munging state
         # self.content_meta.version = _content_version
 
