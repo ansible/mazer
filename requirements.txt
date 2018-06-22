@@ -6,3 +6,6 @@ yamlloader
 
 # TODO: we can likely eliminate this
 jinja2
+
+# Used if we need offline version compares
+semver

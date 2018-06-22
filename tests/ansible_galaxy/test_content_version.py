@@ -3,7 +3,7 @@ import logging
 
 import pytest
 
-from ansible_galaxy.models import content_version
+from ansible_galaxy import content_version
 from ansible_galaxy import exceptions
 
 log = logging.getLogger(__name__)
