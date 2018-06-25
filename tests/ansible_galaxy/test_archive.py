@@ -7,8 +7,6 @@ import tarfile
 import tempfile
 import pprint
 
-import pytest
-
 from ansible_galaxy import archive
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import GalaxyContentMeta
@@ -86,7 +84,6 @@ def test_extract_file_foo():
             'force_overwrite': False}
 
     files_to_extract.append(item)
-    import pprint
     log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
 
     read_tar_file = tarfile.TarFile.open(name=tmp_tar_fo.name, mode='r')
@@ -134,7 +131,6 @@ def test_extract_files():
     log.debug('tar_file2 members: %s', tar_file.getmembers())
     tar_file.close()
 
-    import pprint
     log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
 
     read_tar_file = tarfile.TarFile.open(name=tmp_tar_fo.name, mode='r')
@@ -153,12 +149,10 @@ def test_extract_files():
     shutil.rmtree(tmp_dir)
 
 
-@pytest.mark.skip(reason="Need to either add a test tar or build one on the fly")
-def test_extract_file():
+def test_extract_file(mocker):
     # FIXME: rm out of tests tar file example
     # FIXME: generate a test tarfile
-    tar_file = tarfile.TarFile.open(name='/tmp/alikins.testing-content.tar.gz',
-                                    mode='r')
+    tar_file_mock = mocker.MagicMock(spec_set=tarfile.TarFile)
     # TODO: replace with tmpdir fixture
     tmp_dir = tempfile.mkdtemp(prefix=TMP_PREFIX)
 
@@ -167,32 +161,77 @@ def test_extract_file():
     pathname = 'roles/test-role-d/handlers/main.yml'
     top_dir = 'ansible-content-archive'
 
-    member = tarfile.TarInfo(os.path.join(top_dir, pathname))
-
     dest_dir = os.path.join(tmp_dir, 'extracted_stuff')
+
+    member = tarfile.TarInfo(os.path.join(top_dir, pathname))
 
     item = {'archive_member': member,
             'dest_dir': dest_dir,
             'dest_filename': pathname,
             'force_overwrite': True}
 
-    import pprint
     log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
 
-    res = archive.extract_file(tar_file, file_to_extract=item)
+    res = archive.extract_file(tar_file_mock, file_to_extract=item)
 
+    log.debug('tar_file_mock: %s', tar_file_mock)
+    log.debug('tar_file_mock.call_args_list: %s', tar_file_mock.call_args_list)
+    log.debug('tar_file_mock.method_calls: %s', tar_file_mock.method_calls)
     log.debug('res: %s', res)
+
+    assert pathname in res
     # log.debug('%s contents: %s', tmp_dir, glob.glob(dest_dir, '**', recursive=True))
-    log.debug('%s contents: %s', tmp_dir, list(os.walk(dest_dir)))
     shutil.rmtree(tmp_dir)
 
 
-@pytest.mark.skip(reason="Need to either add a test tar or build one on the fly")
-def test_extract_files_tmp():
+def test_extract_file_exists(mocker):
+    tar_file_mock = mocker.MagicMock(spec_set=tarfile.TarFile)
+    # TODO: replace with tmpdir fixture
+    tmp_dir = tempfile.mkdtemp(prefix=TMP_PREFIX)
+
+    files_to_extract = []
+    # for pathname in tar_example1:
+    pathname = 'roles/test-role-d/handlers/main.yml'
+    top_dir = 'ansible-content-archive'
+
+    dest_dir = os.path.join(tmp_dir, 'extracted_stuff')
+
+    def faux_exists(path):
+        if path.startswith(dest_dir):
+            return True
+        return False
+
+    mocker.patch('ansible_galaxy.archive.os.path.exists',
+                 side_effect=faux_exists)
+
+    member = tarfile.TarInfo(os.path.join(top_dir, pathname))
+
+    item = {'archive_member': member,
+            'dest_dir': dest_dir,
+            'dest_filename': pathname,
+            'force_overwrite': False}
+
+    log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
+
+    try:
+        archive.extract_file(tar_file_mock, file_to_extract=item)
+    except exceptions.GalaxyClientError as e:
+        log.exception(e)
+        return
+    finally:
+        shutil.rmtree(tmp_dir)
+
+    assert False, 'Expected a GalaxyClientError because the file to extract already exists, but that did not happen'
+
+
+def test_extract_files_tmp(mocker):
     # FIXME: rm out of tests tar file example
     # FIXME: generate a test tarfile
-    tar_file = tarfile.TarFile.open(name='/tmp/alikins.testing-content.tar.gz',
-                                    mode='r')
+    # tar_file = tarfile.TarFile.open(name='/tmp/alikins.testing-content.tar.gz',
+    #                                mode='r')
+
+    tar_file_mock = mocker.MagicMock(spec_set=tarfile.TarFile)
+
     # TODO: replace with tmpdir fixture
     tmp_dir = tempfile.mkdtemp(prefix=TMP_PREFIX)
 
@@ -216,11 +255,13 @@ def test_extract_files_tmp():
 
         files_to_extract.append(item)
 
-    import pprint
     log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
 
-    res = archive.extract_files(tar_file, files_to_extract=files_to_extract)
+    res = archive.extract_files(tar_file_mock, files_to_extract=files_to_extract)
 
+    log.debug('tar_file_mock: %s', tar_file_mock)
+    log.debug('tar_file_mock.call_args_list: %s', tar_file_mock.call_args_list)
+    log.debug('tar_file_mock.method_calls: %s', tar_file_mock.method_calls)
     log.debug('res: %s', list(res))
     # log.debug('%s contents: %s', tmp_dir, glob.glob(dest_dir, '**', recursive=True))
     log.debug('%s contents: %s', tmp_dir, list(os.walk(dest_dir)))
@@ -421,7 +462,6 @@ def test_find_members_by_content_type():
 
     res = archive.filter_members_by_content_type(members, 'multi-content', 'role')
 
-    import pprint
     log.debug('res: %s', pprint.pformat(res))
 
     filenames = [x.name for x in res]
@@ -435,7 +475,6 @@ def test_find_members_by_content_type_role_archive():
 
     res = archive.filter_members_by_content_type(members, 'role', 'role')
 
-    import pprint
     log.debug('res: %s', pprint.pformat(res))
 
     filenames = [x.name for x in res]
