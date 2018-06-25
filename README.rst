@@ -19,10 +19,7 @@ If you're installing Ansible content in a production environment, or need assist
 Proposed Features
 -----------------
 
-* More than just roles!
-* Support all the content types, including: roles, modules, module utils, all types of plugins.
-* Support repositories containing multipe types of each content. In other words, allow for mulitple modules, multiple plugins, and multiple roles all in one repository.
-* Support installing modules and plugins from [Ansible Galaxy](https://galaxy.ansible.com), or directly from a source repository.
+* Support repositories containing multiple roles. In other words, allow for multiple roles all in one repository.
 
 Examples
 --------
@@ -120,8 +117,8 @@ Installing Mazer
 
 From source
 ```````````
-    $ git clone https://github.com/ansible/galaxy-cli.git
-    $ cd galaxy-cli
+    $ git clone https://github.com/ansible/mazer.git
+    $ cd mazer
     $ python setup.py install
 
 Or install the requirements via pip::
@@ -131,7 +128,7 @@ Or install the requirements via pip::
 Via pip (from git)
 ``````````````````
 
-    pip install -v git+ssh://git@github.com/ansible/galaxy-cli.git
+    pip install -v git+ssh://git@github.com/ansible/mazer.git
 
 Testing
 -------
@@ -139,7 +136,7 @@ Testing
 unit testing
 ````````````
 
-galaxy-cli uses pytest for unit tests.
+mazer uses pytest for unit tests.
 
 test requirements
 ~~~~~~~~~~~~~~~~~

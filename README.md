@@ -11,11 +11,8 @@ If you're installing Ansible content in a production environment, or need assist
 
 ## Proposed Features
 
-- More than just roles!
-- Support all the content types, including: roles, modules, module utils, all types of plugins.
-- Support repositories containing multipe types of each content. In other words, allow 
-for mulitple modules, multiple plugins, and multiple roles all in one repository.
-- Support installing modules and plugins from [Ansible Galaxy](https://galaxy.ansible.com), or directly from a source repository.
+- Support repositories containing multiple roles. In other words, allow
+for multiple roles all in one repository.
 
 ## Examples
 
@@ -101,43 +98,6 @@ $ tree ~/.ansible/content
     └── linear.py
 ```
 
-### Installing just one type of content from a multi content repo
-
-To install just the modules from https://github.com/alikins/ansible-testing-content:
-
-```
-$ mazer install -t modules alikins.ansible-testing-content
-```
-
-This will install only the modules from modules/ into ~/.ansible/content/library
-
-```
-$ tree ~/.ansible/content
-/home/adrian/.ansible/content/
-└── library
-    ├── elasticsearch_plugin.py
-    ├── kibana_plugin.py
-    ├── mysql_db.py
-    ├── mysql_replication.py
-    ├── mysql_user.py
-    ├── mysql_variables.py
-    ├── redis.py
-    └── riak.py
-
-```
-
-### Install just the strategy plugins
-
-``` shell
-# install just the strategy plugins from alikins.ansible-testing-content
-
-mazer install -t strategy_plugin alikins.ansible-testing-content
-tree ~/.ansible/content
-
-# install just the modules
-
-mazer install -t module alikins.ansible-testing-content
-```
 
 ### Install a role to a different content path
 
@@ -152,8 +112,8 @@ This will install the geerlingguy.nginx role to ~/my-ansible-content/roles/geerl
 ### From source
 
 ```
-$ git clone https://github.com/ansible/galaxy-cli.git
-$ cd galaxy-cli
+$ git clone https://github.com/ansible/mazer.git
+$ cd mazer
 $ python setup.py install
 ```
 
@@ -165,14 +125,14 @@ $ pip install -r requirements.txt
 
 ### Via pip (from git)
 ```
-pip install -v git+ssh://git@github.com/ansible/galaxy-cli.git
+pip install -v git+ssh://git@github.com/ansible/mazer.git
 ```
 
 ## Testing
 
 ### unit testing
 
-galaxy-cli uses pytest for unit tests.
+mazer uses pytest for unit tests.
 
 #### test requirements
 
@@ -195,7 +155,7 @@ via 'pytest' directly
 $ pytest tests/
 ```
 
-## Prerequisites 
+## Prerequisites
 
 When installing content from an Ansible Galaxy server, requires Galaxy v3.0+.
 
