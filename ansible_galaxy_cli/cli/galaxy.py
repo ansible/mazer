@@ -302,8 +302,6 @@ class GalaxyCLI(cli.CLI):
         # TODO: more prep here?
         requested_content_specs = self.args
 
-        rc = 1
-
         try:
             rc = install.install_content_specs(galaxy_context,
                                                content_spec_strings=requested_content_specs,
