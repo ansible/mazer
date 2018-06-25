@@ -156,7 +156,7 @@ def load_archive(archive_path):
     archive_parent_dir = members[0].name
 
     # next find the metadata file
-    (meta_file, meta_parent_dir, galaxy_file, apb_yaml_file) = \
+    (meta_file, meta_parent_dir, dummy, apb_yaml_file) = \
         find_archive_metadata(members)
 
     archive_type = detect_content_archive_type(archive_path, members)
