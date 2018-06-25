@@ -5,17 +5,11 @@ import logging
 from ansible_galaxy import exceptions
 from ansible_galaxy import download
 from ansible_galaxy.fetch import base
-from ansible_galaxy.flat_rest_api.api import GalaxyAPI
+from ansible_galaxy.rest_api import GalaxyAPI
 from ansible_galaxy.models import content_version
 from ansible_galaxy.utils.content_name import parse_content_name
 
 log = logging.getLogger(__name__)
-
-
-def _build_download_url(external_url=None, version=None):
-    if external_url and version:
-        archive_url = '%s/archive/%s.tar.gz' % (external_url, version)
-        return archive_url
 
 
 def get_download_url(repo_data=None, external_url=None, repoversion=None):
@@ -143,8 +137,7 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         external_url = repo_data.get('external_url', None)
         if not external_url:
-            raise exceptions.GalaxyError('no external_url info on the Repository object from %s',
-                                         repo_name)
+            raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % repo_name)
 
         download_url = get_download_url(repo_data=repo_data, external_url=external_url, repoversion=_repoversion)
         # download_url = _build_download_url(external_url=external_url, version=_content_version)

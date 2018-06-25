@@ -25,7 +25,7 @@ __metaclass__ = type
 import logging
 import json
 from six.moves.urllib.error import HTTPError
-from six.moves.urllib.parse import quote as urlquote, urlencode
+from six.moves.urllib.parse import quote as urlquote
 import socket
 import ssl
 
@@ -46,13 +46,17 @@ def g_connect(method):
     def wrapped(self, *args, **kwargs):
         if not self.initialized:
             log.debug("Initial connection to galaxy_server: %s", self._api_server)
+
             server_version = self._get_server_api_version()
+
             if server_version not in self.SUPPORTED_VERSIONS:
                 raise exceptions.GalaxyClientError("Unsupported Galaxy server API version: %s" % server_version)
 
             self.baseurl = '%s/api/%s' % (self._api_server, server_version)
             self.version = server_version  # for future use
+
             log.debug("Base API: %s", self.baseurl)
+
             self.initialized = True
         return method(self, *args, **kwargs)
     return wrapped
@@ -111,17 +115,26 @@ class GalaxyAPI(object):
 
             # debug log a json version of the data that was created from the response
             response_log.debug('"%s %s" data:\n%s', http_method, url, json.dumps(data, indent=2))
-        except HTTPError as e:
+        except HTTPError as http_exc:
             self.log.debug('Exception on "%s %s"', http_method, url)
-            self.log.exception(e)
+            self.log.exception(http_exc)
 
             # FIXME: probably need a try/except here if the response body isnt json which
             #        can happen if a proxy mangles the response
-            res = json.loads(to_text(e.fp.read(), errors='surrogate_or_strict'))
+            res = json.loads(to_text(http_exc.fp.read(), errors='surrogate_or_strict'))
 
             http_log.error('%s %s data from server error response:\n%s', http_method, url, res)
 
-            raise exceptions.GalaxyClientError(res['detail'])
+            try:
+                error_msg = '%s' % res['detail']
+                raise exceptions.GalaxyClientError(error_msg)
+            except (KeyError, TypeError) as detail_parse_exc:
+                self.log.exception(detail_parse_exc)
+                self.log.warning('Unable to parse error detail from response: %s', detail_parse_exc)
+
+            # TODO: great place to be able to use 'raise from'
+            # FIXME: this needs to be tweaked so the
+            raise exceptions.GalaxyClientError(http_exc)
         except (ssl.SSLError, socket.error) as e:
             self.log.debug('Connection error to Galaxy API for request "%s %s": %s', http_method, url, e)
             self.log.exception(e)
@@ -168,9 +181,9 @@ class GalaxyAPI(object):
         name = urlquote(name)
         url = '%s/repositories/?name=%s&provider_namespace__namespace__name=%s' % (self.baseurl, name, namespace)
         data = self.__call_galaxy(url, http_method='GET')
-        if len(data["results"]) != 0:
+        if data["results"]:
             return data["results"][0]
-        return None
+        return {}
 
     @g_connect
     def lookup_content_by_name(self, namespace, repo_name, content_name, content_type=None, notify=True):
@@ -188,33 +201,13 @@ class GalaxyAPI(object):
 
         url = '%s/content/?name=%s&namespace__name=%s' % (self.baseurl, content_name, namespace)
         data = self.__call_galaxy(url, http_method='GET')
-        if len(data["results"]) != 0:
+        if data["results"]:
             return data["results"][0]
-        return None
 
-    @g_connect
-    def lookup_role_by_name(self, role_name, notify=True):
-        """
-        Find a role by name.
-        """
-        self.log.debug('role_name=%s', role_name)
-        role_name = urlquote(role_name)
-
-        try:
-            parts = role_name.split(".")
-            user_name = ".".join(parts[0:-1])
-            role_name = parts[-1]
-            if notify:
-                self.log.info("- downloading role '%s', owned by %s", role_name, user_name)
-        except Exception as e:
-            self.log.exception(e)
-            raise exceptions.GalaxyClientError("Invalid role name (%s). Specify role as format: username.rolename" % role_name)
-
-        url = '%s/roles/?owner__username=%s&name=%s' % (self.baseurl, user_name, role_name)
-        data = self.__call_galaxy(url, http_method='GET')
-        if len(data["results"]) != 0:
-            return data["results"][0]
-        return None
+        self.log.debug('No results found while looking for content by name for '
+                       'namespace=%s repo_name=%s content_name=%s',
+                       namespace, repo_name, content_name)
+        return {}
 
     @g_connect
     def fetch_content_related(self, related_url):
@@ -224,60 +217,26 @@ class GalaxyAPI(object):
         """
         self.log.debug('related_url=%s', related_url)
 
-        try:
-            url = '%s%s?page_size=50' % (self._api_server, related_url)
+        # try:
+        url = '%s%s?page_size=50' % (self._api_server, related_url)
+
+        # can raise a GalaxyClientError
+        data = self.__call_galaxy(url, http_method='GET')
+
+        # empty list for return value if there are no results
+        results = data.get('results', [])
+
+        # TODO: generalize the pagination support
+        # check for paginated results
+        done = (data.get('next_link', None) is None)
+
+        while not done:
+            url = '%s%s' % (self._api_server, data['next_link'])
             data = self.__call_galaxy(url, http_method='GET')
-            results = data.get('results', None)
-            if results is None:
-                # not a results list, just return the item
-                return data
+
+            # if no results, default to a empty list
+            results += data.get('results', [])
 
             done = (data.get('next_link', None) is None)
-            while not done:
-                url = '%s%s' % (self._api_server, data['next_link'])
-                data = self.__call_galaxy(url, http_method='GET')
-                results += data['results']
-                done = (data.get('next_link', None) is None)
-            return results
-        except Exception as e:
-            self.log.exception(e)
-            return None
 
-    @g_connect
-    def get_list(self, what):
-        """
-        Fetch the list of items specified.
-        """
-        self.log.debug('what=%s', what)
-
-        try:
-            url = '%s/%s/?page_size' % (self.baseurl, what)
-            data = self.__call_galaxy(url, http_method='GET')
-            if "results" in data:
-                results = data['results']
-            else:
-                results = data
-            done = True
-            if "next" in data:
-                done = (data.get('next_link', None) is None)
-            while not done:
-                url = '%s%s' % (self._api_server, data['next_link'])
-                data = self.__call_galaxy(url, http_method='GET')
-                results += data['results']
-                done = (data.get('next_link', None) is None)
-            return results
-        except Exception as error:
-            self.log.exception(error)
-            raise exceptions.GalaxyClientError("Failed to download the %s list: %s" % (what, str(error)))
-
-    @g_connect
-    def add_secret(self, source, github_user, github_repo, secret):
-        url = "%s/notification_secrets/" % self.baseurl
-        args = urlencode({
-            "source": source,
-            "github_user": github_user,
-            "github_repo": github_repo,
-            "secret": secret
-        })
-        data = self.__call_galaxy(url, args=args, method='POST')
-        return data
+        return results

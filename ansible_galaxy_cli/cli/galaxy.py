@@ -41,9 +41,7 @@ from ansible_galaxy import matchers
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.utils.text import to_text
 
-# FIXME: importing class, fix name collision later or use this style
-# TODO: replace flat_rest_api with a OO interface
-from ansible_galaxy.flat_rest_api.api import GalaxyAPI
+from ansible_galaxy import rest_api
 
 # FIXME: not a model...
 from ansible_galaxy.models.content import CONTENT_TYPES
@@ -190,7 +188,7 @@ class GalaxyCLI(cli.CLI):
 
         log.debug('galaxy context: %s', galaxy_context)
 
-        self.api = GalaxyAPI(galaxy_context)
+        self.api = rest_api.GalaxyAPI(galaxy_context)
 
         log.debug('execute action: %s', self.action)
         log.debug('execute action with options: %s', self.options)

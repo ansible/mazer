@@ -144,7 +144,7 @@ class TestGalaxy(unittest.TestCase):
 
                 # testing
                 self.assertEqual(mock_run.call_count, 1)
-                self.assertTrue(isinstance(gc.api, ansible_galaxy.flat_rest_api.api.GalaxyAPI))
+                self.assertTrue(isinstance(gc.api, ansible_galaxy.rest_api.GalaxyAPI))
                 self.assertEqual(mock_ex.call_count, 1)
 
     def test_execute_remove(self):
