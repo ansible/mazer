@@ -63,7 +63,6 @@ def remove(installed_repository):
                  e)
         log.exception(e)
         raise
-    return False
 
 
 class ContentRepository(object):

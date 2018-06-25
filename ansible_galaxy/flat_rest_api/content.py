@@ -757,7 +757,6 @@ class InstalledContent(GalaxyContent):
                 except Exception as e:
                     log.warn('unable to rmtree for path=%s', self.path)
                     log.exception(e)
-                    pass
 
         else:
             raise exceptions.GalaxyClientError("Removing Galaxy Content not yet implemented")

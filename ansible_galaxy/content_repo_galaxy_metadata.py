@@ -206,6 +206,5 @@ def install_dep_by_galaxy_metadata(content_dep,
         # extract it (or better, add it to the accumulated list of things to extract)
         log.debug('looks like the dep %s is a dep from the same repo, skipping for now FIXME',
                   content_meta)
-        pass
 
     return [(content_meta, [])]
