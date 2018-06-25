@@ -71,4 +71,4 @@ def init(role_name,
 
     display_callback("- %s was created successfully" % role_name)
 
-    # TODO: return?
+    return 0
