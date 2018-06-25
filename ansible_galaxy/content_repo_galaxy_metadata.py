@@ -133,7 +133,6 @@ def install_by_galaxy_metadata(content_tar_file,
                                               files_to_extract=member_matches,
                                               # content_type=content_meta.content_type,
                                               extract_to_path=content_meta.path,
-                                              content_type_requires_meta=False,
                                               force_overwrite=force_overwrite)
         log.debug('res: %s', res)
 
