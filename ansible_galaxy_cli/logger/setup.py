@@ -3,111 +3,86 @@
 import logging
 import logging.config
 import os
+import yaml
 
-LOG_FILE = os.path.expandvars(os.path.expanduser('~/.ansible/mazer.log')),
+LOG_FILE = os.path.expandvars(os.path.expanduser('~/.ansible/mazer.log'))
 
 DEFAULT_CONSOLE_LEVEL = os.getenv('MAZER_LOG_LEVEL', 'WARNING').upper()
 DEFAULT_LEVEL = 'DEBUG'
 
-DEFAULT_DEBUG_FORMAT = '[%(asctime)s,%(msecs)03d %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)-3d - %(message)s'
-# DEFAULT_HANDLERS = ['console', 'file']
-DEFAULT_HANDLERS = ['file']
+DEFAULT_LOGGING_CONFIG_YAML = os.path.join(os.path.dirname(__file__), 'default-mazer-logging.yml')
+LOGGING_CONFIG_YAML = os.path.expandvars(os.path.expanduser('~/.ansible/mazer-logging.yml'))
 
-DEFAULT_LOGGING_CONFIG = {
+FALLBACK_LOGGING_CONFIG = {
     'version': 1,
 
     'disable_existing_loggers': False,
 
-    'formatters': {
-        # skip the date for console log handler, but include it for the file log handler
-        'console_verbose': {
-            'format': DEFAULT_DEBUG_FORMAT,
-            'datefmt': '%H:%M:%S',
-        },
-        # a plain formatter for messages/errors to stderr
-        'console_plain': {
-            'format': '%(message)s',
-        },
-        'file_verbose': {
-            'format': '[%(asctime)s %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)-3d - %(message)s',
-        },
-    },
-
-    'filters': {},
-
     'handlers': {
-        'stderr_verbose': {
-            'level': DEFAULT_CONSOLE_LEVEL,
-            'class': 'logging.StreamHandler',
-            'formatter': 'console_verbose',
-            'stream': 'ext://sys.stderr',
+        'null_handler': {
+            'class': 'logging.NullHandler',
+            'level': 'ERROR',
         },
-        'stderr_plain': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'console_plain',
-            'stream': 'ext://sys.stderr',
-        },
-        'file': {
-            'level': DEFAULT_LEVEL,
-            'class': 'logging.handlers.WatchedFileHandler',
-            'filename': os.path.expandvars(os.path.expanduser('~/.ansible/mazer.log')),
-            'formatter': 'file_verbose',
-        },
-        'http_file': {
-            'level': DEFAULT_LEVEL,
-            'class': 'logging.handlers.WatchedFileHandler',
-            'filename': os.path.expandvars(os.path.expanduser('~/.ansible/mazer-http.log')),
-            'formatter': 'file_verbose',
-        }
     },
 
     'loggers': {
         'ansible_galaxy': {
-            'handlers': DEFAULT_HANDLERS,
-            'level': 'DEBUG',
-        },
-        'ansible_galaxy.flat_rest_api': {
-            'level': 'DEBUG',
-        },
-        'ansible_galaxy.flat_rest_api.content': {
-            'level': 'DEBUG'
-        },
-        'ansible_galaxy.flat_rest_api.api.(http)': {
-            'level': 'INFO',
-            'handlers': DEFAULT_HANDLERS,
-            # to log verbose debug level logging to http_file handler:
-            'propagate': False,
-            # 'level': 'DEBUG',
-            # 'handlers': ['http_file'],
-        },
-        'ansible_galaxy.archive.(extract)': {
+            'handlers': ['null_handler'],
             'level': 'INFO',
         },
         'ansible_galaxy_cli': {
-            'handlers': DEFAULT_HANDLERS,
-            'level': 'DEBUG'
-        },
-        # For sending messages to stderr and to default handlers
-        'ansible_galaxy_cli.(stderr)': {
-            'handlers': DEFAULT_HANDLERS + ['stderr_plain'],
-            'level': 'DEBUG',
-            'propagate': False,
+            'handlers': ['null_handler'],
+            'level': 'INFO',
         },
     }
 }
 
 
+class ExpandTildeWatchedFileHandler(logging.handlers.WatchedFileHandler):
+    '''A variant of WatchedFileHandler that will expand ~/ in it's filename param'''
+    def __init__(self, *args, **kwargs):
+        orig_filename = kwargs.pop('filename', '~/.ansible/mazer.log')
+        kwargs['filename'] = os.path.expandvars(os.path.expanduser(orig_filename))
+        super(ExpandTildeWatchedFileHandler, self).__init__(*args, **kwargs)
+
+
 def setup(logging_config=None):
     logging_config = logging_config or {}
 
-    conf = logging.config.dictConfig(logging_config)
+    logging.config.dictConfig(logging_config)
 
-#    import logging_tree
-#    logging_tree.printout()
 
-    return conf
+def load_config_yaml(config_file_path):
+    logging_config = None
+
+    try:
+        with open(config_file_path, 'r') as logging_config_file:
+            logging_config = yaml.safe_load(logging_config_file)
+    except (IOError, OSError) as e:
+        pass
+    except yaml.error.YAMLError as e:
+        print(e)
+
+    return logging_config
 
 
 def setup_default():
-    return setup(logging_config=DEFAULT_LOGGING_CONFIG)
+    logging_config = None
+
+    # fallback is basically no setup, null handler, etc
+    # builtin, doesn't depend on yaml config
+    setup(FALLBACK_LOGGING_CONFIG)
+
+    # load the more extensive defaults from DEFAULT_LOGGING_CONFIG_YAML
+    default_logging_config = load_config_yaml(DEFAULT_LOGGING_CONFIG_YAML)
+    if default_logging_config:
+        setup(default_logging_config)
+
+    # load custom logging config
+    logging_config = load_config_yaml(LOGGING_CONFIG_YAML)
+
+    if logging_config:
+        setup(logging_config)
+
+    # import logging_tree
+    # logging_tree.printout()
