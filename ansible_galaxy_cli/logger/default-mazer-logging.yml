@@ -47,7 +47,7 @@ loggers:
     propagate: false
   ansible_galaxy.archive.extract:
     level: INFO
-  ansible_galaxy.flat_rest_api.api.(http):
+  ansible_galaxy.rest_api.(http):
     level: INFO
     propagate: false
     # to log verbose debug level logging to http_file handler:
