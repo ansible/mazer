@@ -6,7 +6,7 @@ Mazer
 
 Ansible content manager
 
-A new command-line tool for managing `Ansible <https://github.com/ansible/ansible>` content.
+A new command-line tool for managing `Ansible <https://github.com/ansible/ansible>`__ content.
 
 Expect breaking changes!
 ------------------------
@@ -14,7 +14,8 @@ Expect breaking changes!
 Mazer is experimental, and currently only available for tech-preview. Use with lots of caution! It is not intended for use in
 production environments, nor is it currently intended to replace the `ansible-galaxy` command-line tool.
 
-If you're installing Ansible content in a production environment, or need assistance with Ansible, please visit the `Ansible Project <https://github.com/ansible/ansible>`, or the `Ansible docs site <https://docs.ansible.com>`.
+If you're installing Ansible content in a production environment, or need assistance with Ansible, please visit the `Ansible Project <https://github.com/ansible/ansible>`__,
+or the `Ansible docs site <https://docs.ansible.com>`__.
 
 Proposed Features
 -----------------
@@ -27,11 +28,11 @@ Examples
 Installing roles
 ````````````````
 
-To install `geerlingguy.nginx <https://galaxy.ansible.com/geerlingguy/nginx/>` via galaxy::
+To install `geerlingguy.nginx <https://galaxy.ansible.com/geerlingguy/nginx/>`__ via galaxy::
 
     $ mazer install geerlingguy.nginx
 
-See `mazer github repo <https://github.com/ansible/mazer>` for more examples.
+See `mazer github repo <https://github.com/ansible/mazer>`__ for more examples.
 
 Installing Mazer
 ----------------
@@ -39,7 +40,7 @@ Installing Mazer
 From source
 ```````````
 
-The source code for mazer lives at `https://github.com/ansible/mazer <https://github.com/ansible/mazer>`
+The source code for mazer lives at `https://github.com/ansible/mazer <https://github.com/ansible/mazer>`__
 
     $ git clone https://github.com/ansible/mazer.git
     $ cd mazer
@@ -85,12 +86,12 @@ When installing content from an Ansible Galaxy server, requires Galaxy v3.0+.
 Roadmap
 -------
 
-To see what we're working on, and where we're headed, `view the roadmap <https://github.com/ansible/mazer/ROADMAP.md>`.
+To see what we're working on, and where we're headed, `view the roadmap <https://github.com/ansible/mazer/ROADMAP.md>`__.
 
 Getting help
 ------------
 
-Issues welcome! If you find a bug, or have a feature idea, please let us know by `opening an issue <https://github.com/ansible/mazer/issues>`.
+Issues welcome! If you find a bug, or have a feature idea, please let us know by `opening an issue <https://github.com/ansible/mazer/issues>`__.
 
 You can also reach out to us on irc.freenode.net in the #ansible-galaxy channel.
 
@@ -104,4 +105,4 @@ A mazer is also a hardwood drinking vessel.
 License
 -------
 
-[GNU General Public License v3.0](./LICENSE)
+`GNU General Public License v3.0 <https://github.com/ansible/mazer/LICENSE>`__
