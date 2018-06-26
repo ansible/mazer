@@ -35,12 +35,12 @@ from ansible_galaxy.actions import info
 from ansible_galaxy.actions import init
 from ansible_galaxy.actions import list as list_action
 from ansible_galaxy.actions import remove
+from ansible_galaxy.actions import version
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
 from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy import matchers
 from ansible_galaxy.models.context import GalaxyContext
-from ansible_galaxy.utils.text import to_text
 
 from ansible_galaxy import rest_api
 
@@ -351,11 +351,6 @@ class GalaxyCLI(cli.CLI):
                                 display_callback=self.display)
 
     def execute_version(self):
-        self.display('Ansible Galaxy CLI, version', galaxy_cli_version)
-        self.display(', '.join(os.uname()))
-        self.display(sys.version, sys.executable)
-        if self.config_file_path:
-            self.display(u"Using %s as config file" % to_text(self.config_file_path))
-        else:
-            self.display(u"No config file found; using defaults")
-        return True
+        return version.version(config_file_path=self.config_file_path,
+                               cli_version=galaxy_cli_version,
+                               display_callback=self.display)
