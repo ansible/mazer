@@ -2,7 +2,7 @@
 
 A new command-line tool for managing [Ansible](https://github.com/ansible/ansible) content.
 
-### Expect breaking changes! 
+### Expect breaking changes!
 
 Mazer is experimental, and currently only available for tech-preview. Use with lots of caution! It is not intended for use in
 production environments, nor is it currently intended to replace the `ansible-galaxy` command-line tool.
@@ -18,7 +18,7 @@ for multiple roles all in one repository.
 
 ### Installing roles
 
-To install https://galaxy.ansible.com/geerlingguy/nginx/ https://github.com/geerlingguy/ansible-role-nginx via galaxy:
+To install the galaxy role [geerlingguy.nginx](https://galaxy.ansible.com/geerlingguy/nginx/) via galaxy:
 
 ```
 $ mazer install geerlingguy.nginx
@@ -36,68 +36,112 @@ To install via github:
 $ mazer install git+https://github.com/geerlingguy/ansible-role-nginx
 ```
 
-### Installing repos with multiple types of content
+### Installing repos with multiple roles
 
-To install https://github.com/alikins/ansible-testing-content (alikins.testing-content):
-
-```
-$ mazer install alikins.ansible-testing-content
-```
-
-This will install all of the content in the https://github.com/alikins/ansible-testing-content
-repo, including various plugins, modules, module_utils, and roles to ~/.ansible/content
+To install the galaxy repo [testing.ansible-testing-content](https://galaxy.ansible.com/testing/ansible-testing-content):
 
 ```
-$ tree ~/.ansible/content
-/home/ansible_user/.ansible/content/
-├── action_plugins
-│   └── add_host.py
-├── filter_plugins
-│   ├── json_query.py
-├── library
-│   ├── elasticsearch_plugin.py
-│   ├── kibana_plugin.py
-├── lookup_plugins
-│   └── openshift.py
-├── module_utils
-│   ├── inventory.py
-│   ├── raw.py
-│   └── scale.py
-├── roles
-│   ├── test-role-a
-│   │   ├── defaults
-│   │   │   └── main.yml
-│   │   ├── handlers
-│   │   │   └── main.yml
-│   │   ├── meta
-│   │   │   └── main.yml
-│   │   ├── tasks
-│   │   │   └── main.yml
-│   │   ├── tests
-│   │   │   ├── inventory
-│   │   │   └── test.yml
-│   │   └── vars
-│   │       └── main.yml
-│   ├── test-role-b
-│   │   ├── defaults
-│   │   │   └── main.yml
-│   │   ├── handlers
-│   │   │   └── main.yml
-│   │   ├── meta
-│   │   │   └── main.yml
-│   │   ├── README.md
-│   │   ├── tasks
-│   │   │   └── main.yml
-│   │   ├── tests
-│   │   │   ├── inventory
-│   │   │   └── test.yml
-│   │   └── vars
-│   │       └── main.yml
-└── strategy_plugins
-    ├── debug.py
-    └── linear.py
+$ mazer install testing.ansible-testing-content
 ```
 
+This will install all of the roles in the https://galaxy.ansible.com/testing/ansible-testing-content
+to ~/.ansible/content/testing.ansible-testing-content/roles/
+
+```
+$ tree ~/.ansible/content/
+/home/user/.ansible/content/
+└── testing.ansible-testing-content
+    └── roles
+        ├── ansible-role-foobar
+        │   ├── defaults
+        │   │   └── main.yml
+        │   ├── handlers
+        │   │   └── main.yml
+        │   ├── meta
+        │   │   └── main.yml
+        │   ├── README.md
+        │   ├── tasks
+        │   │   └── main.yml
+        │   ├── tests
+        │   │   ├── inventory
+        │   │   └── test.yml
+        │   └── vars
+        │       └── main.yml
+        ├── ansible-test-role-1
+        │   ├── defaults
+        │   │   └── main.yml
+        │   ├── handlers
+        │   │   └── main.yml
+        │   ├── meta
+        │   │   └── main.yml
+        │   ├── README.md
+        │   ├── tasks
+        │   │   └── main.yml
+        │   ├── tests
+        │   │   ├── inventory
+        │   │   └── test.yml
+        │   └── vars
+        │       └── main.yml
+        ├── test-role-a
+        │   ├── defaults
+        │   │   └── main.yml
+        │   ├── handlers
+        │   │   └── main.yml
+        │   ├── meta
+        │   │   └── main.yml
+        │   ├── tasks
+        │   │   └── main.yml
+        │   ├── tests
+        │   │   ├── inventory
+        │   │   └── test.yml
+        │   └── vars
+        │       └── main.yml
+        ├── test-role-b
+        │   ├── defaults
+        │   │   └── main.yml
+        │   ├── handlers
+        │   │   └── main.yml
+        │   ├── meta
+        │   │   └── main.yml
+        │   ├── README.md
+        │   ├── tasks
+        │   │   └── main.yml
+        │   ├── tests
+        │   │   ├── inventory
+        │   │   └── test.yml
+        │   └── vars
+        │       └── main.yml
+        ├── test-role-c
+        │   ├── defaults
+        │   │   └── main.yml
+        │   ├── handlers
+        │   │   └── main.yml
+        │   ├── meta
+        │   │   └── main.yml
+        │   ├── README.md
+        │   ├── tasks
+        │   │   └── main.yml
+        │   ├── tests
+        │   │   ├── inventory
+        │   │   └── test.yml
+        │   └── vars
+        │       └── main.yml
+        └── test-role-d
+            ├── defaults
+            │   └── main.yml
+            ├── handlers
+            │   └── main.yml
+            ├── meta
+            │   └── main.yml
+            ├── README.md
+            ├── tasks
+            │   └── main.yml
+            ├── tests
+            │   ├── inventory
+            │   └── test.yml
+            └── vars
+                └── main.yml
+```
 
 ### Install a role to a different content path
 
@@ -110,6 +154,8 @@ This will install the geerlingguy.nginx role to ~/my-ansible-content/roles/geerl
 ## Installing Mazer
 
 ### From source
+
+The source code for mazer lives at [https://github.com/ansible/mazer](https://github.com/ansible/mazer)
 
 ```
 $ git clone https://github.com/ansible/mazer.git
@@ -130,11 +176,19 @@ pip install -v git+ssh://git@github.com/ansible/mazer.git
 
 ## Testing
 
-### unit testing
+### Running from a source checkout
+
+To run mazer from a source checkout, without installing, use the setup.py 'develop' command:
+
+```
+python setup.py develop
+```
+
+### Unit testing
 
 mazer uses pytest for unit tests.
 
-#### test requirements
+#### Test requirements
 
 To install test requirements, use pip to install the requirements in requirements_test.txt:
 

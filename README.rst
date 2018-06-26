@@ -6,7 +6,7 @@ Mazer
 
 Ansible content manager
 
-A new command-line tool for managing [Ansible](https://github.com/ansible/ansible) content.
+A new command-line tool for managing `Ansible <https://github.com/ansible/ansible>` content.
 
 Expect breaking changes!
 ------------------------
@@ -14,7 +14,7 @@ Expect breaking changes!
 Mazer is experimental, and currently only available for tech-preview. Use with lots of caution! It is not intended for use in
 production environments, nor is it currently intended to replace the `ansible-galaxy` command-line tool.
 
-If you're installing Ansible content in a production environment, or need assistance with Ansible, please visit the [Ansible project](https://github.com/ansible/ansible), or the [Ansible docs site](https://docs.ansible.com).
+If you're installing Ansible content in a production environment, or need assistance with Ansible, please visit the `Ansible Project <https://github.com/ansible/ansible>`, or the `Ansible docs site <https://docs.ansible.com>`.
 
 Proposed Features
 -----------------
@@ -27,96 +27,20 @@ Examples
 Installing roles
 ````````````````
 
-To install https://galaxy.ansible.com/geerlingguy/nginx/ https://github.com/geerlingguy/ansible-role-nginx via galaxy::
+To install `geerlingguy.nginx <https://galaxy.ansible.com/geerlingguy/nginx/>` via galaxy::
 
     $ mazer install geerlingguy.nginx
 
-To install a specific version via galaxy::
-
-
-    $ mazer install geerlingguy.nginx,2.6.0
-
-
-To install via github::
-
-
-    $ mazer install git+https://github.com/geerlingguy/ansible-role-nginx
-
-
-Installing repos with multiple types of content
-```````````````````````````````````````````````
-
-To install https://github.com/alikins/ansible-testing-content (alikins.testing-content)::
-
-    $ mazer install alikins.ansible-testing-content
-
-This will install all of the content in the https://github.com/alikins/ansible-testing-content
-repo, including various plugins, modules, module_utils, and roles to ~/.ansible/content
-
-For example::
-
-    $ tree ~/.ansible/content
-    /home/ansible_user/.ansible/content/
-    ├── action_plugins
-    │   └── add_host.py
-    ├── filter_plugins
-    │   ├── json_query.py
-    ├── library
-    │   ├── elasticsearch_plugin.py
-    │   ├── kibana_plugin.py
-    ├── lookup_plugins
-    │   └── openshift.py
-    ├── module_utils
-    │   ├── inventory.py
-    │   ├── raw.py
-    │   └── scale.py
-    ├── roles
-    │   ├── test-role-a
-    │   │   ├── defaults
-    │   │   │   └── main.yml
-    │   │   ├── handlers
-    │   │   │   └── main.yml
-    │   │   ├── meta
-    │   │   │   └── main.yml
-    │   │   ├── tasks
-    │   │   │   └── main.yml
-    │   │   ├── tests
-    │   │   │   ├── inventory
-    │   │   │   └── test.yml
-    │   │   └── vars
-    │   │       └── main.yml
-    │   ├── test-role-b
-    │   │   ├── defaults
-    │   │   │   └── main.yml
-    │   │   ├── handlers
-    │   │   │   └── main.yml
-    │   │   ├── meta
-    │   │   │   └── main.yml
-    │   │   ├── README.md
-    │   │   ├── tasks
-    │   │   │   └── main.yml
-    │   │   ├── tests
-    │   │   │   ├── inventory
-    │   │   │   └── test.yml
-    │   │   └── vars
-    │   │       └── main.yml
-    └── strategy_plugins
-        ├── debug.py
-        └── linear.py
-
-
-Install a role to a different content path
-``````````````````````````````````````````
-
-    $ mazer install --content-path ~/my-ansible-content geerlingguy.nginx
-
-This will install the geerlingguy.nginx role to ~/my-ansible-content/roles/geerlingguy.nginx
+See `mazer github repo <https://github.com/ansible/mazer>` for more examples.
 
 Installing Mazer
 ----------------
 
 From source
 ```````````
+
+The source code for mazer lives at `https://github.com/ansible/mazer <https://github.com/ansible/mazer>`
+
     $ git clone https://github.com/ansible/mazer.git
     $ cd mazer
     $ python setup.py install
@@ -161,12 +85,12 @@ When installing content from an Ansible Galaxy server, requires Galaxy v3.0+.
 Roadmap
 -------
 
-To see what we're working on, and where we're headed, [view the roadmap](./ROADMAP.md).
+To see what we're working on, and where we're headed, `view the roadmap <https://github.com/ansible/mazer/ROADMAP.md>`.
 
 Getting help
 ------------
 
-Issues welcome! If you find a bug, or have a feature idea, please let us know by [opening an issue](https://github.com/ansible/mazer/issues).
+Issues welcome! If you find a bug, or have a feature idea, please let us know by `opening an issue <https://github.com/ansible/mazer/issues>`.
 
 You can also reach out to us on irc.freenode.net in the #ansible-galaxy channel.
 
