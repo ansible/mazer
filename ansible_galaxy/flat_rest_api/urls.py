@@ -48,14 +48,15 @@ except ImportError:
     # Python 3
     import http.client as httplib
 
-import ansible.module_utils.six.moves.http_cookiejar as cookiejar
-import ansible.module_utils.six.moves.urllib.request as urllib_request
-import ansible.module_utils.six.moves.urllib.error as urllib_error
+import six.moves.http_cookiejar as cookiejar
+import six.moves.urllib.request as urllib_request
+import six.moves.urllib.error as urllib_error
+from six import PY3
 
-from ansible.module_utils.six import PY3
+# FIXME:
+# from ansible.module_utils.basic import get_distribution
 
-from ansible.module_utils.basic import get_distribution
-from ansible.module_utils._text import to_bytes, to_native, to_text
+from ansible_galaxy.utils.text import to_bytes, to_native, to_text
 
 try:
     # python3
@@ -69,7 +70,7 @@ except ImportError:
 urllib_request.HTTPRedirectHandler.http_error_308 = urllib_request.HTTPRedirectHandler.http_error_307
 
 try:
-    from ansible.module_utils.six.moves.urllib.parse import urlparse, urlunparse
+    from six.moves.urllib.parse import urlparse, urlunparse
     HAS_URLPARSE = True
 except:
     HAS_URLPARSE = False
@@ -1265,11 +1266,11 @@ def fetch_url(module, url, data=None, headers=None, method=None,
         # finally update the result with a message about the fetch
         info.update(dict(msg="OK (%s bytes)" % r.headers.get('Content-Length', 'unknown'), url=r.geturl(), status=r.code))
     except NoSSLError as e:
-        distribution = get_distribution()
-        if distribution is not None and distribution.lower() == 'redhat':
-            module.fail_json(msg='%s. You can also install python-ssl from EPEL' % to_native(e))
-        else:
-            module.fail_json(msg='%s' % to_native(e))
+        # distribution = get_distribution()
+        # if distribution is not None and distribution.lower() == 'redhat':
+        #    module.fail_json(msg='%s. You can also install python-ssl from EPEL' % to_native(e))
+        # else:
+        module.fail_json(msg='%s' % to_native(e))
     except (ConnectionError, ValueError) as e:
         module.fail_json(msg=to_native(e))
     except urllib_error.HTTPError as e:
