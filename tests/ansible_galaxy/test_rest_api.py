@@ -2,6 +2,7 @@ import io
 import logging
 import json
 import ssl
+import sys
 
 import pytest
 import mock
@@ -9,6 +10,7 @@ import mock
 from six.moves.urllib.error import HTTPError
 from six import text_type
 
+import ansible_galaxy
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy import rest_api
@@ -506,3 +508,11 @@ def test_galaxy_api_lookup_content_by_name_empty_results(mocker, galaxy_api):
 
     # expect an empty dict returned in this case
     assert res == {}
+
+
+def test_user_agent():
+    res = rest_api.user_agent()
+    assert res.startswith('Mazer/%s' % ansible_galaxy.__version__)
+    assert sys.platform in res
+    assert 'python:' in res
+    assert 'ansible_galaxy' in res

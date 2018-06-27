@@ -24,11 +24,14 @@ __metaclass__ = type
 
 import logging
 import json
+import sys
+
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.parse import quote as urlquote
 import socket
 import ssl
 
+from ansible_galaxy import __version__ as mazer_version
 from ansible_galaxy import exceptions
 from ansible_galaxy.utils.text import to_native, to_text
 
@@ -39,6 +42,17 @@ log = logging.getLogger(__name__)
 http_log = logging.getLogger('%s.(http)' % __name__)
 request_log = logging.getLogger('%s.(http).(request)' % __name__)
 response_log = logging.getLogger('%s.(http).(response)' % __name__)
+
+USER_AGENT_FORMAT = 'Mazer/{version} ({platform}; python:{py_major}.{py_minor}.{py_micro}) ansible_galaxy/{version}'
+
+
+def user_agent():
+    user_agent_data = {'version': mazer_version,
+                       'platform': sys.platform,
+                       'py_major': sys.version_info.major,
+                       'py_minor': sys.version_info.minor,
+                       'py_micro': sys.version_info.micro}
+    return USER_AGENT_FORMAT.format(**user_agent_data)
 
 
 def g_connect(method):
@@ -70,8 +84,10 @@ class GalaxyAPI(object):
     # FIXME: just pass in server_url
     def __init__(self, galaxy):
         self.galaxy = galaxy
+
         log.debug('galaxy: %s', galaxy)
         log.debug('galaxy.server: %s', galaxy.server)
+
         self._validate_certs = not galaxy.server['ignore_certs']
         self.baseurl = None
         self.version = None
@@ -80,7 +96,11 @@ class GalaxyAPI(object):
 
         # set the API server
         self._api_server = galaxy.server['url']
+
         self.log.debug('Validate TLS certificates for %s: %s', self._api_server, self._validate_certs)
+
+        self.user_agent = user_agent()
+        log.debug('User Agent: %s', self.user_agent)
 
     # TODO: raise an API/net specific exception?
     @g_connect
@@ -94,6 +114,7 @@ class GalaxyAPI(object):
 
             resp = open_url(url, data=args, validate_certs=self._validate_certs,
                             headers=headers, method=http_method,
+                            http_agent=self.user_agent,
                             timeout=20)
 
             http_log.info('"%s %s" http_status=%s', http_method, url, resp.getcode())
