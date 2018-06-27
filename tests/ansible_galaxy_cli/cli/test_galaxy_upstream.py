@@ -189,11 +189,11 @@ class TestGalaxy(unittest.TestCase):
             self.assertIsInstance(galaxycli_obj.parser, ansible_galaxy_cli.cli.SortedOptParser)
             # self.assertIsInstance(galaxycli_obj.galaxy, ansible_galaxy.models.context.GalaxyContext)
             formatted_call = {
-                'info': 'usage: %prog info [options] role_name[,version]',
+                'info': 'usage: %prog info [options] repo_name[,version]',
                 'init': 'usage: %prog init [options] role_name',
-                'install': 'usage: %prog install [options] [-r FILE | role_name(s)[,version] | scm+role_repo_url[,version] | tar_file(s)]',
-                'list': 'usage: %prog list [role_name]',
-                'remove': 'usage: %prog remove role1 role2 ...',
+                'install': 'usage: %prog install [options] [-r FILE | repo_name(s)[,version] | scm+repo_url[,version] | tar_file(s)]',
+                'list': 'usage: %prog list [repo_name]',
+                'remove': 'usage: %prog remove repo1 repo2 ...',
                 'version': 'usage: %prog version',
             }
 

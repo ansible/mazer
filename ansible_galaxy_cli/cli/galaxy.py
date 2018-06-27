@@ -24,6 +24,7 @@ __metaclass__ = type
 
 import json
 import logging
+import optparse
 import os
 import sys
 
@@ -79,7 +80,7 @@ class GalaxyCLI(cli.CLI):
 
         # specific to actions
         if self.action == "info":
-            self.parser.set_usage("usage: %prog info [options] role_name[,version]")
+            self.parser.set_usage("usage: %prog info [options] repo_name[,version]")
 
         elif self.action == "init":
             self.parser.set_usage("usage: %prog init [options] role_name")
@@ -91,21 +92,20 @@ class GalaxyCLI(cli.CLI):
                                    help='The path to a role skeleton that the new role should be based upon.')
 
         elif self.action == "install":
-            self.parser.set_usage("usage: %prog install [options] [-r FILE | role_name(s)[,version] | scm+role_repo_url[,version] | tar_file(s)]")
+            self.parser.set_usage("usage: %prog install [options] [-r FILE | repo_name(s)[,version] | scm+repo_url[,version] | tar_file(s)]")
             self.parser.add_option('-i', '--ignore-errors', dest='ignore_errors', action='store_true', default=False,
-                                   help='Ignore errors and continue with the next specified role.')
+                                   help='Ignore errors and continue with the next specified repo.')
             self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False, help='Don\'t download roles listed as dependencies')
             self.parser.add_option('-r', '--role-file', dest='role_file', help='A file containing a list of roles to be imported')
-            # TODO: test this with multi-content repos
-            self.parser.add_option('-g', '--keep-scm-meta', dest='keep_scm_meta', action='store_true',
-                                   default=False, help='Use tar instead of the scm archive option when packaging the role')
-            self.parser.add_option('-t', '--type', dest='content_type', default="all", help='A type of Galaxy Content to install: role, module, etc')
+            self.parser.add_option('-t', '--type', dest='content_type', default="all",
+                                   # help='A type of Galaxy Content to install: role, module, etc',
+                                   help=optparse.SUPPRESS_HELP)
             self.parser.add_option('--namespace', dest='namespace', default=None,
                                    help='The namespace to use when installing content (required for installs from local scm repo or archives)')
         elif self.action == "remove":
-            self.parser.set_usage("usage: %prog remove role1 role2 ...")
+            self.parser.set_usage("usage: %prog remove repo1 repo2 ...")
         elif self.action == "list":
-            self.parser.set_usage("usage: %prog list [role_name]")
+            self.parser.set_usage("usage: %prog list [repo_name]")
         elif self.action == "version":
             self.parser.set_usage("usage: %prog version")
 
@@ -123,7 +123,7 @@ class GalaxyCLI(cli.CLI):
                                    help='The path to the directory containing your galaxy content. The default is the content_path configured in your'
                                         'ansible.cfg file (/etc/ansible/content if not configured)', type='str')
         if self.action in ("init", "install"):
-            self.parser.add_option('-f', '--force', dest='force', action='store_true', default=False, help='Force overwriting an existing role')
+            self.parser.add_option('-f', '--force', dest='force', action='store_true', default=False, help='Force overwriting an existing repo')
 
     def parse(self):
         ''' create an options parser for bin/ansible '''
