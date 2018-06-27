@@ -1,4 +1,3 @@
-# TODO(alikins): remove bumpverion if we dont use it
 bumpversion
 Sphinx
 wheel

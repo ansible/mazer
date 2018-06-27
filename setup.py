@@ -4,7 +4,6 @@
 """The setup script."""
 
 from setuptools import setup, find_packages
-import ansible_galaxy_cli
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -54,6 +53,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/ansible/galaxy-cli',
-    version=ansible_galaxy_cli.__version__,
+    version='0.1.0',
     zip_safe=False,
 )

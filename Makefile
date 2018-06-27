@@ -1,6 +1,7 @@
 RST_DOCS_DIR=docs/rst
 
-.PHONY: clean clean-test clean-pyc clean-build docs help
+.PHONY: clean clean-test clean-pyc clean-build docs help \
+	dev/bumpversion-path dev/bumpversion-minor dev/bumpversion-major
 .DEFAULT_GOAL := help
 
 
@@ -46,10 +47,19 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	$(MAKE) -C $(RST_DOCS_DIR) clean
 	$(MAKE) -C $(RST_DOCS_DIR) html
 
-release: dist ## package and upload a release
+dev/bumpversion-patch:
+	bumpversion --verbose patch
+
+dev/bumpversion-minor:
+	bumpversion --verbose minor
+
+dev/bumpversion-major:
+	bumpversion --verbose major
+
+dev/release: dist ## package and upload a release
 	twine upload dist/*
 
-dist: clean ## builds source and wheel package
+dev/dist: clean ## builds source and wheel package
 	python setup.py sdist
 	python setup.py bdist_wheel
 	ls -l dist
