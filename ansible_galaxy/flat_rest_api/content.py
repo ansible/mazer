@@ -190,6 +190,10 @@ class GalaxyContent(object):
         return self.content_meta.name
 
     @property
+    def label(self):
+        return self.content_meta.label
+
+    @property
     def version(self):
         return self.content_meta.version
 

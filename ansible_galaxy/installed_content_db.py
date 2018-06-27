@@ -77,6 +77,7 @@ def installed_content_iterator(galaxy_context,
                     version = "(unknown version)"
                 # display_callback("- %s, %s" % (path_file, version))
 
+            log.debug('gr__dict__: %s', gr.__dict__)
             if not content_match_filter(gr):
                 log.debug('%s was not matched by content_match_filter: %s', gr, content_match_filter)
                 continue
