@@ -151,6 +151,57 @@ $ mazer install --content-path ~/my-ansible-content geerlingguy.nginx
 
 This will install the geerlingguy.nginx role to ~/my-ansible-content/roles/geerlingguy.nginx
 
+
+## Configuration
+
+mazer is configured by a 'mazer.yml' config file in ~/.ansible.
+
+``` yaml
+# The galaxy rest api server mazer will communicate with.
+server:
+  # The http or https URL of the Galaxy server used by default.
+  # REST requests will be made to https://galaxy-qa.ansible.com/api/v1
+  # in this example.
+  #
+  # default: https://galaxy-qa.ansible.com
+  #
+  url: https://galaxy-qa.ansible.com
+
+  # if ignore_certs is true, https requests will not verify the
+  # https server certificate is signed a known CA.
+  #
+  # default: False (https connections do verify certificates)
+  #
+  ignore_certs: false
+
+# When installing content like ansible roles, mazer will install into
+# sub directories of this path.
+#
+# default: ~/.ansible/content
+#
+content_path: ~/.ansible/content
+
+options:
+  # A list of file glob patterns to ignore when
+  # 'init' creates a role from a role skeleton.
+  role_skeleton_ignore:
+    - ^.git$
+    - ^.*/.git_keep$
+
+  # role_skeleton_path is a path to a directory of
+  # custom role skeletons to use instead of the built
+  # in skeletons.
+  #
+  # default: Relative to mazers installation, for example:
+  #          ~/.local/lib/python2.7/site-packages/mazer-0.1.0-py3.6.egg/ansible_galaxy_cli/data/role_skeleton/
+  #
+  role_skeleton_path: null
+
+# The version of the config file format.
+# This should never need to be changed manually.
+version: 1
+```
+
 ## Installing Mazer
 
 ### From source
