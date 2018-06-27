@@ -26,7 +26,7 @@ def init(role_name,
         company='your company (optional)',
         license='license (GPLv2, CC-BY, etc)',
         issue_tracker_url='http://example.com/issue/tracker',
-        min_ansible_version='1.2',
+        min_ansible_version='2.4',
         role_type=role_type
     )
 
