@@ -71,7 +71,7 @@ class TestGalaxy(unittest.TestCase):
         gc.parse()
         gc.run()
         cls.role_dir = "./delete_me"
-        cls.role_name = "delete_me"
+        cls.role_name = "unittest.delete_me"
 
         # add a meta/main.yml
         test_dir = os.path.join(cls.role_dir, 'meta')
@@ -97,6 +97,7 @@ class TestGalaxy(unittest.TestCase):
         dep_lines = ["- 'src': '%s'\n" % cls.role_tar,
                      "  'name': '%s'\n" % cls.role_name,
                      "  'path': '%s'\n" % cls.role_path]
+        log.debug('dep_lines: %s', dep_lines)
         for dep_line in dep_lines:
             fd.write(dep_line)
 
@@ -149,15 +150,24 @@ class TestGalaxy(unittest.TestCase):
 
     def test_execute_remove(self):
         # installing role
-        gc = GalaxyCLI(args=["ansible-galaxy", "install", "-p", self.role_path, "-r", self.role_req, '--force'])
+        log.debug('self.role_path: %s', self.role_path)
+        log.debug('self.role_req: %s', self.role_req)
+
+        gc = GalaxyCLI(args=["ansible-galaxy", "install", "--content-path", self.role_path, "-r", self.role_req, '--force'])
         gc.parse()
         gc.run()
 
+        log.debug('self.role_name: %s', self.role_name)
         # location where the role was installed
         role_file = os.path.join(self.role_path, self.role_name)
 
+        log.debug('role_file: %s', role_file)
+
         # removing role
-        gc = GalaxyCLI(args=["ansible-galaxy", "remove", role_file, self.role_name])
+        # args = ["ansible-galaxy", "remove", role_file, self.role_name]
+        args = ["ansible-galaxy", "remove", self.role_name]
+        log.debug('args: %s', args)
+        gc = GalaxyCLI(args=args)
         gc.parse()
         gc.run()
 

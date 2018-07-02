@@ -325,9 +325,10 @@ class GalaxyContent(object):
                 member_matches = archive.filter_members_by_fnmatch(tar_file_members,
                                                                    match_pattern)
 
-                namespaced_content_path = '%s/%s/%s' % (namespace_repo_name,
-                                                        content_sub_dir,
-                                                        content_name)
+                namespaced_content_path = '%s/%s/%s/%s' % (content_meta.namespace,
+                                                           content_meta.name,
+                                                           content_sub_dir,
+                                                           content_name)
 
                 log.debug('namespaced_content_path: %s', namespaced_content_path)
 
@@ -406,9 +407,10 @@ class GalaxyContent(object):
 
         log.debug('namespace_repo_name: %s', namespace_repo_name)
 
-        namespaced_content_path = '%s/%s/%s' % (namespace_repo_name,
-                                                'roles',
-                                                content_meta.name)
+        namespaced_content_path = '%s/%s/%s/%s' % (content_meta.namespace,
+                                                   content_meta.name,
+                                                   'roles',
+                                                   content_meta.name)
 
         log.debug('namespace: %s', content_meta.namespace)
         log.debug('namespaced_content_path: %s', namespaced_content_path)
@@ -418,7 +420,8 @@ class GalaxyContent(object):
             # rel_path ~  roles/some-role/meta/main.yml for ex
             rel_path = member.name[len(parent_dir) + 1:]
 
-            namespaced_role_rel_path = os.path.join(namespace_repo_name, 'roles', content_meta.name, rel_path)
+            # namespaced_role_rel_path = os.path.join(namespace_repo_name, 'roles', content_meta.name, rel_path)
+            namespaced_role_rel_path = os.path.join(content_meta.namespace, content_meta.name,  'roles', content_meta.name, rel_path)
 
             # log.debug('namespaced_role_rel_path: %s', namespaced_role_rel_path)
 

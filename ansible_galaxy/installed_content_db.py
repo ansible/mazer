@@ -10,32 +10,39 @@ log = logging.getLogger(__name__)
 
 
 # need a content_type matcher?
-def installed_repository_role_iterator(namespace_path):
+def installed_repository_role_iterator(repository_path):
 
-    namespaced_roles_dirs = glob.glob('%s/%s/*' % (namespace_path, 'roles'))
-    for namespaced_roles_path in namespaced_roles_dirs:
+    repository_roles_dirs = glob.glob('%s/%s/*' % (repository_path, 'roles'))
+    for repository_roles_path in repository_roles_dirs:
         # full_content_paths.append(namespaced_roles_path)
-        yield namespaced_roles_path
+        log.debug('rrp: %s', repository_roles_path)
+        yield repository_roles_path
 
 
 installed_repository_content_iterator_map = {'roles': installed_repository_role_iterator}
 
 
 def installed_content_iterator(galaxy_context,
-                               content_type=None,
+                               namespace_match_filter=None,
                                repository_match_filter=None,
-                               content_match_filter=None):
+                               content_match_filter=None,
+                               content_type=None):
 
     # match_all works for all types
-    content_match_filter = content_match_filter or matchers.MatchAll()
+    namespace_match_filter = namespace_match_filter or matchers.MatchAll()
     repository_match_filter = repository_match_filter or matchers.MatchAll()
+    content_match_filter = content_match_filter or matchers.MatchAll()
 
     content_type = content_type or 'roles'
 
     installed_repo_db = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
+    log.debug('installed_repo_db: %s', installed_repo_db)
+
     # for namespace_full_path in namespace_paths_iterator:
-    for installed_repository in installed_repo_db.select(repository_match_filter=repository_match_filter):
+    for installed_repository in installed_repo_db.select(namespace_match_filter=namespace_match_filter,
+                                                         repository_match_filter=repository_match_filter):
+        log.debug('installed_repository: %s', installed_repository)
         installed_repository_full_path = installed_repository.path
         # log.debug('installed_repository_full_path: %s', installed_repository_full_path)
 
@@ -54,6 +61,7 @@ def installed_content_iterator(galaxy_context,
         installed_repository_content_iterator = installed_repository_content_iterator_method(installed_repository_full_path)
 
         for installed_content_full_path in installed_repository_content_iterator:
+            log.debug('icfp: %s', installed_content_full_path)
             path_file = os.path.basename(installed_content_full_path)
 
             gr = InstalledContent(galaxy_context, path_file, path=installed_content_full_path)

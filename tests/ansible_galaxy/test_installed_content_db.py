@@ -45,18 +45,22 @@ class MatchContentNamesFnmatch(object):
 
 
 def test_installed_content_iterator_empty(galaxy_context, mocker):
+    mocker.patch('ansible_galaxy.installed_namespaces_db.get_namespace_paths',
+                 return_value=iter(['foo', 'blip']))
     mocker.patch('ansible_galaxy.installed_repository_db.get_repository_paths',
-                 return_value=iter(['foo.bar', 'blip.baz']))
+                 return_value=iter(['bar', 'baz']))
 
     # The content type specific content iterator is determined at runtime, so we need to patch the value
     # of the 'roles' item in installed_repository_content_iterator_map to patch the right method used
     mocker.patch.dict('ansible_galaxy.installed_content_db.installed_repository_content_iterator_map',
-                      {'roles': mocker.Mock(return_value=iter(['/dev/null/content/foo.bar/roles/role-1', '/dev/null/content/blip.baz/roles/role-2']))})
+                      {'roles': mocker.Mock(return_value=iter(['/dev/null/content/foo/bar/roles/role-1', '/dev/null/content/blip/baz/roles/role-2']))})
 
     ici = installed_content_db.installed_content_iterator(galaxy_context,
                                                           content_type='roles')
+    log.debug('ici: %s', ici)
 
     installed_content = list(ici)
+    log.debug('installed_content: %s', installed_content)
     assert installed_content[0]['content_data'].name == 'role-1'
 
 
