@@ -46,5 +46,6 @@ class MatchNamespacesOrLabels(Match):
 
     def match(self, other):
         log.debug('self.namespaces_or_labels: %s other.namespace: %s other.label: %s', self.namespaces_or_labels, other.namespace, other.label)
+        # TODO: should this matcher require a namespace string or a namespace object? either?
         return any([other.label in self.namespaces_or_labels,
-                    other.namespace in self.namespaces_or_labels])
+                    other.namespace.namespace in self.namespaces_or_labels])

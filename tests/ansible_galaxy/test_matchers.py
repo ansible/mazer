@@ -3,10 +3,15 @@ import pytest
 
 from ansible_galaxy import matchers
 from ansible_galaxy.models.content_repository import ContentRepository
+from ansible_galaxy.models import repository_namespace
 
 log = logging.getLogger(__name__)
 
-CR = ContentRepository
+
+def CR(namespace=None, name=None):
+    ns = repository_namespace.RepositoryNamespace(namespace=namespace)
+    return ContentRepository(namespace=ns,
+                             name=name)
 
 
 @pytest.mark.parametrize("matcher_class,matcher_args,candidates, expected", [
@@ -64,5 +69,5 @@ def test_match_all(matcher_class, matcher_args, candidates, expected):
     for candidate in candidates:
         res = matcher(candidate)
 
-        log.debug('res: %s, candidate=%s, expected=%s', res, candidate, expected)
-        assert res is expected, 'res %s for candidate=%s was not %s' % (res, candidate, expected)
+        log.debug('res: %s, matcher=%s, candidate=%s, expected=%s', res, matcher, candidate, expected)
+        assert res is expected, 'res %s for matcher=%s candidate=%s was not %s' % (res, matcher, candidate, expected)

@@ -27,7 +27,7 @@ def list(galaxy_context,
                              # 'installed_repo_namespace': repo.namespace,
                              # 'installed_repo_name': repo.name,
                              # 'installed_repo_path': repo.path,
-                             'installed_repo_id': '%s.%s' % (repo.namespace, repo.name),
+                             'installed_repo_id': '%s.%s' % (repo.namespace.namespace, repo.name),
                              })
         display_callback("repo={installed_repo_id}, type={type}, name={name}, version={version}".format(**content_dict))
 

@@ -3,6 +3,8 @@ import shutil
 
 import yaml
 
+from ansible_galaxy.models import repository_namespace
+
 log = logging.getLogger(__name__)
 
 # The galaxy_metadata will contain a dict that defines
@@ -71,14 +73,18 @@ class ContentRepository(object):
                  name=None,
                  label=None,
                  path=None):
+        # a RepositoryNamespace instance
         self.namespace = namespace
         self.name = name
         self.path = path
-        self.label = label or '%s.%s' % (self.namespace, self.name)
+        if self.namespace:
+            label = label or '%s.%s' % (self.namespace.namespace, self.name)
+        self.label = label
 
     @classmethod
     def from_content_spec_data(cls, content_spec_data):
-        return cls(namespace=content_spec_data.get('namespace'),
+        namespace = repository_namespace.RepositoryNamespace(namespace=content_spec_data.get('namespace'))
+        return cls(namespace=namespace,
                    name=content_spec_data.get('name'))
 
     def __repr__(self):
