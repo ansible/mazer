@@ -207,30 +207,6 @@ class GalaxyAPI(object):
         return {}
 
     @g_connect
-    def lookup_content_by_name(self, namespace, repo_name, content_name, content_type=None, notify=True):
-        self.log.debug('namespace=%s', namespace)
-        self.log.debug('repo_name=%s', repo_name)
-        self.log.debug('content_name=%s', content_name)
-        self.log.debug('content_type=%s', content_type)
-        self.log.debug('notify=%s', notify)
-
-        content_name = urlquote(content_name)
-        repo_name = urlquote(repo_name)
-
-        if notify:
-            self.log.info("- downloading content '%s', type '%s',repo_name '%s'  owned by %s", content_name, content_type, repo_name, namespace)
-
-        url = '%s/content/?name=%s&namespace__name=%s' % (self.baseurl, content_name, namespace)
-        data = self.__call_galaxy(url, http_method='GET')
-        if data["results"]:
-            return data["results"][0]
-
-        self.log.debug('No results found while looking for content by name for '
-                       'namespace=%s repo_name=%s content_name=%s',
-                       namespace, repo_name, content_name)
-        return {}
-
-    @g_connect
     def fetch_content_related(self, related_url):
         """
         Fetch the list of related items for the given role.

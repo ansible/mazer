@@ -459,57 +459,6 @@ def test_galaxy_api_fetch_content_related_no_results(mocker, galaxy_api):
     assert len(res) == 0
 
 
-def test_galaxy_api_lookup_content_by_name(mocker, galaxy_api):
-    mocker.patch('ansible_galaxy.rest_api.open_url',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(data={'stuff': [1, 2, 3],
-                                                   'results': [{'foo1': 11, 'foo2': 12}]
-                                                   },
-                                             url='blippyblopfakeurl'),
-                     ]
-                 ))
-
-    namespace = 'alikins'
-    repo_name = 'role-awx'
-    content_name = 'role-awx'
-    content_type = 'role'
-
-    res = galaxy_api.lookup_content_by_name(namespace, repo_name, content_name, content_type)
-
-    log.debug('res: %s', res)
-
-    assert isinstance(res, dict)
-    assert 'foo1' in res
-
-
-def test_galaxy_api_lookup_content_by_name_empty_results(mocker, galaxy_api):
-    mocker.patch('ansible_galaxy.rest_api.open_url',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(data={'stuff': [1, 2, 3],
-                                                   'results': [],
-                                                   },
-                                             url='blippyblopfakeurl'),
-                     ]
-                 ))
-
-    namespace = 'alikins'
-    repo_name = 'role-awx'
-    content_name = 'role-awx'
-    content_type = 'role'
-
-    res = galaxy_api.lookup_content_by_name(namespace, repo_name, content_name, content_type,
-                                            notify=False)
-
-    log.debug('res: %s', res)
-
-    assert isinstance(res, dict)
-
-    # expect an empty dict returned in this case
-    assert res == {}
-
-
 def test_user_agent():
     res = rest_api.user_agent()
     assert res.startswith('Mazer/%s' % ansible_galaxy.__version__)
