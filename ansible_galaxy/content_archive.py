@@ -116,10 +116,6 @@ def load_archive(archive_path):
 
     archive_parent_dir = members[0].name
 
-    # next find the metadata file
-    (meta_file, meta_parent_dir, dummy, apb_yaml_file) = \
-        find_archive_metadata(members)
-
     archive_type = detect_content_archive_type(archive_path, members)
     log.debug('archive_type: %s', archive_type)
 
@@ -129,13 +125,8 @@ def load_archive(archive_path):
     #                                                         content_type=content_meta.content_type,
     #                                                         content_dir=content_meta.content_dir)
 
-    log.debug('meta_file: %s', meta_file)
     log.debug('archive_type: %s', archive_type)
     log.debug("archive_parent_dir: %s", archive_parent_dir)
-    log.debug("meta_parent_dir: %s", meta_parent_dir)
-
-    # metadata_ = archive.load_archive_role_metadata(content_tar_file,
-    #                                               meta_file)
 
     # looks like we are a role, update the default content_type from all -> role
     if archive_type == 'role':
