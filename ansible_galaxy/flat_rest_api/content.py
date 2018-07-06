@@ -452,6 +452,7 @@ class GalaxyContent(object):
         content_tar_file, archive_meta = content_archive.load_archive(archive_path)
 
         content_data = fetch_results.get('content', {})
+
         content_meta.version = content_data.get('fetched_version', content_meta.version)
         content_meta.namespace = content_data.get('content_namespace', content_meta.namespace)
 
@@ -475,13 +476,7 @@ class GalaxyContent(object):
 
         log.info('Installing content from archive type: %s', archive_meta.archive_type)
 
-        # content_types_to_install = [self.content_install_type]
-        # if self.content_install_type == 'all':
-        #    content_types_to_install = CONTENT_TYPES
-
         if archive_meta.archive_type == 'multi-content':
-            # if content_meta.content_type == 'all':
-
             log.info('Installing %s as a archive_type=%s content_type=%s install_type=%s ',
                      content_meta.name, archive_meta.archive_type, content_meta.content_type,
                      self.content_install_type)
@@ -504,14 +499,13 @@ class GalaxyContent(object):
                                                   content_types_to_install=content_types_to_install,
                                                   force_overwrite=force_overwrite)
 
-            # log.debug('res:\n%s', pprint.pformat(res))
-
             installed.append((content_meta, res))
 
         elif archive_meta.archive_type == 'role':
             log.info('Installing %s as a role content archive and content_type=%s (role)', content_meta.name, content_meta.content_type)
 
             log.debug('archive_parent_dir: %s', archive_parent_dir)
+
             installed_from_role = self._install_role_archive(content_tar_file,
                                                              archive_meta=archive_meta,
                                                              content_meta=content_meta,
@@ -524,11 +518,10 @@ class GalaxyContent(object):
         # rm any temp files created when getting the content archive
         fetcher.cleanup()
 
-        # self.display_callback('Installed content: %s',
-
         for item in installed:
             log.info('Installed content: %s', item[0])
             log.debug('Installed files: %s', pprint.pformat(item[1]))
+
         return installed
 
     # TODO: property of GalaxyContentMeta ?
