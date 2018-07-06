@@ -123,7 +123,29 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
         #    display.vvv('Skipping role %s' % role.name)
         #    continue
 
+        # TODO: we could do all the downloads first, then install them. Likely
+        #       less error prone mid 'transaction'
         log.debug('Processing %s as %s', content.name, content.content_type)
+
+        log.debug('About to find() requested content: %s', content)
+
+        # See if we can find metadata and/or download the archive before we try to
+        # remove an installed version...
+        try:
+            content.find()
+        except exceptions.GalaxyError as e:
+            log.warning('Unable to find metadata for %s: %s', content.name, e)
+            raise_without_ignore(ignore_errors, e)
+            continue
+
+        log.debug('About to download requested content: %s', content)
+
+        try:
+            content.fetch()
+        except exceptions.GalaxyError as e:
+            log.warning('Unable to fetch %s: %s', content.name, e)
+            raise_without_ignore(ignore_errors, e)
+            continue
 
         # FIXME - Unsure if we want to handle the install info for all galaxy
         #         content. Skipping for non-role types for now.

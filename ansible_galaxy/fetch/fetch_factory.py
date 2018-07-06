@@ -23,7 +23,7 @@ def get(galaxy_context, content_spec):
     elif content_spec.fetch_method == FetchMethods.LOCAL_FILE:
         # the file is a tar, so open it that way and extract it
         # to the specified (or default) content directory
-        fetcher = local_file.LocalFileFetch(content_spec.src)
+        fetcher = local_file.LocalFileFetch(content_spec)
     elif content_spec.fetch_method == FetchMethods.REMOTE_URL:
         fetcher = remote_url.RemoteUrlFetch(remote_url=content_spec.src,
                                             validate_certs=not galaxy_context.server['ignore_certs'])

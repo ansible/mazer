@@ -148,6 +148,11 @@ class GalaxyContent(object):
         # maintain backwards compat with legacy roles
         self._orig_path = path
 
+        # TODO: state machine for find->fetch->install
+        # data from fetch.find() where we find, discover, and resolve info about the content
+        #  (ie, via asking the galaxy api)
+        self._find_results = None
+
     def __repr__(self):
         """
         Returns "content_name (version) content_type" if version is not null
@@ -406,7 +411,55 @@ class GalaxyContent(object):
 
         return installed
 
+    def find(self):
+        """find/discover info about the content
+
+        This is all side effect, setting self._find_results."""
+
+        self.log.debug('Attempting to find() content_spec=%s', self.content_spec)
+
+        self._fetcher = fetch_factory.get(galaxy_context=self.galaxy,
+                                          content_spec=self.content_spec)
+
+        # TODO: sep method, called from actions.install
+        self._find_results = self._fetcher.find()
+
+        self.log.debug('find() found info for %s', self.content_spec)
+
+    def fetch(self):
+        """download the archive and side effect set self._archive_path to where it was downloaded to.
+
+        MUST be called after self.find()."""
+
+        self.log.debug('Fetching %s', self.content_spec)
+
+        try:
+            # FIXME: note that ignore_certs for the galaxy
+            # server(galaxy_context.server['ignore_certs'])
+            # does not really imply that the repo archive download should ignore certs as well
+            # (galaxy api server vs cdn) but for now, we use the value for both
+            fetch_results = self._fetcher.fetch(find_results=self._find_results)
+        except exceptions.GalaxyDownloadError as e:
+            log.exception(e)
+
+            blurb = 'Failed to fetch the content archive "%s": %s'
+            log.error(blurb, self._fetcher.remote_resource, e)
+
+            # reraise, currently handled in main
+            # TODO: if we support more than one archive per invocation, will need to accumulate errors
+            #       if we want to skip some of them
+            raise
+
+        self._fetch_results = fetch_results
+        self._archive_path = fetch_results['archive_path']
+
+        return fetch_results
+
     def install(self, content_meta=None, force_overwrite=False, namespace=None):
+        """extract the archive to the filesystem and write out install metadata.
+
+        MUST be called after self.fetch()."""
+
         self.log.debug('install: content_meta=%s, force_overwrite=%s, namespace=%s',
                        content_meta, force_overwrite, namespace)
         installed = []
@@ -421,32 +474,7 @@ class GalaxyContent(object):
         #        install should get pass a content_archive (or something more abstract)
         # TODO: some useful exceptions for 'cant find', 'cant read', 'cant write'
 
-        fetcher = fetch_factory.get(galaxy_context=self.galaxy,
-                                    content_spec=self.content_spec)
-
-        if fetcher:
-
-            # TODO: sep method, called from actions.install
-            find_results = fetcher.find()
-
-            try:
-                # FIXME: note that ignore_certs for the galaxy
-                # server(galaxy_context.server['ignore_certs'])
-                # does not really imply that the repo archive download should ignore certs as well
-                # (galaxy api server vs cdn) but for now, we use the value for both
-                fetch_results = fetcher.fetch(find_results=find_results)
-            except exceptions.GalaxyDownloadError as e:
-                log.exception(e)
-
-                blurb = 'Failed to fetch the content archive "%s": %s'
-                log.error(blurb, fetcher.remote_resource, e)
-
-                # reraise, currently handled in main
-                # TODO: if we support more than one archive per invocation, will need to accumulate errors
-                #       if we want to skip some of them
-                raise
-
-            archive_path = fetch_results['archive_path']
+        archive_path = self._fetch_results.get('archive_path', None)
 
         if not archive_path:
             raise exceptions.GalaxyClientError('No valid content data found for %s', self.src)
@@ -455,9 +483,10 @@ class GalaxyContent(object):
 
         content_tar_file, archive_meta = content_archive.load_archive(archive_path)
 
-        # content_data = find_results.get('content', {})
-        content_data = fetch_results.get('content', {})
+        # TODO: do we still need to check the fetched version against the spec version?
+        content_data = self._fetch_results.get('content', {})
 
+        # If the requested namespace/version is different than the one we got via find()/fetch()...
         content_meta.version = content_data.get('fetched_version', content_meta.version)
         content_meta.namespace = content_data.get('content_namespace', content_meta.namespace)
 
@@ -521,7 +550,7 @@ class GalaxyContent(object):
         self.display_callback("- %s was installed successfully to %s" % (str(self), self.path))
 
         # rm any temp files created when getting the content archive
-        fetcher.cleanup()
+        self._fetcher.cleanup()
 
         for item in installed:
             log.info('Installed content: %s', item[0])
