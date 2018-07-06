@@ -446,23 +446,6 @@ class GalaxyContent(object):
 
         return installed
 
-    def _install_apb_archive(self, content_tar_file, archive_parent_dir, content_meta,
-                             force_overwrite=False):
-        apb_name = content_meta.apb_data.get('name', content_meta.name)
-        log.info('about to extract %s to %s', apb_name, content_meta.path)
-
-        installed_paths = archive.extract_by_content_type(content_tar_file,
-                                                          archive_parent_dir,
-                                                          content_meta,
-                                                          content_archive_type='apb',
-                                                          install_content_type='apb',
-                                                          files_to_extract=content_tar_file.getmembers(),
-                                                          extract_to_path=content_meta.path,
-                                                          force_overwrite=force_overwrite)
-
-        installed = [(content_meta, installed_paths)]
-        return installed
-
     def install(self, content_meta=None, force_overwrite=False, namespace=None):
         installed = []
         archive_parent_dir = None
@@ -607,40 +590,6 @@ class GalaxyContent(object):
                                                              content_meta=content_meta,
                                                              force_overwrite=force_overwrite)
             installed.extend(installed_from_role)
-
-        elif archive_meta.archive_type == 'apb':
-            log.info('Installing %s as a Ansible Playbook Bundle content archive and content_type=%s (apb)', content_meta.name, content_meta.content_type)
-
-            apb_name = content_meta.apb_data.get('name', content_meta.name)
-            log.info('about to extract %s to %s', apb_name, content_meta.path)
-
-            if self.content_install_type in ('all', 'apb'):
-                installed_from_apb = \
-                    self._install_apb_archive(content_tar_file,
-                                              archive_parent_dir,
-                                              content_meta=content_meta,
-                                              force_overwrite=force_overwrite)
-
-                installed.extend(installed_from_apb)
-
-            else:
-                # we are installing bits out of the apb, treat it like a multi-content
-                content_meta.content_dir = None
-                content_meta.content_sub_dir = None
-                content_meta.content_type = 'all'
-
-                installed_paths = \
-                    self._install_for_content_types(content_tar_file,
-                                                    archive_parent_dir,
-                                                    content_archive_type='apb',
-                                                    content_meta=content_meta,
-                                                    # install_content_type='apb',
-                                                    content_types_to_install=content_types_to_install,
-                                                    force_overwrite=force_overwrite)
-
-                installed_from_apb = [(content_meta, installed_paths)]
-
-            installed.extend(installed_from_apb)
 
         # return the parsed yaml metadata
         self.display_callback("- %s was installed successfully to %s" % (str(self), self.path))
