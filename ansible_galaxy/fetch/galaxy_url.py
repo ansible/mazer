@@ -62,7 +62,7 @@ class GalaxyUrlFetch(base.BaseFetch):
     fetch_method = 'galaxy_url'
 
     def __init__(self, content_spec, content_version,
-                 galaxy_context, validate_certs=None):
+                 galaxy_context):
         super(GalaxyUrlFetch, self).__init__()
 
         # self.galaxy_url = galaxy_url
@@ -70,9 +70,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         self.content_version = content_version
         self.galaxy_context = galaxy_context
 
-        self.validate_certs = validate_certs
-        if validate_certs is None:
-            self.validate_certs = True
+        self.validate_certs = not self.galaxy_context.server['ignore_certs']
 
         log.debug('Validate TLS certificates: %s', self.validate_certs)
 

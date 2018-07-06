@@ -60,6 +60,7 @@ def _build_content_set(content_spec_strings, install_content_type, galaxy_contex
                                           src=content_spec_.src,
                                           scm=content_spec_.scm,
                                           version=content_spec_.version,
+                                          content_spec=content_spec_,
                                           ))
 
     return content_left

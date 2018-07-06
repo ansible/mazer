@@ -35,10 +35,7 @@ from ansible_galaxy import archive
 from ansible_galaxy import content_archive
 from ansible_galaxy.content_repo_galaxy_metadata import install_from_galaxy_metadata
 from ansible_galaxy import display
-from ansible_galaxy.fetch.scm_url import ScmUrlFetch
-from ansible_galaxy.fetch.local_file import LocalFileFetch
-from ansible_galaxy.fetch.remote_url import RemoteUrlFetch
-from ansible_galaxy.fetch.galaxy_url import GalaxyUrlFetch
+from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.content import CONTENT_TYPES, SUPPORTED_CONTENT_TYPES
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.models import content
@@ -52,36 +49,6 @@ log = logging.getLogger(__name__)
 # can provide a ContentInstallInfo
 
 
-# FIXME: do we have an enum like class for py2.6? worth a dep?
-class FetchMethods(object):
-    SCM_URL = 'SCM_URL'
-    LOCAL_FILE = 'LOCAL_FILE'
-    REMOTE_URL = 'REMOTE_URL'
-    GALAXY_URL = 'GALAXY_URL'
-
-
-def choose_content_fetch_method(scm_url=None, src=None):
-    log.debug('scm_url=%s, src=%s', scm_url, src)
-    if scm_url:
-        # create tar file from scm url
-        return FetchMethods.SCM_URL
-
-    if not src:
-        raise exceptions.GalaxyClientError("No valid content data found")
-
-    if os.path.isfile(src):
-        # installing a local tar.gz
-        return FetchMethods.LOCAL_FILE
-
-    if '://' in src:
-        return FetchMethods.REMOTE_URL
-
-    # if it doesnt look like anything else, assume it's galaxy
-    return FetchMethods.GALAXY_URL
-
-
-#        fetch_method = ScmUrlFetch(scm_url=scm_url, scm_spec=spec)
-#        return fetch_method
 # TODO: add InstalledContent
 #       get rid of GalaxyContent.metadata / GalaxyContent.install_info
 #       for InstalledContent add a from_install_info() to build it from file at creation
@@ -99,9 +66,18 @@ class GalaxyContent(object):
     REQUIRES_META_MAIN = ('role')
 
     # FIXME(alikins): Not a fan of vars/args with names like 'type', but leave it for now
-    def __init__(self, galaxy, name,
-                 src=None, version=None, scm=None, path=None, type="role",
-                 content_meta=None, sub_name=None, namespace=None,
+    def __init__(self,
+                 galaxy,
+                 name,
+                 src=None,
+                 version=None,
+                 scm=None,
+                 path=None,
+                 type="role",
+                 content_meta=None,
+                 content_spec=None,
+                 sub_name=None,
+                 namespace=None,
                  # metadata is the info in roles meta/main.yml for ex
                  metadata=None,
                  # install_info is info in meta/.galaxy_install_info for installed content packages
@@ -146,6 +122,8 @@ class GalaxyContent(object):
 
         # FIXME
         self.sub_name = sub_name
+
+        self.content_spec = content_spec
 
         # self.galaxy.content_roots['default']['content_path']
         primary_galaxy_content_path = self.galaxy.content_path
@@ -417,7 +395,6 @@ class GalaxyContent(object):
             files_to_extract.append(extract_info)
 
         file_extractor = archive.extract_files(content_tar_file, files_to_extract)
-        log.debug('file_extracter: %s', file_extractor)
 
         installed_paths = [x for x in file_extractor]
         installed = [(content_meta, installed_paths)]
@@ -431,6 +408,8 @@ class GalaxyContent(object):
         return installed
 
     def install(self, content_meta=None, force_overwrite=False, namespace=None):
+        self.log.debug('install: content_meta=%s, force_overwrite=%s, namespace=%s',
+                       content_meta, force_overwrite, namespace)
         installed = []
         archive_parent_dir = None
 
@@ -442,30 +421,20 @@ class GalaxyContent(object):
         # FIXME: really need to move the fetch step elsewhere and do it before,
         #        install should get pass a content_archive (or something more abstract)
         # TODO: some useful exceptions for 'cant find', 'cant read', 'cant write'
-        fetch_method = choose_content_fetch_method(scm_url=self.scm, src=self.src)
 
-        fetcher = None
-        if fetch_method == FetchMethods.SCM_URL:
-            fetcher = ScmUrlFetch(scm_url=self.scm, scm_spec=self.spec)
-        elif fetch_method == FetchMethods.LOCAL_FILE:
-            # the file is a tar, so open it that way and extract it
-            # to the specified (or default) content directory
-            fetcher = LocalFileFetch(self.src)
-        elif fetch_method == FetchMethods.REMOTE_URL:
-            fetcher = RemoteUrlFetch(remote_url=self.src, validate_certs=self._validate_certs)
-        elif fetch_method == FetchMethods.GALAXY_URL:
-            fetcher = GalaxyUrlFetch(content_spec=self.src,
-                                     content_version=self.version,
-                                     galaxy_context=self.galaxy,
-                                     validate_certs=self._validate_certs)
-        else:
-            raise exceptions.GalaxyError('No approriate content fetcher found for %s %s',
-                                         self.scm, self.src)
+        log.debug('self.content_spec.fetch_method: %s', self.content_spec.fetch_method)
 
-        log.debug('fetch_method: %s', fetch_method)
+        fetcher = fetch_factory.get(galaxy_context=self.galaxy,
+                                    content_spec=self.content_spec)
+
+        log.debug('fetcher: %s method: %s', fetcher, fetcher.fetch_method)
 
         if fetcher:
             try:
+                # FIXME: note that ignore_certs for the galaxy
+                # server(galaxy_context.server['ignore_certs'])
+                # does not really imply that the repo archive download should ignore certs as well
+                # (galaxy api server vs cdn) but for now, we use the value for both
                 fetch_results = fetcher.fetch()
             except exceptions.GalaxyDownloadError as e:
                 log.exception(e)
