@@ -425,12 +425,16 @@ class GalaxyContent(object):
                                     content_spec=self.content_spec)
 
         if fetcher:
+
+            # TODO: sep method, called from actions.install
+            find_results = fetcher.find()
+
             try:
                 # FIXME: note that ignore_certs for the galaxy
                 # server(galaxy_context.server['ignore_certs'])
                 # does not really imply that the repo archive download should ignore certs as well
                 # (galaxy api server vs cdn) but for now, we use the value for both
-                fetch_results = fetcher.fetch()
+                fetch_results = fetcher.fetch(find_results=find_results)
             except exceptions.GalaxyDownloadError as e:
                 log.exception(e)
 
@@ -451,6 +455,7 @@ class GalaxyContent(object):
 
         content_tar_file, archive_meta = content_archive.load_archive(archive_path)
 
+        # content_data = find_results.get('content', {})
         content_data = fetch_results.get('content', {})
 
         content_meta.version = content_data.get('fetched_version', content_meta.version)

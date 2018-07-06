@@ -18,7 +18,18 @@ class ScmUrlFetch(base.BaseFetch):
 
         self.remote_resource = content_spec.src
 
-    def fetch(self):
+    # scm
+    def find(self):
+        results = {'content': {'galaxy_namespace': self.content_spec.namespace,
+                               'repo_name': self.content_spec.name},
+                   'specified_content_version': self.content_spec.version,
+                   'specified_content_spec': self.content_spec.scm}
+        results['custom'] = {'scm_url': self.content_spec.src}
+
+        return results
+
+    def fetch(self, find_results=None):
+        find_results = find_results or {}
         content_archive_path = scm_archive.scm_archive_content(src=self.content_spec.src,
                                                                scm=self.content_spec.scm,
                                                                name=self.content_spec.name,
@@ -28,10 +39,11 @@ class ScmUrlFetch(base.BaseFetch):
         log.debug('content_archive_path=%s', content_archive_path)
 
         results = {'archive_path': content_archive_path,
-                   'fetch_method': self.fetch_method,
-                   'download_url': self.content_spec.src}
-        results['custom'] = {'scm_url': self.content_spec.src,
-                             'specified_content_spec': self.content_spec.scm}
+                   'download_url': self.content_spec.src,
+                   'fetch_method': self.fetch_method}
+        results['content'] = find_results['content']
+        results['custom'] = find_results.get('custom', {})
+        results['custom']['scm_url'] = self.content_spec.src
 
         # TODO: what the heck should the version be for a scm_url if one wasnt specified?
         return results

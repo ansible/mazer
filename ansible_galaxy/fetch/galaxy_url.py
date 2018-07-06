@@ -74,7 +74,8 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         log.debug('Validate TLS certificates: %s', self.validate_certs)
 
-    def fetch(self):
+    def find(self):
+        log.debug('find')
         api = GalaxyAPI(self.galaxy_context)
 
         # FIXME - Need to update our API calls once Galaxy has them implemented
@@ -137,7 +138,32 @@ class GalaxyUrlFetch(base.BaseFetch):
         if not external_url:
             raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % repo_name)
 
-        download_url = get_download_url(repo_data=repo_data, external_url=external_url, repoversion=_repoversion)
+        results = {'content': {'galaxy_namespace': content_username,
+                               'repo_name': repo_name,
+                               'content_name': content_name},
+                   'specified_content_version': self.content_version,
+                   'specified_content_spec': self.content_spec,
+                   'custom': {'content_repo_versions': content_repo_versions,
+                              'external_url': external_url,
+                              'galaxy_context': self.galaxy_context,
+                              'related': related,
+                              'repo_data': repo_data,
+                              'repo_versions_url': repo_versions_url,
+                              'repoversion': _repoversion},
+                   }
+
+        return results
+
+    def fetch(self, find_results=None):
+        log.debug('fetch: find_results: %s', find_results)
+        find_results = find_results or {}
+
+        results = {}
+
+        download_url = get_download_url(repo_data=find_results['custom']['repo_data'],
+                                        external_url=find_results['custom']['external_url'],
+                                        repoversion=find_results['custom']['repoversion'])
+
         # download_url = _build_download_url(external_url=external_url, version=_content_version)
         # TODO: error handling if there is no download_url
 
@@ -165,20 +191,8 @@ class GalaxyUrlFetch(base.BaseFetch):
                    'download_url': download_url,
                    'fetch_method': self.fetch_method}
 
-        results['custom'] = {'external_url': external_url,
-                             'repo_versions_url': repo_versions_url,
-                             'galaxy_namespace': content_username,
-                             'repo_name': repo_name,
-                             'content_name': content_name,
-                             'related': related,
-                             'content_repo_versions': content_repo_versions,
-                             'galaxy_context': self.galaxy_context,
-                             'specified_content_version': self.content_version,
-                             'specified_content_spec': self.content_spec,
-                             'repository_data': repo_data}
+        results['custom'] = {}
+        results['content'] = find_results['content']
+        results['content']['fetched_version'] = find_results['custom']['repoversion'].get('version')
 
-        results['content'] = {'fetched_version': _repoversion.get('version'),
-                              'repo_name': repo_name,
-                              'content_name': content_name,
-                              'content_namespace': content_username}
         return results
