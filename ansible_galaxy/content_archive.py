@@ -1,4 +1,3 @@
-import fnmatch
 import logging
 import os
 import tarfile
@@ -44,61 +43,6 @@ def detect_content_archive_type(archive_path, archive_members):
 
     # TODO: exception
     return None
-
-
-# TODO/FIXME: try to make sense of this and find_archive_parent_dir
-def find_archive_metadata(archive_members):
-    '''Try to find the paths to the archives meta data files
-
-    Aka, meta/main.yml or ansible-galaxy.yml.
-
-    Also, while we are at it, try to find the archive parent
-    dir.'''
-
-    meta_file = None
-    galaxy_file = None
-
-    meta_parent_dir = None
-    archive_parent_dir = None
-
-    apb_yaml_file = None
-
-    for member in archive_members:
-        if fnmatch.fnmatch(member.name, '*/%s' % APB_YAML):
-            log.debug('apb.yml member: %s', member)
-            apb_yaml_file = member.name
-
-        if META_MAIN in member.name or GALAXY_FILE in member.name:
-            # Look for parent of meta/main.yml
-            # Due to possibility of sub roles each containing meta/main.yml
-            # look for shortest length parent
-            meta_parent_dir = os.path.dirname(os.path.dirname(member.name))
-            if not meta_file:
-                archive_parent_dir = meta_parent_dir
-                if GALAXY_FILE in member.name:
-                    galaxy_file = member
-                else:
-                    meta_file = member
-            else:
-                # self.log.debug('meta_parent_dir: %s archive_parent_dir: %s len(m): %s len(a): %s member.name: %s',
-                #               meta_parent_dir, archive_parent_dir,
-                #               len(meta_parent_dir),
-                #               len(archive_parent_dir),
-                #               member.name)
-                if len(meta_parent_dir) < len(archive_parent_dir):
-                    archive_parent_dir = meta_parent_dir
-                    meta_file = member
-                    if GALAXY_FILE in member.name:
-                        galaxy_file = member
-                    else:
-                        meta_file = member
-
-    log.debug('apb_yaml_file: %s', apb_yaml_file)
-    # FIXME: return a real type/object for archive metadata
-    return (meta_file,
-            meta_parent_dir,
-            galaxy_file,
-            apb_yaml_file)
 
 
 def load_archive(archive_path):
