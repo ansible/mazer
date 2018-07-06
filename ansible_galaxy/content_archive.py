@@ -101,45 +101,6 @@ def find_archive_metadata(archive_members):
             apb_yaml_file)
 
 
-def find_archive_parent_dir(archive_members, content_type, content_dir):
-    # archive_parent_dir wasn't found when checking for metadata files
-    archive_parent_dir = None
-
-    shortest_dir = None
-    for member in archive_members:
-        # This is either a new-type Galaxy Content that doesn't have an
-        # ansible-galaxy.yml file and the type desired is specified and
-        # we check parent dir based on the correct subdir existing or
-        # we need to just scan the subdirs heuristically and figure out
-        # what to do
-        member_dir = os.path.dirname(os.path.dirname(member.name))
-        shortest_dir = shortest_dir or member_dir
-
-        if len(member_dir) < len(shortest_dir):
-            shortest_dir = member_dir
-
-        if content_type != "all":
-            if content_dir and content_dir in member.name:
-                archive_parent_dir = os.path.dirname(member.name)
-                return archive_parent_dir
-        else:
-            for plugin_dir in content.CONTENT_TYPE_DIR_MAP.values():
-                if plugin_dir in member.name:
-                    archive_parent_dir = os.path.dirname(member.name)
-                    return archive_parent_dir
-
-    if content_type not in content.CONTENT_TYPES:
-        log.debug('did not find a content_dir or plugin_dir, so using shortest_dir %s for archive_parent_dir', shortest_dir)
-        return shortest_dir
-
-    # TODO: archive format exception?
-    msg = "No content metadata provided, nor content directories found for content_type: %s" % \
-        content_type
-    log.debug('content_type: %s', content_type)
-    log.debug('content_dir: %s', content_dir)
-    raise exceptions.GalaxyClientError(msg)
-
-
 def load_archive(archive_path):
     archive_parent_dir = None
 
