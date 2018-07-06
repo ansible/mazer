@@ -102,30 +102,6 @@ class GalaxyContentMeta(object):
         return self._data
 
 
-# TODO: separate GalaxyContent, ContentMeta and ContentArchive classes
-class RoleContentMeta(GalaxyContentMeta):
-
-    def __init__(self, *args, **kwargs):
-        super(RoleContentMeta, self).__init__(*args, **kwargs)
-        self.content_type = 'role'
-        self.content_dir = CONTENT_TYPE_DIR_MAP.get('role', None)
-        self.content_sub_dir = self.name
-
-        # self.requires_meta_main = True
-        log.debug('%s self.__dict__: %s', self.__class__.__name__, self.__dict__)
-
-
-class APBContentArchiveMeta(GalaxyContentMeta):
-    def __init__(self, *args, **kwargs):
-        apb_data = kwargs.pop('apb_data', {})
-        super(APBContentArchiveMeta, self).__init__(*args, **kwargs)
-
-        self.apb_data = apb_data
-        self.content_type = 'apb'
-        self.content_dir = CONTENT_TYPE_DIR_MAP.get('apb', None)
-        self.content_sub_dir = self.apb_data.get('name', self.name)
-
-
 class GalaxyContent(object):
     def __init__(self):
         # need class for obj for ansible-galaxy.yml metadata file
