@@ -33,7 +33,6 @@ import yaml
 from ansible_galaxy import exceptions
 from ansible_galaxy import archive
 from ansible_galaxy import content_archive
-from ansible_galaxy.content_repo_galaxy_metadata import install_from_galaxy_metadata
 from ansible_galaxy import display
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.content import CONTENT_TYPES, SUPPORTED_CONTENT_TYPES
@@ -422,12 +421,8 @@ class GalaxyContent(object):
         #        install should get pass a content_archive (or something more abstract)
         # TODO: some useful exceptions for 'cant find', 'cant read', 'cant write'
 
-        log.debug('self.content_spec.fetch_method: %s', self.content_spec.fetch_method)
-
         fetcher = fetch_factory.get(galaxy_context=self.galaxy,
                                     content_spec=self.content_spec)
-
-        log.debug('fetcher: %s method: %s', fetcher, fetcher.fetch_method)
 
         if fetcher:
             try:
@@ -512,27 +507,6 @@ class GalaxyContent(object):
             # log.debug('res:\n%s', pprint.pformat(res))
 
             installed.append((content_meta, res))
-
-        # now branch based on archive type
-        # FIXME/TODO: not really used at the moment
-        elif archive_meta.archive_type == 'galaxy':
-            log.info('Installing %s as a archive_type=%s content_type=%s (galaxy_file)',
-                     content_meta.name, archive_meta, content_meta.content_type)
-            # log.debug('galaxy_file=%s', galaxy_file)
-            # log.debug('galaxy_metadata=%s', pprint.pformat(galaxy_metadata))
-
-            galaxy_metadata = None
-            # Parse the ansible-galaxy.yml file and install things
-            # as necessary
-            installed_from_galaxy_metadata =  \
-                install_from_galaxy_metadata(content_tar_file,
-                                             archive_parent_dir,
-                                             galaxy_metadata,
-                                             content_meta,
-                                             display_callback=self.display_callback,
-                                             force_overwrite=force_overwrite)
-
-            installed.extend(installed_from_galaxy_metadata)
 
         elif archive_meta.archive_type == 'role':
             log.info('Installing %s as a role content archive and content_type=%s (role)', content_meta.name, content_meta.content_type)
