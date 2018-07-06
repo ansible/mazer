@@ -368,22 +368,6 @@ class GalaxyContent(object):
 
         return all_installed_paths
 
-    def _install_all(self, content_tar_file, archive_parent_dir,
-                     content_archive_type=None, content_meta=None,
-                     force_overwrite=False):
-
-        # FIXME: not sure of best approach/pattern to figuring out how/where to extract the content too
-        #        It is almost similar to a url rewrite engine. Or really, persisting of some object that was loaded from a DTO
-        content_meta = content_meta or self.content_meta
-
-        all_installed_paths = self._install_for_content_types(content_tar_file, archive_parent_dir,
-                                                              content_archive_type, content_meta,
-                                                              content_types_to_install=CONTENT_TYPES,
-                                                              force_overwrite=force_overwrite)
-
-        installed = [(content_meta, all_installed_paths)]
-        return installed
-
     # FIXME: This should really be shared with the bulk of install_for_content_type()
     #        and like a content type specific impl in a GalaxyContent subclass
     def _install_role_archive(self, content_tar_file, archive_meta, content_meta,
