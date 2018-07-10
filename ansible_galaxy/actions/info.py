@@ -124,10 +124,12 @@ def info_content_specs(galaxy_context,
                        offline=None):
 
     output = ''
+    online = not offline
+
     display_callback = display_callback or display.display_callback
 
     # log.debug('base_content_path: %s', base_content_path)
-    content_path = galaxy_context.content_path
+    # content_path = galaxy_context.content_path
 
     offline = offline or False
 
@@ -136,8 +138,9 @@ def info_content_specs(galaxy_context,
 
     not_installed = []
 
-    for content_spec in content_specs:
+    labels_to_match = []
 
+    for content_spec in content_specs:
         galaxy_namespace, repo_name, content_name = parse_content_name(content_spec)
 
         log.debug('content_spec=%s', content_spec)
@@ -148,37 +151,57 @@ def info_content_specs(galaxy_context,
         repo_name = repo_name or content_name
         log.debug('repo_name2=%s', repo_name)
 
-        matcher = matchers.MatchNamespacesOrLabels(['%s.%s' % (galaxy_namespace, repo_name)])
-
-        matched_repos = irdb.select(repository_match_filter=matcher)
-
-        matched_contents = icdb.select(repository_match_filter=matcher)
-        # log.debug('matched_contents: %s', list(matched_contents))
-
-        content_path = os.path.join(content_path, '%s.%s' % (galaxy_namespace, repo_name))
-
-        remote_data = False
-        if not offline:
+        if online:
             # remote_data = api.lookup_content_by_name(galaxy_namespace, repo_name, content_name)
             remote_data = api.lookup_repo_by_name(galaxy_namespace, repo_name)
             display_callback(_repr_remote_repo(remote_data))
-        else:
-            for matched_content in matched_contents:
-                display_callback(_repr_installed_content(matched_content))
 
-        # role_spec = yaml_parse({'role': role})
-        # if role_spec:
-        #     role_info.update(role_spec)
+        label_to_match = '%s.%s' % (galaxy_namespace, repo_name)
+        labels_to_match.append((label_to_match, content_spec))
 
-        for matched_repo in matched_repos:
-            display_callback(_repr_installed_repo(matched_repo))
-            break
-        else:
-            not_installed.append(content_spec)
+    # matcher = matchers.MatchNamespacesOrLabels([label_and_spec[0] for label_and_spec in labels_to_match])
+    matcher = matchers.MatchContentSpec([label_and_spec[1] for label_and_spec in labels_to_match])
 
-        # data = self._display_role_info(content_info)
-        # FIXME: This is broken in both 1.9 and 2.0 as
-        # _display_role_info() always returns something
+    matched_repos = irdb.select(repository_match_filter=matcher)
+
+    # matched_contents = icdb.select(repository_match_filter=matcher)
+    # log.debug('matched_contents: %s', list(matched_contents))
+
+    # content_path = os.path.join(content_path, '%s.%s' % (galaxy_namespace, repo_name))
+
+    remote_data = False
+
+    for matched_repo in matched_repos:
+        display_callback(_repr_installed_repo(matched_repo))
+        log.debug(matched_repo)
+
+        #for matched_content in matched_contents:
+        #    display_callback(_repr_installed_content(matched_content))
+
+
+    # FIXME
+
+    return
+
+
+
+    # TODO: split 'info' action into 'info about installed repos' and 'info from galaxy about a repo'
+    if not offline:
+        # remote_data = api.lookup_content_by_name(galaxy_namespace, repo_name, content_name)
+        remote_data = api.lookup_repo_by_name(galaxy_namespace, repo_name)
+        display_callback(_repr_remote_repo(remote_data))
+    else:
+        for matched_content in matched_contents:
+            display_callback(_repr_installed_content(matched_content))
+
+    # role_spec = yaml_parse({'role': role})
+    # if role_spec:
+    #     role_info.update(role_spec)
+
+    # not_installed =
+    # data = self._display_role_info(content_info)
+    # FIXME: This is broken in both 1.9 and 2.0 as
+    # _display_role_info() always returns something
 
     display_callback(output)
 

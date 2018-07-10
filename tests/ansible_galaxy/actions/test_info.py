@@ -1,10 +1,8 @@
 
 import logging
 import mock
-import tempfile
 
 from ansible_galaxy.actions import info
-from ansible_galaxy.models.context import GalaxyContext
 
 log = logging.getLogger(__name__)
 

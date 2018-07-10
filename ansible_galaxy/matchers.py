@@ -40,6 +40,14 @@ class MatchLabels(Match):
         return other.label in self.labels
 
 
+class MatchContentSpec(Match):
+    def __init__(self, content_specs):
+        self.content_specs = content_specs or []
+
+    def match(self, other):
+        return other in self.content_specs
+
+
 class MatchNamespacesOrLabels(Match):
     def __init__(self, namespaces_or_labels):
         self.namespaces_or_labels = namespaces_or_labels or []
