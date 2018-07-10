@@ -3,15 +3,17 @@ import pytest
 
 from ansible_galaxy import matchers
 from ansible_galaxy.models.content_repository import ContentRepository
+from ansible_galaxy.models.content_spec import ContentSpec
 from ansible_galaxy.models import repository_namespace
 
 log = logging.getLogger(__name__)
 
 
 def CR(namespace=None, name=None):
-    ns = repository_namespace.RepositoryNamespace(namespace=namespace)
-    return ContentRepository(namespace=ns,
-                             name=name)
+    # ns = repository_namespace.RepositoryNamespace(namespace=namespace)
+    cs = ContentSpec(namespace=namespace,
+                     name=name)
+    return ContentRepository(content_spec=cs)
 
 
 @pytest.mark.parametrize("matcher_class,matcher_args,candidates, expected", [
