@@ -76,11 +76,6 @@ class ContentRepository(object):
     path = attr.ib(default=None)
     label = attr.ib(default=None)
 
-    def __attrs_post_init__(self):
-        self.label = self.label or '%s.%s' % (self.namespace.namespace, self.name)
-
-    @classmethod
-    def from_content_spec_data(cls, content_spec_data):
-        namespace = repository_namespace.RepositoryNamespace(namespace=content_spec_data.get('namespace'))
-        return cls(namespace=namespace,
-                   name=content_spec_data.get('name'))
+    @property
+    def label(self):
+        return '%s.%s' % (self.namespace.namespace, self.name)
