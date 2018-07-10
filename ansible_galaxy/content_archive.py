@@ -78,14 +78,12 @@ def load_archive(archive_path):
         # archive_role_metadata = \
         #    archive.load_archive_role_metadata(content_tar_file,
         #                                       os.path.join(archive_parent_dir, archive.META_MAIN))
-        log.debug('Find role metadata in the archive, so installing it as role content_type')
+        log.debug('Found role metadata in the archive, so installing it as role content_type')
 
-        archive_meta = content_archive.RoleContentArchiveMeta(top_dir=archive_parent_dir)
-        # content_meta = content.RoleContentArchiveMeta.from_data(data)
+    archive_meta = content_archive.ContentArchiveMeta(top_dir=archive_parent_dir,
+                                                      archive_type=archive_type,
+                                                      archive_path=archive_path)
 
-        log.debug('role archive_meta: %s', archive_meta)
+    log.debug('role archive_meta: %s', archive_meta)
 
-        return content_tar_file, archive_meta
-
-    return content_tar_file, content_archive.ContentArchiveMeta(archive_type=archive_type,
-                                                                top_dir=archive_parent_dir)
+    return content_tar_file, archive_meta
