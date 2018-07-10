@@ -6,6 +6,8 @@ import pprint
 
 from ansible_galaxy import display
 from ansible_galaxy import matchers
+from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.repository_namespace import RepositoryNamespace
 from ansible_galaxy import installed_content_db
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy.utils.content_name import parse_content_name
@@ -157,7 +159,9 @@ def info_content_specs(galaxy_context,
             display_callback(_repr_remote_repo(remote_data))
 
         label_to_match = '%s.%s' % (galaxy_namespace, repo_name)
-        labels_to_match.append((label_to_match, content_spec))
+        repo_namespace = RepositoryNamespace(namespace=galaxy_namespace)
+        labels_to_match.append((label_to_match, ContentSpec(namespace=repo_namespace,
+                                                            name=repo_name)))
 
     # matcher = matchers.MatchNamespacesOrLabels([label_and_spec[0] for label_and_spec in labels_to_match])
     matcher = matchers.MatchContentSpec([label_and_spec[1] for label_and_spec in labels_to_match])
@@ -173,7 +177,7 @@ def info_content_specs(galaxy_context,
 
     for matched_repo in matched_repos:
         display_callback(_repr_installed_repo(matched_repo))
-        log.debug(matched_repo)
+        log.debug('matched_repo: %s', matched_repo)
 
         #for matched_content in matched_contents:
         #    display_callback(_repr_installed_content(matched_content))

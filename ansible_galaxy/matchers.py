@@ -45,7 +45,8 @@ class MatchContentSpec(Match):
         self.content_specs = content_specs or []
 
     def match(self, other):
-        return other in self.content_specs
+        log.debug('is %s in %s', other.content_spec, self.content_specs)
+        return other.content_spec in self.content_specs
 
 
 class MatchNamespacesOrLabels(Match):
