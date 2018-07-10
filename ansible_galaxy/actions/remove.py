@@ -1,6 +1,6 @@
 import logging
 
-from ansible_galaxy.models import content_repository
+from ansible_galaxy import content_repository
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy_cli import exceptions as cli_exceptions
