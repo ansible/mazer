@@ -3,6 +3,8 @@ import shutil
 
 import yaml
 
+import attr
+
 from ansible_galaxy.models import repository_namespace
 
 log = logging.getLogger(__name__)
@@ -67,28 +69,18 @@ def remove(installed_repository):
         raise
 
 
+@attr.s
 class ContentRepository(object):
-    def __init__(self,
-                 namespace=None,
-                 name=None,
-                 label=None,
-                 path=None):
-        # a RepositoryNamespace instance
-        self.namespace = namespace
-        self.name = name
-        self.path = path
-        if self.namespace:
-            label = label or '%s.%s' % (self.namespace.namespace, self.name)
-        self.label = label
+    namespace = attr.ib()
+    name = attr.ib()
+    path = attr.ib(default=None)
+    label = attr.ib(default=None)
+
+    def __attrs_post_init__(self):
+        self.label = self.label or '%s.%s' % (self.namespace.namespace, self.name)
 
     @classmethod
     def from_content_spec_data(cls, content_spec_data):
         namespace = repository_namespace.RepositoryNamespace(namespace=content_spec_data.get('namespace'))
         return cls(namespace=namespace,
                    name=content_spec_data.get('name'))
-
-    def __repr__(self):
-        return '%s(label="%s", namespace="%s", name="%s", path="%s")' % \
-            (self.__class__.__name__,
-             self.label, self.namespace,
-             self.name, self.path)

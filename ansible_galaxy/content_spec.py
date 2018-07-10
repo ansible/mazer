@@ -94,4 +94,15 @@ def spec_data_from_string(content_spec_string):
 def content_spec_from_string(content_spec_string):
     spec_data = spec_data_from_string(content_spec_string)
 
-    return ContentSpec(**spec_data)
+    log.debug('spec_data: %s', spec_data)
+    return ContentSpec(name=spec_data.get('name'),
+                       namespace=spec_data.get('namespace'),
+                       version=spec_data.get('version'),
+                       scm=spec_data.get('scm'),
+                       spec_string=spec_data.get('spec_string'),
+                       fetch_method=spec_data.get('fetch_method'),
+                       src=spec_data.get('src'))
+
+    #    {'src': 'testing.fake_role_name', 'name': 'fake_role_name', 'namespace': 'testing', 'version': None, 'scm': None,
+    #     'spec_string': 'testing.fake_role_name', 'fetch_method': 'GALAXY_URL'}
+    # return ContentSpec(**spec_data)

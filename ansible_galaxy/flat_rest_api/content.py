@@ -133,12 +133,14 @@ class GalaxyContent(object):
         #    requires_meta_main = True
 
         self.content_meta = content_meta or \
-            content.GalaxyContentMeta(name=name, src=src, version=version,
-                                      scm=scm, path=primary_galaxy_content_path,
-                                      namespace=namespace,
-                                      # requires_meta_main=requires_meta_main,
+            content.GalaxyContentMeta(namespace=namespace,
+                                      name=name,
+                                      version=version,
+                                      src=src,
+                                      scm=scm,
                                       content_type=content_type,
-                                      content_dir=CONTENT_TYPE_DIR_MAP.get(content_type, None))
+                                      content_dir=CONTENT_TYPE_DIR_MAP.get(content_type, None),
+                                      path=primary_galaxy_content_path)
 
         # TODO: factory? metaclass?
         if content_type not in CONTENT_TYPES and content_type != "all":

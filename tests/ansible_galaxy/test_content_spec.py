@@ -1,6 +1,7 @@
 import logging
 import os
 
+import attr
 import pytest
 
 from ansible_galaxy import content_spec
@@ -61,4 +62,5 @@ def test_content_spec_from_string(content_spec_case):
     result = content_spec.content_spec_from_string(content_spec_case['spec'])
     log.debug('spec=%s result=%s exp=%s', content_spec_case['spec'], result, content_spec_case['expected'])
 
+    # assert attr.asdict(result) == attr.asdict(content_spec_case['expected'])
     assert result == content_spec_case['expected']

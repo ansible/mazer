@@ -23,14 +23,18 @@ def test_content_type_dir_map_items():
 
 
 def test_galaxy_content_meta_no_args():
-    content_meta = content.GalaxyContentMeta()
-    assert isinstance(content_meta, content.GalaxyContentMeta)
-    assert content_meta.name is None
-    assert content_meta.content_type is None
+    try:
+        content.GalaxyContentMeta()
+    except TypeError as e:
+        log.exception(e)
+        return
+
+    assert False, 'GalaxyContentMeta() with no args should raise a TypeError but did not'
 
 
 def test_galaxy_content_meta():
-    content_meta = content.GalaxyContentMeta(name='some_content',
+    content_meta = content.GalaxyContentMeta(namespace='somenamespace',
+                                             name='some_content',
                                              version='1.0.0',
                                              src='some_src',
                                              scm='some_scm',
@@ -43,15 +47,18 @@ def test_galaxy_content_meta():
 
 
 def test_galaxy_content_equality():
-    content_meta = content.GalaxyContentMeta(name='some_content',
+    content_meta = content.GalaxyContentMeta(namespace='some_namespace',
+                                             name='some_content',
                                              version='1.0.0',
                                              content_type='role')
 
-    content_meta_newer = content.GalaxyContentMeta(name='some_content',
+    content_meta_newer = content.GalaxyContentMeta(namespace='some_namespace',
+                                                   name='some_content',
                                                    version='2.3.4',
                                                    content_type='role')
 
-    content_meta_newer_dupe = content.GalaxyContentMeta(name='some_content',
+    content_meta_newer_dupe = content.GalaxyContentMeta(namespace='some_namespace',
+                                                        name='some_content',
                                                         version='2.3.4',
                                                         content_type='role')
 

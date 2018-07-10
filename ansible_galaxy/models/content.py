@@ -1,5 +1,7 @@
 import logging
 
+import attr
+
 log = logging.getLogger(__name__)
 
 
@@ -41,65 +43,23 @@ TYPE_DIR_CONTENT_TYPE_MAP = dict([('%ss' % k, k) for k in CONTENT_TYPES])
 TYPE_DIR_CONTENT_TYPE_MAP['library'] = 'module'
 
 
+@attr.s
 class GalaxyContentMeta(object):
-    def __init__(self, name=None, version=None,
-                 src=None, scm=None,
-                 content_type=None,
-                 path=None, requires_meta_main=None,
-                 content_dir=None, content_sub_dir=None,
-                 namespace=None):
-
-        self.name = name
-        self.version = version
-        self.src = src or name
-        self.scm = scm
-        self.content_type = content_type
-        self.path = path
-        self.requires_meta_main = requires_meta_main
-        self.content_dir = content_dir
-        self.content_sub_dir = content_sub_dir
-        self.namespace = namespace
-        self._data = {}
-
-
-#         log.debug('%s locals: %s', self.__class__.__name__, locals())
+    namespace = attr.ib()
+    name = attr.ib()
+    version = attr.ib()
+    content_type = attr.ib()
+    src = attr.ib(default=None)
+    scm = attr.ib(default=None)
+    content_dir = attr.ib(default=None)
+    path = attr.ib(default=None)
+    requires_meta_main = attr.ib(default=None, cmp=False)
+    content_sub_dir = attr.ib(default=None, cmp=False)
 
     @classmethod
     def from_data(cls, data):
         inst = cls(**data)
         return inst
-
-    def __eq__(self, other):
-        return (self.name, self.namespace, self.version, self.src, self.scm,
-                self.content_type, self.content_dir, self.path) == \
-            (other.name, other.namespace, other.version, other.src, other.scm,
-             other.content_type, other.content_dir, other.path)
-
-    def __repr__(self):
-        format_ = 'GalaxyContentMeta(name=%s, namespace=%s, version=%s, src=%s, scm=%s, ' + \
-            'content_type=%s, content_dir=%s, content_sub_dir=%s, path=%s, requires_meta_main=%s)'
-
-        return format_ % (self.name, self.namespace, self.version, self.src, self.scm,
-                          self.content_type, self.content_dir, self.content_sub_dir,
-                          self.path, self.requires_meta_main)
-
-    def _as_dict(self):
-        return {'name': self.name,
-                'namespace': self.namespace,
-                'version': self.version,
-                'src': self.src,
-                'scm': self.scm,
-                'content_type': self.content_type,
-                'path': self.path,
-                'requires_meta_main': self.requires_meta_main,
-                'content_dir': self.content_dir,
-                'content_sub_dir': self.content_sub_dir,
-                }
-
-    @property
-    def data(self):
-        self._data.update(self._as_dict())
-        return self._data
 
 
 class GalaxyContent(object):

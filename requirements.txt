@@ -9,3 +9,7 @@ jinja2
 
 # Used if we need offline version compares
 semver
+
+# used for data classes
+# 18.1.0 introduces the 'factory' keyword
+attrs>=18.1.0
