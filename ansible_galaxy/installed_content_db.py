@@ -66,12 +66,8 @@ def installed_content_iterator(galaxy_context,
 
             gr = InstalledContent(galaxy_context, path_file, path=installed_content_full_path)
 
-            # FIXME: not so much a kluge, but a sure sign that GalaxyContent.path
-            #        (or its alias GalaxyContent.content_meta.path) have different meanings
-            #        in diff parts of the code  (sometimes for the root dir where content lives
-            #        (.ansible/content) sometimes for the path the dir to the content
-            #        (.ansible/content/roles/test-role-a for ex)
-            gr.content_meta.path = installed_content_full_path
+            log.debug('icfp: %s', installed_content_full_path)
+            log.debug('gr.content_meta.path: %s', gr.content_meta.path)
 
             version = None
 
@@ -85,7 +81,6 @@ def installed_content_iterator(galaxy_context,
                     version = "(unknown version)"
                 # display_callback("- %s, %s" % (path_file, version))
 
-#            log.debug('gr__dict__: %s', gr.__dict__)
             if not content_match_filter(gr):
                 log.debug('%s was not matched by content_match_filter: %s', gr, content_match_filter)
                 continue

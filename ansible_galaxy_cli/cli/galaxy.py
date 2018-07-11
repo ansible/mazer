@@ -306,7 +306,7 @@ class GalaxyCLI(cli.CLI):
             rc = install.install_content_specs(galaxy_context,
                                                content_spec_strings=requested_content_specs,
                                                install_content_type=install_content_type,
-                                               namespace=self.options.namespace,
+                                               namespace_override=self.options.namespace,
                                                display_callback=self.display,
                                                ignore_errors=self.options.ignore_errors,
                                                no_deps=self.options.no_deps,

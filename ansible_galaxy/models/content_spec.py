@@ -1,7 +1,7 @@
 import attr
 
 
-@attr.s
+@attr.s(frozen=True)
 class ContentSpec(object):
     '''The info used to identify and reference a galaxy content.
 

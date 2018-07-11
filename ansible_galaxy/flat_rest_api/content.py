@@ -30,6 +30,8 @@ import pprint
 from shutil import rmtree
 import yaml
 
+import attr
+
 from ansible_galaxy import exceptions
 from ansible_galaxy import archive
 from ansible_galaxy import content_archive
@@ -457,13 +459,13 @@ class GalaxyContent(object):
 
         return fetch_results
 
-    def install(self, content_meta=None, force_overwrite=False, namespace=None):
+    def install(self, content_meta=None, force_overwrite=False):
         """extract the archive to the filesystem and write out install metadata.
 
         MUST be called after self.fetch()."""
 
-        self.log.debug('install: content_meta=%s, force_overwrite=%s, namespace=%s',
-                       content_meta, force_overwrite, namespace)
+        self.log.debug('install: content_meta=%s, force_overwrite=%s',
+                       content_meta, force_overwrite)
         installed = []
         archive_parent_dir = None
 
@@ -489,8 +491,19 @@ class GalaxyContent(object):
         content_data = self._fetch_results.get('content', {})
 
         # If the requested namespace/version is different than the one we got via find()/fetch()...
-        content_meta.version = content_data.get('fetched_version', content_meta.version)
-        content_meta.namespace = content_data.get('content_namespace', content_meta.namespace)
+        if content_data.get('fetched_version', content_meta.version) != content_meta.version:
+            log.info('Version "%s" for %s was requested but fetch found version "%s"',
+                     content_meta.version, '%s.%s' % (content_meta.namespace, content_meta.name),
+                     content_data.get('fetched_version', content_meta.version))
+
+            content_meta = attr.evolve(content_meta, version=content_data['fetched_version'])
+
+        if content_data.get('content_namespace', content_meta.namespace) != content_meta.namespace:
+            log.info('Namespace "%s" for %s was requested but fetch found namespace "%s"',
+                     content_meta.namespace, '%s.%s' % (content_meta.namespace, content_meta.name),
+                     content_data.get('content_namespace', content_meta.namespace))
+
+            content_meta = attr.evolve(content_meta, namespace=content_data['content_namespace'])
 
         log.debug('archive_meta: %s', archive_meta)
 

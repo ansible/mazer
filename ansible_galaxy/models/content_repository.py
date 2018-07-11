@@ -7,7 +7,7 @@ from ansible_galaxy.models.content_spec import ContentSpec
 log = logging.getLogger(__name__)
 
 
-@attr.s
+@attr.s(frozen=True)
 class ContentRepository(object):
     content_spec = attr.ib(type=ContentSpec)
     path = attr.ib(default=None)

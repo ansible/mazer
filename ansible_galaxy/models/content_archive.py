@@ -1,7 +1,7 @@
 import attr
 
 
-@attr.s
+@attr.s(frozen=True)
 class ContentArchiveMeta(object):
     requires_meta_main = False
 

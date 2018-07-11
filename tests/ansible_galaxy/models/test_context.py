@@ -77,5 +77,3 @@ def test_context_repr():
     assert 'content_path' in rep_res
     assert 'server' in rep_res
     assert 'some_content_path' in rep_res
-
-

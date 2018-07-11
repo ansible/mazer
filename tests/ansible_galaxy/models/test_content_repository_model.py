@@ -1,6 +1,7 @@
 import logging
 import operator
 
+import attr
 import pytest
 
 from ansible_galaxy.models import content_repository
@@ -13,6 +14,21 @@ log = logging.getLogger(__name__)
 def csf(request):
     _cs = content_spec.ContentSpec(namespace='somenamespace', name='somename', version='1.2.3')
     yield _cs
+
+
+def test_frozen(csf):
+    cr = content_repository.ContentRepository(content_spec=csf)
+
+    new_cr = content_spec.ContentSpec(namespace='somenamespace', name='somename', version='1.2.3')
+
+    with pytest.raises(attr.exceptions.FrozenInstanceError):
+        cr.content_spec = new_cr
+
+    with pytest.raises(attr.exceptions.FrozenInstanceError):
+        cr.path = '/dev/null/somepath'
+
+    with pytest.raises(attr.exceptions.FrozenInstanceError):
+        cr.installed = True
 
 
 def test_cr_init_no_args():

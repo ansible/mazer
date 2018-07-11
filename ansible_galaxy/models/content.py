@@ -43,7 +43,7 @@ TYPE_DIR_CONTENT_TYPE_MAP = dict([('%ss' % k, k) for k in CONTENT_TYPES])
 TYPE_DIR_CONTENT_TYPE_MAP['library'] = 'module'
 
 
-@attr.s
+@attr.s(frozen=True)
 class GalaxyContentMeta(object):
     namespace = attr.ib()
     name = attr.ib()

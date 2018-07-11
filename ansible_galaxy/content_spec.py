@@ -91,10 +91,23 @@ def spec_data_from_string(content_spec_string):
     return spec_data
 
 
-def content_spec_from_string(content_spec_string):
+def content_spec_from_string(content_spec_string, namespace_override=None):
     spec_data = spec_data_from_string(content_spec_string)
 
     log.debug('spec_data: %s', spec_data)
+
+    if namespace_override:
+        if spec_data.get('namespace'):
+            log.debug('using --namespace provided namespace "%s" to override detected namespace "%s"',
+                      namespace_override,
+                      spec_data['namespace'])
+        else:
+            log.debug('using --namespace provided namespace "%s" to since there was no namespace in "%s"',
+                      namespace_override,
+                      content_spec_string)
+
+        spec_data['namespace'] = namespace_override
+
     return ContentSpec(name=spec_data.get('name'),
                        namespace=spec_data.get('namespace'),
                        version=spec_data.get('version'),
