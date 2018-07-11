@@ -2,16 +2,13 @@ import logging
 
 import attr
 
+from ansible_galaxy.models.content_spec import ContentSpec
+
 log = logging.getLogger(__name__)
 
 
 @attr.s
 class ContentRepository(object):
-    content_spec = attr.ib()
-    # path = attr.ib(default=None)
-
-
-@attr.s
-class InstalledContentRepository(object):
-    content_spec = attr.ib()
+    content_spec = attr.ib(type=ContentSpec)
     path = attr.ib(default=None)
+    installed = attr.ib(default=False, type=bool, cmp=False)

@@ -3,7 +3,7 @@ import os
 
 from ansible_galaxy import matchers
 from ansible_galaxy import installed_namespaces_db
-from ansible_galaxy.models.content_repository import InstalledContentRepository
+from ansible_galaxy.models.content_repository import ContentRepository
 from ansible_galaxy.models.content_spec import ContentSpec
 
 log = logging.getLogger(__name__)
@@ -61,8 +61,8 @@ def installed_repository_iterator(galaxy_context,
             # log.debug('repo_fll_path: %s', repository_full_path)
             content_spec = ContentSpec(namespace=namespace.namespace,
                                        name=repository_path)
-            content_repository = InstalledContentRepository(content_spec=content_spec,
-                                                            path=repository_full_path)
+            content_repository = ContentRepository(content_spec=content_spec,
+                                                   path=repository_full_path)
 
             # log.debug('content_repo: %s', content_repository)
             # log.debug('match: %s(%s) %s', repository_match_filter, content_repository, repository_match_filter(content_repository))
