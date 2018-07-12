@@ -25,7 +25,7 @@ def get(galaxy_context, content_spec):
         # to the specified (or default) content directory
         fetcher = local_file.LocalFileFetch(content_spec)
     elif content_spec.fetch_method == FetchMethods.REMOTE_URL:
-        fetcher = remote_url.RemoteUrlFetch(remote_url=content_spec.src,
+        fetcher = remote_url.RemoteUrlFetch(content_spec=content_spec,
                                             validate_certs=not galaxy_context.server['ignore_certs'])
     elif content_spec.fetch_method == FetchMethods.GALAXY_URL:
         fetcher = galaxy_url.GalaxyUrlFetch(content_spec=content_spec.src,
