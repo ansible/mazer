@@ -15,7 +15,7 @@ class BaseFetch(object):
         # just an identifier to use in messages
         self.remote_resource = None
 
-    def fetch(self):
+    def fetch(self, find_results=None):
         '''Get the content archive, save it to a file locally and return the path to that file'''
         raise NotImplementedError
 
