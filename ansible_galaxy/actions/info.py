@@ -1,7 +1,5 @@
 
 import logging
-import pprint
-
 
 from ansible_galaxy import display
 from ansible_galaxy import matchers
@@ -49,8 +47,7 @@ version: {version}"""
 
 # FIXME: format?
 def _repr_remote_repo(remote_data):
-    log.debug('remote_data: %s', remote_data)
-    # print(remote_data)
+    # log.debug('remote_data: %s', remote_data)
 
     # flatten some info for format simplicity
     repo_namespace = remote_data['summary_fields']['namespace']['name']
@@ -72,7 +69,7 @@ def _repr_remote_repo(remote_data):
         content_data['content_description'] = content_object['description']
 
         content_str = CONTENT_TEMPLATE.format(**content_data)
-        log.debug('content_str: %s', content_str)
+        # log.debug('content_str: %s', content_str)
         content_info_parts.append(content_str)
 
     versions = remote_data['summary_fields']['versions']
@@ -85,9 +82,7 @@ def _repr_remote_repo(remote_data):
 
     remote_data['repo_contents'] = '\n'.join(content_info_parts)
 
-    log.debug(pprint.pformat(remote_data))
     return REPO_TEMPLATE.format(**remote_data)
-    # return pprint.pformat(content_info)
 
 
 def _repr_installed_repo(installed_repo):
@@ -95,7 +90,6 @@ def _repr_installed_repo(installed_repo):
 
 
 def _repr_installed_content(installed_content):
-    # print('i_d: %s' % installed_content)
     installed_data = {'name': installed_content['installed_repository'].name,
                       'version': installed_content['version'],
                       'path': installed_content['installed_repository'].path}
@@ -153,13 +147,10 @@ def info_content_specs(galaxy_context,
     for content_spec_string in content_spec_strings:
         galaxy_namespace, repo_name, content_name = parse_content_name(content_spec_string)
 
-        log.debug('content_spec=%s', content_spec_string)
-        log.debug('galaxy_username=%s', galaxy_namespace)
-        log.debug('repo_name=%s', repo_name)
-        log.debug('content_name=%s', content_name)
+        log.debug('showing info for content spec: %s', content_spec_string)
 
         repo_name = repo_name or content_name
-        log.debug('repo_name2=%s', repo_name)
+        # log.debug('repo_name2=%s', repo_name)
 
         if online:
             # remote_data = api.lookup_content_by_name(galaxy_namespace, repo_name, content_name)
@@ -188,22 +179,15 @@ def info_content_specs(galaxy_context,
     matched_labels = []
     for matched_repo in matched_repos:
         display_callback(_repr_installed_repo(matched_repo))
-        log.debug('matched_repo: %s', matched_repo)
         matched_labels.append(matched_repo.content_spec.label)
 
     unmatched_labels = set(all_labels_to_match).difference(set(matched_labels))
-
-    log.debug('all_labels: %s', all_labels_to_match)
-    log.debug('mathed_labels: %s', matched_labels)
-    log.debug('unmatched_labels: %s', unmatched_labels)
 
     if unmatched_labels:
         display_callback('These repos were not found:')
 
         for unmatched_label in sorted(unmatched_labels):
             display_callback(_repr_unmatched_label(unmatched_label))
-    # for matched_content in matched_contents:
-    #    display_callback(_repr_installed_content(matched_content))
 
     return
 

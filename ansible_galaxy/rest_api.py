@@ -39,7 +39,7 @@ from ansible_galaxy.utils.text import to_native, to_text
 from ansible_galaxy.flat_rest_api.urls import open_url
 
 log = logging.getLogger(__name__)
-http_log = logging.getLogger('%s.(http)' % __name__)
+http_log = logging.getLogger('%s.(http).(general)' % __name__)
 request_log = logging.getLogger('%s.(http).(request)' % __name__)
 response_log = logging.getLogger('%s.(http).(response)' % __name__)
 
@@ -69,7 +69,7 @@ def g_connect(method):
             self.baseurl = '%s/api/%s' % (self._api_server, server_version)
             self.version = server_version  # for future use
 
-            log.debug("Base API: %s", self.baseurl)
+            # log.debug("Base API: %s", self.baseurl)
 
             self.initialized = True
         return method(self, *args, **kwargs)
@@ -85,8 +85,8 @@ class GalaxyAPI(object):
     def __init__(self, galaxy):
         self.galaxy = galaxy
 
-        log.debug('galaxy: %s', galaxy)
-        log.debug('galaxy.server: %s', galaxy.server)
+        # log.debug('galaxy: %s', galaxy)
+        log.debug('Using galaxy server URL %s with ignore_certs=%s', galaxy.server['url'], galaxy.server['ignore_certs'])
 
         self._validate_certs = not galaxy.server['ignore_certs']
         self.baseurl = None
@@ -97,7 +97,7 @@ class GalaxyAPI(object):
         # set the API server
         self._api_server = galaxy.server['url']
 
-        self.log.debug('Validate TLS certificates for %s: %s', self._api_server, self._validate_certs)
+        # self.log.debug('Validate TLS certificates for %s: %s', self._api_server, self._validate_certs)
 
         self.user_agent = user_agent()
         log.debug('User Agent: %s', self.user_agent)
@@ -117,11 +117,11 @@ class GalaxyAPI(object):
                             http_agent=self.user_agent,
                             timeout=20)
 
-            http_log.info('"%s %s" http_status=%s', http_method, url, resp.getcode())
+            response_log.info('"%s %s" http_status=%s', http_method, url, resp.getcode())
 
             final_url = resp.geturl()
             if final_url != url:
-                http_log.debug('"%s %s" Redirected to: %s', http_method, url, resp.geturl())
+                request_log.debug('"%s %s" Redirected to: %s', http_method, url, resp.geturl())
 
             resp_info = resp.info()
             response_log.debug('"%s %s" info:\n%s', http_method, url, resp_info)
@@ -177,7 +177,6 @@ class GalaxyAPI(object):
         the API server is up and reachable.
         """
         url = '%s/api/' % self._api_server
-        self.log.debug('get_server_api url=%s', url)
 
         try:
             return_data = open_url(url, validate_certs=self._validate_certs)
@@ -192,12 +191,11 @@ class GalaxyAPI(object):
         if 'current_version' not in data:
             raise exceptions.GalaxyClientError("missing required 'current_version' from server response (%s)" % url)
 
+        self.log.debug('Server API version of URL %s is "%s"', url, data['current_version'])
         return data['current_version']
 
     @g_connect
     def lookup_repo_by_name(self, namespace, name):
-        self.log.debug('user_name=%s', namespace)
-        self.log.debug('name=%s', name)
         namespace = urlquote(namespace)
         name = urlquote(name)
         url = '%s/repositories/?name=%s&provider_namespace__namespace__name=%s' % (self.baseurl, name, namespace)

@@ -262,7 +262,7 @@ class GalaxyContent(object):
         tar_file_members = content_tar_file.getmembers()
 
         for install_content_type in content_types_to_install:
-            log.debug('INSTALLING %s type content from %s', install_content_type, content_tar_file)
+            log.debug('Installing %s type content from %s', install_content_type, content_tar_file)
 
             # TODO: install_for_content_type()  - handle one content type
             #       _install_for_content_type_role() - role specific impl
@@ -276,9 +276,11 @@ class GalaxyContent(object):
             # filter by path built from sub_dir and sub_name for 'modules/elasticsearch_plugin.py'
             content_sub_dir = content_meta.content_sub_dir or content.CONTENT_TYPE_DIR_MAP.get(install_content_type, '')
 
+            label = "%s.%s" % (content_meta.namespace, content_meta.name)
             log.debug('content_meta: %s', content_meta)
-            log.info('about to extract %s to %s', content_meta.name, content_meta.path)
-            log.info('content_sub_dir: %s', content_sub_dir)
+
+            log.info('About to extract "%s" to %s', label, content_meta.path)
+            # log.info('content_sub_dir: %s', content_sub_dir)
 
             # log.debug('content_type_member_matches: %s', pprint.pformat(content_type_member_matches))
 
@@ -299,8 +301,8 @@ class GalaxyContent(object):
             log.debug('content_names: %s', content_names)
 
             # namespace_repo_name = content_meta.src
-            namespace_repo_name = '%s.%s' % (content_meta.namespace, content_meta.name)
-            log.debug('namespace_repo_name: %s', namespace_repo_name)
+            # namespace_repo_name = '%s.%s' % (content_meta.namespace, content_meta.name)
+            # log.debug('namespace_repo_name: %s', namespace_repo_name)
 
             # extract each content individually
             for content_name in content_names:
@@ -316,7 +318,7 @@ class GalaxyContent(object):
                                                            content_sub_dir,
                                                            content_name)
 
-                log.debug('namespaced_content_path: %s', namespaced_content_path)
+                log.debug('Extracting "%s" to %s', label, namespaced_content_path)
 
                 for member_match in member_matches:
                     # archive_member, dest_dir, dest_filename, force_overwrite
@@ -359,31 +361,28 @@ class GalaxyContent(object):
     def _install_role_archive(self, content_tar_file, archive_meta, content_meta,
                               force_overwrite=False):
 
-        log.debug('content_meta: %s', content_meta)
-
         if not content_meta.namespace:
             raise exceptions.GalaxyError('While installing a role from %s, no namespace was found. Try providing one with --namespace' %
                                          content_meta.src)
 
+        label = "%s.%s" % (content_meta.namespace, content_meta.name)
         log.debug('content_meta: %s', content_meta)
-        log.info('about to extract %s to %s', content_meta.name, content_meta.path)
+
+        log.info('About to extract "%s" to %s', label, content_meta.path)
 
         tar_members = content_tar_file.members
         parent_dir = tar_members[0].name
 
         # repo_name = content_meta.name
         # namespace = content_meta.namespace
-        namespace_repo_name = "%s.%s" % (content_meta.namespace, content_meta.name)
-
-        log.debug('namespace_repo_name: %s', namespace_repo_name)
 
         namespaced_content_path = '%s/%s/%s/%s' % (content_meta.namespace,
                                                    content_meta.name,
                                                    'roles',
                                                    content_meta.name)
 
-        log.debug('namespace: %s', content_meta.namespace)
-        log.debug('namespaced_content_path: %s', namespaced_content_path)
+        # log.debug('namespace: %s', content_meta.namespace)
+        log.debug('namespaced role path: %s', namespaced_content_path)
 
         files_to_extract = []
         for member in tar_members:
@@ -420,7 +419,7 @@ class GalaxyContent(object):
 
         This is all side effect, setting self._find_results."""
 
-        self.log.debug('Attempting to find() content_spec=%s', self.content_spec)
+        log.debug('Attempting to find() content_spec=%s', self.content_spec)
 
         self._fetcher = fetch_factory.get(galaxy_context=self.galaxy,
                                           content_spec=self.content_spec)
@@ -428,14 +427,14 @@ class GalaxyContent(object):
         # TODO: sep method, called from actions.install
         self._find_results = self._fetcher.find()
 
-        self.log.debug('find() found info for %s', self.content_spec)
+        log.debug('find() found info for %s', self.content_spec)
 
     def fetch(self):
         """download the archive and side effect set self._archive_path to where it was downloaded to.
 
         MUST be called after self.find()."""
 
-        self.log.debug('Fetching %s', self.content_spec)
+        log.debug('Fetching %s', self.content_spec)
 
         try:
             # FIXME: note that ignore_certs for the galaxy
@@ -464,8 +463,8 @@ class GalaxyContent(object):
 
         MUST be called after self.fetch()."""
 
-        self.log.debug('install: content_meta=%s, force_overwrite=%s',
-                       content_meta, force_overwrite)
+        log.debug('install: content_meta=%s, force_overwrite=%s',
+                  content_meta, force_overwrite)
         installed = []
         archive_parent_dir = None
 
@@ -519,18 +518,18 @@ class GalaxyContent(object):
         # TODO: need an install state machine real bad
 
         if self.content_type != "all":
-            self.display_callback("- extracting %s %s to %s" % (self.content_type, content_meta.name, self.path))
+            self.display_callback('- extracting %s "%s" to %s' % (self.content_type, content_meta.name, self.path))
         else:
             self.display_callback("- extracting all content in %s to content directories" % content_meta.name)
 
         log.info('Installing content from archive type: %s', archive_meta.archive_type)
 
         if archive_meta.archive_type == 'multi-content':
-            log.info('Installing %s as a archive_type=%s content_type=%s install_type=%s ',
+            log.info('Installing "%s" as a archive_type=%s content_type=%s install_type=%s ',
                      content_meta.name, archive_meta.archive_type, content_meta.content_type,
                      self.content_install_type)
 
-            log.info('about to extract content_type=%s %s version=%s to %s',
+            log.info('About to extract content_type=%s "%s" version=%s to %s',
                      content_meta.content_type, content_meta.name, content_meta.version, content_meta.path)
 
             log.debug('content_meta: %s', content_meta)
@@ -551,9 +550,9 @@ class GalaxyContent(object):
             installed.append((content_meta, res))
 
         elif archive_meta.archive_type == 'role':
-            log.info('Installing %s as a role content archive and content_type=%s (role)', content_meta.name, content_meta.content_type)
+            log.info('Installing "%s" as a role content archive and content_type=%s (role)', content_meta.name, content_meta.content_type)
 
-            log.debug('archive_parent_dir: %s', archive_parent_dir)
+            # log.debug('archive_parent_dir: %s', archive_parent_dir)
 
             installed_from_role = self._install_role_archive(content_tar_file,
                                                              archive_meta=archive_meta,
@@ -569,7 +568,7 @@ class GalaxyContent(object):
 
         for item in installed:
             log.info('Installed content: %s', item[0])
-            log.debug('Installed files: %s', pprint.pformat(item[1]))
+            # log.debug('Installed files: %s', pprint.pformat(item[1]))
 
         return installed
 

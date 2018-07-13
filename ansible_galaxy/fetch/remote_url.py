@@ -14,12 +14,12 @@ class RemoteUrlFetch(base.BaseFetch):
         super(RemoteUrlFetch, self).__init__()
 
         self.content_spec = content_spec
-        self._remote_url = content_spec.src
+        self.remote_url = content_spec.src
 
         self.validate_certs = validate_certs
         log.debug('Validate TLS certificates: %s', self.validate_certs)
 
-        self.remote_resource = self._remote_url
+        self.remote_resource = self.remote_url
 
     def find(self):
         results = {'content': {'galaxy_namespace': self.content_spec.namespace,

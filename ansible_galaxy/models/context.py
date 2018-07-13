@@ -32,11 +32,6 @@ class GalaxyContext(object):
     ''' Keeps global galaxy info '''
 
     def __init__(self, content_path=None, server=None):
-
-        log.debug('content_path: %s', content_path)
-        log.debug('server: %s', server)
-
-        # TODO: server info object
         self.server = server or {'url': None,
                                  'ignore_certs': False}
         self.content_path = content_path

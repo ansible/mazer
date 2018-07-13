@@ -177,7 +177,7 @@ class GalaxyCLI(cli.CLI):
 
         self.config = config.load(self.config_file_path)
 
-        log.debug(json.dumps(self.config.as_dict(), indent=4))
+        log.debug('configuration: %s', json.dumps(self.config.as_dict(), indent=None))
 
         # cli --server value or the url field of the first server in config
         # TODO: pass list of server config objects to GalaxyContext and/or create a GalaxyContext later

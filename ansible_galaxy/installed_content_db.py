@@ -15,7 +15,7 @@ def installed_repository_role_iterator(repository_path):
     repository_roles_dirs = glob.glob('%s/%s/*' % (repository_path, 'roles'))
     for repository_roles_path in repository_roles_dirs:
         # full_content_paths.append(namespaced_roles_path)
-        log.debug('rrp: %s', repository_roles_path)
+        # log.debug('rrp: %s', repository_roles_path)
         yield repository_roles_path
 
 
@@ -37,14 +37,11 @@ def installed_content_iterator(galaxy_context,
 
     installed_repo_db = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    log.debug('installed_repo_db: %s', installed_repo_db)
-
     # for namespace_full_path in namespace_paths_iterator:
     for installed_repository in installed_repo_db.select(namespace_match_filter=namespace_match_filter,
                                                          repository_match_filter=repository_match_filter):
-        log.debug('installed_repository: %s', installed_repository)
+        log.debug('Found repo "%s" at %s', installed_repository.content_spec.label, installed_repository.path)
         installed_repository_full_path = installed_repository.path
-        # log.debug('installed_repository_full_path: %s', installed_repository_full_path)
 
         if not repository_match_filter(installed_repository):
             log.debug('The repo_match_filter %s failed to match for %s', repository_match_filter, installed_repository)
@@ -60,14 +57,13 @@ def installed_content_iterator(galaxy_context,
 
         installed_repository_content_iterator = installed_repository_content_iterator_method(installed_repository_full_path)
 
+        log.debug('Looking for %s in repo at %s', content_type, installed_repository_full_path)
         for installed_content_full_path in installed_repository_content_iterator:
-            log.debug('icfp: %s', installed_content_full_path)
             path_file = os.path.basename(installed_content_full_path)
 
             gr = InstalledContent(galaxy_context, path_file, path=installed_content_full_path)
 
-            log.debug('icfp: %s', installed_content_full_path)
-            log.debug('gr.content_meta.path: %s', gr.content_meta.path)
+            log.debug('Found %s "%s" at %s', gr.content_type, gr.name, installed_content_full_path)
 
             version = None
 

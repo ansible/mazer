@@ -36,15 +36,15 @@ def installed_namespace_iterator(galaxy_context,
 
     namespace_paths = get_namespace_paths(content_path)
 
+    log.debug('Looking for namespaces in %s', content_path)
     for namespace_path in namespace_paths:
-        log.debug('namespace_path: %s', namespace_path)
         namespace_full_path = os.path.join(content_path, namespace_path)
 
         repository_namespace = RepositoryNamespace(namespace=namespace_path,
                                                    path=namespace_full_path)
 
-        log.debug('repo_namespace: %s', repository_namespace)
         if namespace_match_filter(repository_namespace):
+            log.debug('Found namespace "%s"', repository_namespace.namespace)
             yield repository_namespace
 
 

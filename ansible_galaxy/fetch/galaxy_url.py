@@ -72,18 +72,15 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         self.validate_certs = not self.galaxy_context.server['ignore_certs']
 
-        log.debug('Validate TLS certificates: %s', self.validate_certs)
+        # log.debug('Validate TLS certificates: %s', self.validate_certs)
 
     def find(self):
-        log.debug('find')
         api = GalaxyAPI(self.galaxy_context)
 
         # FIXME - Need to update our API calls once Galaxy has them implemented
         content_username, repo_name, content_name = parse_content_name(self.content_spec)
 
-        log.debug('content_username=%s', content_username)
-        log.debug('repo_name=%s', repo_name)
-        log.debug('content_name=%s', content_name)
+        log.debug('Querying %s for namespace=%s, name=%s', self.galaxy_context.server['url'], content_username, repo_name)
 
         # TODO: extract parsing of cli content sorta-url thing and add better tests
         repo_name = repo_name or content_name
@@ -155,7 +152,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         return results
 
     def fetch(self, find_results=None):
-        log.debug('fetch: find_results: %s', find_results)
+        # log.debug('fetch: find_results: %s', find_results)
         find_results = find_results or {}
 
         results = {}

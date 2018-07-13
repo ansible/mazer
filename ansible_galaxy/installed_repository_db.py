@@ -48,8 +48,8 @@ def installed_repository_iterator(galaxy_context,
     # log.debug('repository_paths for content_path=%s: %s', content_path, repository_paths)
 
     for namespace in installed_namespace_db.select(namespace_match_filter=namespace_match_filter):
-        log.debug('namespace: %s', namespace)
-        log.debug('namespace.path: %s', namespace.path)
+        # log.debug('namespace: %s', namespace)
+        log.debug('Looking for repos in namespace "%s"', namespace.namespace)
 
         repository_paths = get_repository_paths(namespace.path)
 
@@ -67,6 +67,7 @@ def installed_repository_iterator(galaxy_context,
             # log.debug('content_repo: %s', content_repository)
             # log.debug('match: %s(%s) %s', repository_match_filter, content_repository, repository_match_filter(content_repository))
             if repository_match_filter(content_repository):
+                log.debug('Found repo "%s" in namespace "%s"', repository_path, namespace.namespace)
                 yield content_repository
 
 
