@@ -17,14 +17,15 @@ class RoleMetadata(object):
     license = attr.ib(default=None)
 
     # behaviorial
-    min_ansible_version = attr.ib(default=None)
-    min_ansible_container_version = attr.ib(default=None)
+    min_ansible_version = attr.ib(default=None, converter=str)
+    min_ansible_container_version = attr.ib(default=None, converter=str)
     allow_duplicates = attr.ib(default=False)
 
     issue_tracker = attr.ib(default=None)
     github_branch = attr.ib(default=None)
 
-    tags = attr.ib(factory=list)
+    # TODO: validate list items are text
+    galaxy_tags = attr.ib(factory=list)
 
     # TODO: a Platform model if needed
     platforms = attr.ib(factory=list)
