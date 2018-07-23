@@ -567,6 +567,11 @@ class GalaxyContent(object):
 
 # TODO/FIXME: revist a Content base class
 class InstalledContent(GalaxyContent):
+    @property
+    def metadata_path(self):
+        return os.path.join(self.path,
+                            content_archive.META_MAIN)
+
     def _load_metadata_yaml(self):
         meta_path = os.path.join(self.path,
                                  content_archive.META_MAIN)
