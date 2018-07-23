@@ -59,9 +59,11 @@ def installed_content_iterator(galaxy_context,
 
         log.debug('Looking for %s in repo at %s', content_type, installed_repository_full_path)
         for installed_content_full_path in installed_repository_content_iterator:
+
+            repo_namespace = installed_repository.content_spec.namespace
             path_file = os.path.basename(installed_content_full_path)
 
-            gr = InstalledContent(galaxy_context, path_file, path=installed_content_full_path)
+            gr = InstalledContent(galaxy_context, path_file, namespace=repo_namespace, path=installed_content_full_path)
 
             log.debug('Found %s "%s" at %s', gr.content_type, gr.name, installed_content_full_path)
 

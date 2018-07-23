@@ -627,9 +627,9 @@ class InstalledContent(GalaxyContent):
 #        log.debug('self.path: %s', self.path)
 #        log.debug('self.META_INSTALL: %s', self.META_INSTALL)
 
-        info_path = os.path.join(self.path, self.META_INSTALL)
-
-        log.debug('info_path: %s', info_path)
+        # FIXME: should be prop of content_meta or content_spec
+        info_path = os.path.join(self.path, self.content_meta.namespace, self.content_meta.name,
+                                 self.content_meta.content_dir, self.content_meta.name, self.META_INSTALL)
         if os.path.isfile(info_path):
             try:
                 f = open(info_path, 'r')

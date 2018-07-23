@@ -38,6 +38,8 @@ def detect_content_archive_type(archive_path, archive_members):
     for member in archive_members:
         if member.name == meta_main_target:
             return 'role'
+
+    for member in archive_members:
         if member.name in type_dir_targets:
             return 'multi-content'
 
