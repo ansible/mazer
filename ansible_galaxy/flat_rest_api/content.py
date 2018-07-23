@@ -26,7 +26,7 @@ __metaclass__ = type
 import datetime
 import logging
 import os
-import pprint
+# import pprint
 from shutil import rmtree
 import yaml
 
@@ -40,6 +40,7 @@ from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.content import CONTENT_TYPES, SUPPORTED_CONTENT_TYPES
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.models import content
+from ansible_galaxy.models import content_install_info
 
 
 log = logging.getLogger(__name__)
@@ -223,12 +224,12 @@ class GalaxyContent(object):
         #
 
         install_date = datetime.datetime.utcnow()
-        info = dict(
-            version=content_meta.version,
-            # This format is locale specific, but preserve for compat
-            install_date=install_date.strftime("%c"),
-            install_date_iso=install_date
-        )
+        install_info = content_install_info.ContentInstallInfo(version=content_meta.version,
+                                                               install_date=install_date.strftime("%c"),
+                                                               install_date_iso=install_date)
+
+        log.debug('install_info: %s', install_info)
+        log.debug('install_info asdict: %s', attr.asdict(install_info))
 
         # if not os.path.exists(os.path.join(content_meta.path, 'meta')):
         if not os.path.exists(os.path.dirname(info_path)):
@@ -238,9 +239,9 @@ class GalaxyContent(object):
             # FIXME: just return the install_info dict (or better, build it elsewhere and pass in)
             # FIXME: stop minging self state
             try:
-                self._install_info = yaml.safe_dump(info, f, default_flow_style=False)
+                self._install_info = yaml.safe_dump(attr.asdict(install_info), f, default_flow_style=False)
             except Exception as e:
-                log.warn('unable to serialize .galaxy_install_info to info_path=%s for data=%s', info_path, info)
+                log.warn('unable to serialize .galaxy_install_info to info_path=%s for data=%s', info_path, install_info)
                 log.exception(e)
                 return False
 
