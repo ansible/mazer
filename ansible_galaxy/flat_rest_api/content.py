@@ -35,12 +35,13 @@ import attr
 from ansible_galaxy import exceptions
 from ansible_galaxy import archive
 from ansible_galaxy import content_archive
+from ansible_galaxy import content_install_info
 from ansible_galaxy import display
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.content import CONTENT_TYPES, SUPPORTED_CONTENT_TYPES
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.models import content
-from ansible_galaxy.models import content_install_info
+from ansible_galaxy.models.content_install_info import ContentInstallInfo
 
 
 log = logging.getLogger(__name__)
@@ -212,42 +213,6 @@ class GalaxyContent(object):
     def install_info(self):
         return self._install_info
 
-    # TODO: this is pretty much the persist/save method
-    # FIXME: should probably be a GalaxyInfoInfo class
-    def _write_galaxy_install_info(self, content_meta, info_path):
-        """
-        Writes a YAML-formatted file to the role's meta/ directory
-        (named .galaxy_install_info) which contains some information
-        we can use later for commands like 'list' and 'info'.
-        """
-        # FIXME - unsure if we want this, need to figure it out and if we want it then need to handle
-        #
-
-        install_date = datetime.datetime.utcnow()
-        install_info = content_install_info.ContentInstallInfo(version=content_meta.version,
-                                                               install_date=install_date.strftime("%c"),
-                                                               install_date_iso=install_date)
-
-        log.debug('install_info: %s', install_info)
-        log.debug('install_info asdict: %s', attr.asdict(install_info))
-
-        # if not os.path.exists(os.path.join(content_meta.path, 'meta')):
-        if not os.path.exists(os.path.dirname(info_path)):
-            os.makedirs(os.path.dirname(info_path))
-
-        with open(info_path, 'w+') as f:
-            # FIXME: just return the install_info dict (or better, build it elsewhere and pass in)
-            # FIXME: stop minging self state
-            try:
-                self._install_info = yaml.safe_dump(attr.asdict(install_info), f, default_flow_style=False)
-            except Exception as e:
-                log.warn('unable to serialize .galaxy_install_info to info_path=%s for data=%s', info_path, install_info)
-                log.exception(e)
-                return False
-
-        log.debug('wrote %s galaxy_install_info to %s', content_meta.name, info_path)
-        return True
-
     def remove(self):
         raise exceptions.GalaxyError('Calling remove() on a GalaxyContent (not InstalledGalaxyContent) doesnt mean anything')
 
@@ -353,7 +318,14 @@ class GalaxyContent(object):
                     info_path = os.path.join(content_meta.path,
                                              namespaced_content_path,
                                              self.META_INSTALL)
-                    self._write_galaxy_install_info(content_meta, info_path)
+
+                    install_datetime = datetime.datetime.utcnow()
+
+                    install_info = ContentInstallInfo.from_version_date(version=content_meta.version,
+                                                                        install_datetime=install_datetime)
+
+                    content_install_info.save(install_info, info_path)
+                    # self._write_galaxy_install_info(content_meta, info_path)
 
         return all_installed_paths
 
@@ -411,7 +383,13 @@ class GalaxyContent(object):
                                  namespaced_content_path,
                                  self.META_INSTALL)
 
-        self._write_galaxy_install_info(content_meta, info_path)
+        install_datetime = datetime.datetime.utcnow()
+
+        install_info = ContentInstallInfo.from_version_date(version=content_meta.version,
+                                                            install_datetime=install_datetime)
+
+        content_install_info.save(install_info, info_path)
+        # self._write_galaxy_install_info(content_meta, info_path)
 
         return installed
 
@@ -634,7 +612,7 @@ class InstalledContent(GalaxyContent):
         if os.path.isfile(info_path):
             try:
                 f = open(info_path, 'r')
-                return yaml.safe_load(f)
+                return content_install_info.load(f)
             except Exception as e:
                 log.exception(e)
                 self.debug("Unable to load Galaxy install info for %s", self.content_meta.name)

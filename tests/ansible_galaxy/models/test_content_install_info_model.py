@@ -21,6 +21,19 @@ def test_init():
     assert isinstance(attr.asdict(info), dict)
 
 
+def test_from_version_date():
+    install_datetime = datetime.datetime.utcnow()
+    info = content_install_info.ContentInstallInfo.from_version_date(version='1.2.3',
+                                                                     install_datetime=install_datetime)
+
+    log.debug('info: %s', info)
+
+    assert isinstance(info, content_install_info.ContentInstallInfo)
+    assert isinstance(attr.asdict(info), dict)
+
+    assert info.install_date_iso == install_datetime
+
+
 def test_frozen():
     install_date = datetime.datetime.utcnow()
     info = content_install_info.ContentInstallInfo(version='1.2.3',
