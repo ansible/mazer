@@ -32,6 +32,18 @@ def test_load():
     assert isinstance(install_info.install_date, text_type)
 
 
+def test_load_string():
+    install_info = content_install_info.load(yaml_data1)
+
+    log.debug('install_info: %s', install_info)
+
+    assert isinstance(install_info, ContentInstallInfo)
+
+    assert install_info.version == '0.1.0'
+    assert isinstance(install_info.install_date_iso, datetime.datetime)
+    assert isinstance(install_info.install_date, text_type)
+
+
 def test_save(tmpdir):
     install_datetime = datetime.datetime.utcnow()
     install_info = ContentInstallInfo.from_version_date(version='4.5.6',

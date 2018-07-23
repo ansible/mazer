@@ -389,7 +389,6 @@ class GalaxyContent(object):
                                                             install_datetime=install_datetime)
 
         content_install_info.save(install_info, info_path)
-        # self._write_galaxy_install_info(content_meta, info_path)
 
         return installed
 
@@ -600,25 +599,27 @@ class InstalledContent(GalaxyContent):
 
         return self._metadata
 
+    @property
+    def install_info_path(self):
+        # TODO: once this class is mostly immutable, this wont need to be a property
+        return os.path.join(self.path, self.content_meta.namespace, self.content_meta.name,
+                            self.content_meta.content_dir, self.content_meta.name, self.META_INSTALL)
+
     def _load_install_info(self):
         '''loads, yaml parses, and returns the data from .galaxy_install_info'''
 
-#        log.debug('self.path: %s', self.path)
-#        log.debug('self.META_INSTALL: %s', self.META_INSTALL)
+        if not os.path.isfile(self.install_info_path):
+            return None
 
-        # FIXME: should be prop of content_meta or content_spec
-        info_path = os.path.join(self.path, self.content_meta.namespace, self.content_meta.name,
-                                 self.content_meta.content_dir, self.content_meta.name, self.META_INSTALL)
-        if os.path.isfile(info_path):
-            try:
-                f = open(info_path, 'r')
-                return content_install_info.load(f)
-            except Exception as e:
-                log.exception(e)
-                self.debug("Unable to load Galaxy install info for %s", self.content_meta.name)
-                return False
-            finally:
-                f.close()
+        try:
+            f = open(self.install_info_path, 'r')
+            return content_install_info.load(f)
+        except Exception as e:
+            log.exception(e)
+            self.debug("Unable to load Galaxy install info for %s", self.content_meta.name)
+            return False
+        finally:
+            f.close()
 
     # TODO: class/module for ContentInstallInfo
     @property
