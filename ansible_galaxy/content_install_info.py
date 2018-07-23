@@ -24,6 +24,21 @@ def load(data_or_file_object):
     return install_info
 
 
+def load_from_filename(filename):
+    if not os.path.isfile(filename):
+        return None
+
+    try:
+        f = open(filename, 'r')
+        return load(f)
+    except Exception as e:
+        log.exception(e)
+        log.debug('Unable to load install info from path: %s', filename)
+        return False
+    finally:
+        f.close()
+
+
 def save(install_info, filename):
     log.debug('saving install info to %s', filename)
     if not os.path.exists(os.path.dirname(filename)):
@@ -41,5 +56,3 @@ def save(install_info, filename):
 
     log.debug('wrote galaxy_install_info to %s', filename)
     return True
-
-

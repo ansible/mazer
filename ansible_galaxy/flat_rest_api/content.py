@@ -605,22 +605,6 @@ class InstalledContent(GalaxyContent):
         return os.path.join(self.path, self.content_meta.namespace, self.content_meta.name,
                             self.content_meta.content_dir, self.content_meta.name, self.META_INSTALL)
 
-    def _load_install_info(self):
-        '''loads, yaml parses, and returns the data from .galaxy_install_info'''
-
-        if not os.path.isfile(self.install_info_path):
-            return None
-
-        try:
-            f = open(self.install_info_path, 'r')
-            return content_install_info.load(f)
-        except Exception as e:
-            log.exception(e)
-            self.debug("Unable to load Galaxy install info for %s", self.content_meta.name)
-            return False
-        finally:
-            f.close()
-
     # TODO: class/module for ContentInstallInfo
     @property
     def install_info(self):
@@ -629,7 +613,7 @@ class InstalledContent(GalaxyContent):
         """
         # FIXME: Do we want to have this for galaxy content?
         if self._install_info is None:
-            self._install_info = self._load_install_info()
+            self._install_info = content_install_info.load_from_filename(self.install_info_path)
         return self._install_info
 
     def remove(self):
