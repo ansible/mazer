@@ -28,7 +28,6 @@ import logging
 import os
 # import pprint
 from shutil import rmtree
-import yaml
 
 import attr
 
@@ -573,25 +572,6 @@ class InstalledContent(GalaxyContent):
         return os.path.join(self.path, self.content_meta.namespace, self.content_meta.name,
                             self.content_meta.content_dir, self.content_meta.name, content_archive.META_MAIN)
 
-    def _load_metadata_yaml(self):
-        log.debug('looking for content meta data from self.metadata_pathh: %s', self.metadata_path)
-
-        log.debug('self._metadata: %s', self._metadata)
-        if os.path.isfile(self.metadata_path):
-
-            log.debug('loading content metadata from meta_path: %s', self.metadata_path)
-            try:
-                f = open(self.metadata_path, 'r')
-                res = role_metadata.load(f, role_name=self.content_meta.name)
-                log.debug('res: %s', res)
-                return yaml.safe_load(f)
-            except Exception as e:
-                log.exception(e)
-                log.debug("Unable to load metadata for %s", self.content_meta.name)
-                return False
-            finally:
-                f.close()
-
     @property
     def metadata(self):
         """
@@ -601,10 +581,10 @@ class InstalledContent(GalaxyContent):
             log.debug('content_type not role %s', self.content_meta.content_type)
             return {}
 
-
         # if self._metadata is not None:
         if self._metadata is None:
-            self._metadata = self._load_metadata_yaml()
+            self._metadata = role_metadata.load_from_filename(self.metadata_path,
+                                                              role_name=self.content_meta.name)
 
         return self._metadata
 

@@ -1,4 +1,5 @@
 import logging
+import os
 import pprint
 
 import yaml
@@ -11,6 +12,8 @@ log = logging.getLogger(__name__)
 def load(data_or_file_object, role_name=None):
     log.debug('loading role metadata from %s', data_or_file_object)
 
+    # TODO: potentially want to let yaml errors bubble up more
+    #       so errors have more useful info if there is yaml parse error
     data_dict = yaml.safe_load(data_or_file_object)
 
     log.debug('data_dict: %s', pprint.pformat(data_dict))
@@ -40,3 +43,20 @@ def load(data_or_file_object, role_name=None):
 
     log.debug('loaded role metadata: %s', role_md)
     return role_md
+
+
+def load_from_filename(filename, role_name=None):
+    log.debug('looking for content meta data from path: %s', filename)
+
+    if not os.path.isfile(filename):
+        return None
+
+    try:
+        f = open(filename, 'r')
+        return load(f, role_name=role_name)
+    except Exception as e:
+        log.exception(e)
+        log.debug('Unable to load role metadata from path: %s', filename)
+        return False
+    finally:
+        f.close()
