@@ -538,6 +538,19 @@ class GalaxyContent(object):
                                                              force_overwrite=force_overwrite)
             installed.extend(installed_from_role)
 
+        install_datetime = datetime.datetime.utcnow()
+
+        repo_info_path = os.path.join(content_meta.path,
+                                      self.content_meta.namespace,
+                                      self.content_meta.name,
+                                      '.galaxy_install_info')
+
+        repo_install_info = InstallInfo.from_version_date(version=content_meta.version,
+                                                          install_datetime=install_datetime)
+
+        log.debug('repo_info_path: %s', repo_info_path)
+        install_info.save(repo_install_info, repo_info_path)
+
         # return the parsed yaml metadata
         self.display_callback("- %s was installed successfully to %s" % (str(self), self.path))
 
