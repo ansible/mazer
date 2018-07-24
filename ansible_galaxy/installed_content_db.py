@@ -67,6 +67,8 @@ def installed_content_iterator(galaxy_context,
 
             log.debug('Found %s "%s" at %s', gr.content_type, gr.name, installed_content_full_path)
 
+            log.debug('gr.metadata: %s', gr.metadata)
+
             version = None
 
             # TODO: should probably sep the generator for getting the InstalledContent objects from the generator that

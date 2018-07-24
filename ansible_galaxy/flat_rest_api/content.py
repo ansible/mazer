@@ -36,6 +36,7 @@ from ansible_galaxy import exceptions
 from ansible_galaxy import archive
 from ansible_galaxy import content_archive
 from ansible_galaxy import content_install_info
+from ansible_galaxy import role_metadata
 from ansible_galaxy import display
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.content import CONTENT_TYPES, SUPPORTED_CONTENT_TYPES
@@ -569,19 +570,20 @@ class GalaxyContent(object):
 class InstalledContent(GalaxyContent):
     @property
     def metadata_path(self):
-        return os.path.join(self.path,
-                            content_archive.META_MAIN)
+        return os.path.join(self.path, self.content_meta.namespace, self.content_meta.name,
+                            self.content_meta.content_dir, self.content_meta.name, content_archive.META_MAIN)
 
     def _load_metadata_yaml(self):
-        meta_path = os.path.join(self.path,
-                                 content_archive.META_MAIN)
+        log.debug('looking for content meta data from self.metadata_pathh: %s', self.metadata_path)
 
-        log.debug('looking for content meta data from meta_path: %s', meta_path)
+        log.debug('self._metadata: %s', self._metadata)
+        if os.path.isfile(self.metadata_path):
 
-        if os.path.isfile(meta_path):
-            log.debug('loading content metadata from meta_path: %s', meta_path)
+            log.debug('loading content metadata from meta_path: %s', self.metadata_path)
             try:
-                f = open(meta_path, 'r')
+                f = open(self.metadata_path, 'r')
+                res = role_metadata.load(f, role_name=self.content_meta.name)
+                log.debug('res: %s', res)
                 return yaml.safe_load(f)
             except Exception as e:
                 log.exception(e)
@@ -599,7 +601,9 @@ class InstalledContent(GalaxyContent):
             log.debug('content_type not role %s', self.content_meta.content_type)
             return {}
 
-        if self._metadata is not None:
+
+        # if self._metadata is not None:
+        if self._metadata is None:
             self._metadata = self._load_metadata_yaml()
 
         return self._metadata

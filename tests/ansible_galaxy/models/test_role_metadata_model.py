@@ -21,15 +21,15 @@ def test_basic():
                                          description='some role that does stuff',
                                          company='Red Hat',
                                          license='GPLv3',
-                                         tags=['stuff', 'nginx', 'system', 'devel'])
+                                         galaxy_tags=['stuff', 'nginx', 'system', 'devel'])
 
     log.debug('role_md: %s', role_md)
     assert isinstance(role_md, role_metadata.RoleMetadata)
 
     assert role_md.name == 'some_role'
     assert role_md.author == 'alikins@redhat.com'
-    assert 'stuff' in role_md.tags
-    assert isinstance(role_md.tags, list)
+    assert 'stuff' in role_md.galaxy_tags
+    assert isinstance(role_md.galaxy_tags, list)
     assert role_md.allow_duplicates is False
 
 
@@ -54,11 +54,11 @@ def test_asdict():
                                          description='some role that does stuff',
                                          company='Red Hat',
                                          license='GPLv3',
-                                         tags=['stuff', 'nginx', 'system', 'devel'])
+                                         galaxy_tags=['stuff', 'nginx', 'system', 'devel'])
 
     log.debug('role_md: %s', role_md)
     role_dict = attr.asdict(role_md)
 
     assert isinstance(role_dict, dict)
     assert role_dict['name'] == role_md.name == 'some_role'
-    assert role_dict['tags'] == role_md.tags == ['stuff', 'nginx', 'system', 'devel']
+    assert role_dict['galaxy_tags'] == role_md.galaxy_tags == ['stuff', 'nginx', 'system', 'devel']

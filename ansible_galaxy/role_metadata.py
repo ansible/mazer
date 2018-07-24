@@ -1,4 +1,5 @@
 import logging
+import pprint
 
 import yaml
 
@@ -12,7 +13,7 @@ def load(data_or_file_object, role_name=None):
 
     data_dict = yaml.safe_load(data_or_file_object)
 
-    log.debug('data_dict: %s', data_dict)
+    log.debug('data_dict: %s', pprint.pformat(data_dict))
 
     galaxy_info = data_dict.get('galaxy_info', {})
     dependencies = data_dict.get('dependencies', [])
@@ -29,6 +30,8 @@ def load(data_or_file_object, role_name=None):
                            company=galaxy_info.get('company', None),
                            license=galaxy_info.get('license', None),
                            galaxy_tags=galaxy_info.get('galaxy_tags'),
+                           platforms=galaxy_info.get('platforms'),
+                           cloud_platforms=galaxy_info.get('cloud_platforms'),
                            min_ansible_version=galaxy_info.get('min_ansible_version'),
                            min_ansible_container_version=galaxy_info.get('min_ansible_container_version'),
                            # from outside of galaxy_info dict

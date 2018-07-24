@@ -34,5 +34,3 @@ class RoleMetadata(object):
 
     # TODO: a role/content Dependency model
     dependencies = attr.ib(factory=list)
-
-    video_links = attr.ib(default=list)
