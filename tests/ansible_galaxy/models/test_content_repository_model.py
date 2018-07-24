@@ -3,6 +3,7 @@ import operator
 
 import attr
 import pytest
+import six
 
 from ansible_galaxy.models import content_repository
 from ansible_galaxy.models import content_spec
@@ -37,7 +38,13 @@ def test_cr_init_no_args():
 
     log.debug('exc_info.getrepr(): %s', exc_info.getrepr(showlocals=True, style='native'))
 
-    assert exc_info.match("__init__.*missing.*1.*'content_spec'")
+    # different TypeError strings for py2 vs py3
+    if six.PY3:
+        assert exc_info.match("__init__.*missing.*1.*'content_spec'")
+
+    if six.PY2:
+        # __init__() takes at least 2 arguments (1 given)
+        assert exc_info.match("__init__.*takes at least.*arguments.*given")
 
 
 def test_cr_init(csf):
