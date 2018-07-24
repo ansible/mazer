@@ -5,7 +5,7 @@ import yaml
 
 import attr
 
-from ansible_galaxy.models.content_install_info import ContentInstallInfo
+from ansible_galaxy.models.install_info import InstallInfo
 
 log = logging.getLogger(__name__)
 
@@ -16,9 +16,9 @@ def load(data_or_file_object):
     info_dict = yaml.safe_load(data_or_file_object)
 
     log.debug('info_dict: %s', info_dict)
-    install_info = ContentInstallInfo(version=info_dict.get('version', None),
-                                      install_date=info_dict.get('install_date', None),
-                                      install_date_iso=info_dict.get('install_date_iso', None))
+    install_info = InstallInfo(version=info_dict.get('version', None),
+                               install_date=info_dict.get('install_date', None),
+                               install_date_iso=info_dict.get('install_date_iso', None))
 
     log.debug('install_info: %s', install_info)
     return install_info

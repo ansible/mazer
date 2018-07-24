@@ -34,14 +34,14 @@ import attr
 from ansible_galaxy import exceptions
 from ansible_galaxy import archive
 from ansible_galaxy import content_archive
-from ansible_galaxy import content_install_info
+from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
 from ansible_galaxy import display
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.content import CONTENT_TYPES, SUPPORTED_CONTENT_TYPES
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.models import content
-from ansible_galaxy.models.content_install_info import ContentInstallInfo
+from ansible_galaxy.models.install_info import InstallInfo
 
 
 log = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ log = logging.getLogger(__name__)
 # has a GalaxyContentMeta FIXME: rename back to GalaxyContentData
 # FIXME: erk, and a metadata (ie, ansible-galaxy.yml)
 #
-# can provide a ContentInstallInfo
+# can provide a InstallInfo
 
 
 # TODO: add InstalledContent
@@ -321,10 +321,10 @@ class GalaxyContent(object):
 
                     install_datetime = datetime.datetime.utcnow()
 
-                    install_info = ContentInstallInfo.from_version_date(version=content_meta.version,
-                                                                        install_datetime=install_datetime)
+                    content_install_info = InstallInfo.from_version_date(version=content_meta.version,
+                                                                         install_datetime=install_datetime)
 
-                    content_install_info.save(install_info, info_path)
+                    install_info.save(content_install_info, info_path)
                     # self._write_galaxy_install_info(content_meta, info_path)
 
         return all_installed_paths
@@ -385,10 +385,10 @@ class GalaxyContent(object):
 
         install_datetime = datetime.datetime.utcnow()
 
-        install_info = ContentInstallInfo.from_version_date(version=content_meta.version,
-                                                            install_datetime=install_datetime)
+        content_install_info = InstallInfo.from_version_date(version=content_meta.version,
+                                                             install_datetime=install_datetime)
 
-        content_install_info.save(install_info, info_path)
+        install_info.save(content_install_info, info_path)
 
         return installed
 
@@ -594,7 +594,7 @@ class InstalledContent(GalaxyContent):
         return os.path.join(self.path, self.content_meta.namespace, self.content_meta.name,
                             self.content_meta.content_dir, self.content_meta.name, self.META_INSTALL)
 
-    # TODO: class/module for ContentInstallInfo
+    # TODO: class/module for InstallInfo
     @property
     def install_info(self):
         """
@@ -602,7 +602,7 @@ class InstalledContent(GalaxyContent):
         """
         # FIXME: Do we want to have this for galaxy content?
         if self._install_info is None:
-            self._install_info = content_install_info.load_from_filename(self.install_info_path)
+            self._install_info = install_info.load_from_filename(self.install_info_path)
         return self._install_info
 
     def remove(self):
