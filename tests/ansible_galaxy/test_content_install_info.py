@@ -12,7 +12,7 @@ from ansible_galaxy.models.content_install_info import ContentInstallInfo
 
 log = logging.getLogger(__name__)
 
-yaml_data1 = '''
+yaml_data1 = u'''
 install_date: Tue Jul 17 14:41:59 2018
 install_date_iso: 2018-07-17 14:41:59.229716
 version: 0.1.0

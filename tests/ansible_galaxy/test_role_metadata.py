@@ -10,7 +10,7 @@ from ansible_galaxy.models.role_metadata import RoleMetadata
 
 log = logging.getLogger(__name__)
 
-yaml_data1 = '''
+yaml_data1 = u'''
 ---
 dependencies: []
 
