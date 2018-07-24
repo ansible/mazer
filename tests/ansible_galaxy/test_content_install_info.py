@@ -1,7 +1,6 @@
 import datetime
 import io
 import logging
-import os
 
 import yaml
 
@@ -70,7 +69,7 @@ def test_save(tmpdir):
 
     temp_dir = tmpdir.mkdir('mazer_content_install_info_unit_test')
     temp_file = temp_dir.join('.galaxy_install_info')
-    content_install_info.save(install_info, temp_file)
+    content_install_info.save(install_info, temp_file.strpath)
 
     log.debug('tmpfile: %s', temp_file)
 
