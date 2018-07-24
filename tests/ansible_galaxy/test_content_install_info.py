@@ -4,7 +4,7 @@ import logging
 
 import yaml
 
-from six import text_type
+from six import string_types
 
 from ansible_galaxy import content_install_info
 from ansible_galaxy.models.content_install_info import ContentInstallInfo
@@ -28,7 +28,7 @@ def test_load():
 
     assert install_info.version == '0.1.0'
     assert isinstance(install_info.install_date_iso, datetime.datetime)
-    assert isinstance(install_info.install_date, text_type)
+    assert isinstance(install_info.install_date, string_types)
 
 
 def test_load_string():
@@ -40,7 +40,7 @@ def test_load_string():
 
     assert install_info.version == '0.1.0'
     assert isinstance(install_info.install_date_iso, datetime.datetime)
-    assert isinstance(install_info.install_date, text_type)
+    assert isinstance(install_info.install_date, string_types)
 
 
 def test_load_from_filename(tmpdir):
@@ -58,7 +58,7 @@ def test_load_from_filename(tmpdir):
 
     assert install_info.version == '0.1.0'
     assert isinstance(install_info.install_date_iso, datetime.datetime)
-    assert isinstance(install_info.install_date, text_type)
+    assert isinstance(install_info.install_date, string_types)
 
 
 def test_save(tmpdir):
