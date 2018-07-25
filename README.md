@@ -2,6 +2,12 @@
 
 A new command-line tool for managing [Ansible](https://github.com/ansible/ansible) content.
 
+**Note:** Mazer is most useful when used with a version of Ansible that understands mazer installed content.
+Currently that means the ['mazer_role_loader' branch of ansible](https://github.com/ansible/ansible/tree/mazer_role_loader)
+
+**Note:** By default, mazer currently defaults to using the "beta" Ansible Galaxy server at https://galaxy-qa.ansible.com.
+https://galaxy-qa.ansible.com may have different data than the primary Ansible Galaxy server at https://galaxy.ansible.com
+
 ### Expect breaking changes!
 
 Mazer is experimental, and currently only available for tech-preview. Use with lots of caution! It is not intended for use in
@@ -13,6 +19,10 @@ If you're installing Ansible content in a production environment, or need assist
 
 - Support repositories containing multiple roles. In other words, allow
 for multiple roles all in one repository.
+
+## Docs
+
+For additional documentation on mazer, see the [Ansible Galaxy Docs mazer docs](https://galaxy.ansible.com/docs/mazer/index.html)
 
 ## Examples
 
@@ -38,109 +48,109 @@ $ mazer install git+https://github.com/geerlingguy/ansible-role-nginx
 
 ### Installing repos with multiple roles
 
-To install the galaxy repo [testing.ansible-testing-content](https://galaxy.ansible.com/testing/ansible-testing-content):
+To install the galaxy repo [testing.ansible_testing_content](https://galaxy-qa.ansible.com/testing/ansible_testing_content):
 
 ```
-$ mazer install testing.ansible-testing-content
+$ mazer install testing.ansible_testing_content
 ```
 
-This will install all of the roles in the https://galaxy.ansible.com/testing/ansible-testing-content
-to ~/.ansible/content/testing.ansible-testing-content/roles/
+This will install all of the roles in the https://galaxy-qa.ansible.com/testing/ansible_testing_content
+to ~/.ansible/content/testing/ansible_testing_content/roles/
 
 ```
-$ tree ~/.ansible/content/
-/home/user/.ansible/content/
-└── testing.ansible-testing-content
-    └── roles
-        ├── ansible-role-foobar
-        │   ├── defaults
-        │   │   └── main.yml
-        │   ├── handlers
-        │   │   └── main.yml
-        │   ├── meta
-        │   │   └── main.yml
-        │   ├── README.md
-        │   ├── tasks
-        │   │   └── main.yml
-        │   ├── tests
-        │   │   ├── inventory
-        │   │   └── test.yml
-        │   └── vars
-        │       └── main.yml
-        ├── ansible-test-role-1
-        │   ├── defaults
-        │   │   └── main.yml
-        │   ├── handlers
-        │   │   └── main.yml
-        │   ├── meta
-        │   │   └── main.yml
-        │   ├── README.md
-        │   ├── tasks
-        │   │   └── main.yml
-        │   ├── tests
-        │   │   ├── inventory
-        │   │   └── test.yml
-        │   └── vars
-        │       └── main.yml
-        ├── test-role-a
-        │   ├── defaults
-        │   │   └── main.yml
-        │   ├── handlers
-        │   │   └── main.yml
-        │   ├── meta
-        │   │   └── main.yml
-        │   ├── tasks
-        │   │   └── main.yml
-        │   ├── tests
-        │   │   ├── inventory
-        │   │   └── test.yml
-        │   └── vars
-        │       └── main.yml
-        ├── test-role-b
-        │   ├── defaults
-        │   │   └── main.yml
-        │   ├── handlers
-        │   │   └── main.yml
-        │   ├── meta
-        │   │   └── main.yml
-        │   ├── README.md
-        │   ├── tasks
-        │   │   └── main.yml
-        │   ├── tests
-        │   │   ├── inventory
-        │   │   └── test.yml
-        │   └── vars
-        │       └── main.yml
-        ├── test-role-c
-        │   ├── defaults
-        │   │   └── main.yml
-        │   ├── handlers
-        │   │   └── main.yml
-        │   ├── meta
-        │   │   └── main.yml
-        │   ├── README.md
-        │   ├── tasks
-        │   │   └── main.yml
-        │   ├── tests
-        │   │   ├── inventory
-        │   │   └── test.yml
-        │   └── vars
-        │       └── main.yml
-        └── test-role-d
-            ├── defaults
-            │   └── main.yml
-            ├── handlers
-            │   └── main.yml
-            ├── meta
-            │   └── main.yml
-            ├── README.md
-            ├── tasks
-            │   └── main.yml
-            ├── tests
-            │   ├── inventory
-            │   └── test.yml
-            └── vars
-                └── main.yml
+/home/adrian/.ansible/content/
+└── testing
+    └── ansible_testing_content
+        └── roles
+            ├── ansible-role-foobar
+            │   ├── defaults
+            │   │   └── main.yml
+            │   ├── handlers
+            │   │   └── main.yml
+            │   ├── meta
+            │   │   └── main.yml
+            │   ├── README.md
+            │   ├── tasks
+            │   │   └── main.yml
+            │   ├── tests
+            │   │   ├── inventory
+            │   │   └── test.yml
+            │   └── vars
+            │       └── main.yml
+            ├── ansible-test-role-1
+            │   ├── defaults
+            │   │   └── main.yml
+            │   ├── handlers
+            │   │   └── main.yml
+            │   ├── meta
+            │   │   └── main.yml
+            │   ├── README.md
+            │   ├── tasks
+            │   │   └── main.yml
+            │   ├── tests
+            │   │   ├── inventory
+            │   │   └── test.yml
+            │   └── vars
+            │       └── main.yml
+            ├── test-role-a
+            │   ├── defaults
+            │   │   └── main.yml
+            │   ├── handlers
+            │   │   └── main.yml
+            │   ├── meta
+            │   │   └── main.yml
+            │   ├── tasks
+            │   │   └── main.yml
+            │   ├── tests
+            │   │   ├── inventory
+            │   │   └── test.yml
+            │   └── vars
+            │       └── main.yml
+            ├── test-role-b
+            │   ├── defaults
+            │   │   └── main.yml
+            │   ├── handlers
+            │   │   └── main.yml
+            │   ├── meta
+            │   │   └── main.yml
+            │   ├── README.md
+            │   ├── tasks
+            │   │   └── main.yml
+            │   ├── tests
+            │   │   ├── inventory
+            │   │   └── test.yml
+            │   └── vars
+            │       └── main.yml
+            ├── test-role-c
+            │   ├── defaults
+            │   │   └── main.yml
+            │   ├── handlers
+            │   │   └── main.yml
+            │   ├── meta
+            │   │   └── main.yml
+            │   ├── README.md
+            │   ├── tasks
+            │   │   └── main.yml
+            │   ├── tests
+            │   │   ├── inventory
+            │   │   └── test.yml
+            │   └── vars
+            │       └── main.yml
+            └── test-role-d
+                ├── defaults
+                │   └── main.yml
+                ├── handlers
+                │   └── main.yml
+                ├── meta
+                │   └── main.yml
+                ├── README.md
+                ├── tasks
+                │   └── main.yml
+                ├── tests
+                │   ├── inventory
+                │   └── test.yml
+                └── vars
+                    └── main.yml
 ```
 
 ### Install a role to a different content path
@@ -149,11 +159,76 @@ $ tree ~/.ansible/content/
 $ mazer install --content-path ~/my-ansible-content geerlingguy.nginx
 ```
 
-This will install the geerlingguy.nginx role to ~/my-ansible-content/roles/geerlingguy.nginx
+This will install the geerlingguy.nginx role to ~/my-ansible-content/geerlingguy/nginx/roles/nginx
 
+### Using mazer installed roles in a playbook (requires 'mazer_role_loader' ansible branch)
 
+Before running this example, install the roles required via mazer. Use '--force' if some of the roles are already installed by mazer.
+
+```
+$ mazer install GROG.debug-variable testing.ansible_testing_content f500.dumpall openmicroscopy.debug-dumpallvars
+```
+
+Example playbook using mazer install roles, using fully qualified role names and older style name.
+
+``` yaml
+---
+- name: Using some mazer installed roles
+  hosts: localhost
+  roles:
+    # expect to load from ~/.ansible/content
+    # a traditional role, one role per repo
+    #  referenced with the style namespace.reponame.rolename style
+    - GROG.debug-variable.debug-variable
+
+    # a traditional role referenced via the traditional name
+    # (namespace.reponame)
+    - f500.dumpall
+
+    # traditional role specified as dict with role vars provided 'json' style
+    - {role: GROG.debug-variable.debug-variable, debug_variable_dump_location: '/tmp/ansible-GROG-dict-style-debug.dump', dir: '/opt/b', app_port: 5001}
+
+    # traditional role specified as dict with role vars provided playbook yaml style
+    - role: f500.dumpall
+      tags:
+        - debug
+      dumpall_host_destination: '/tmp/ansible-f500-dumpall/'
+
+    # If a traditional role is installed in multiple places like:
+    #    # mazer content path
+    #    ~/.ansible/content/alikins/everywhere/roles/everywhere
+    #
+    #    # default ansible roles_path
+    #    ~/.ansible/roles/everywhere
+    #
+    #    # playbook local roles directoty
+    #    roles/everywhere.
+    #
+    # If the role is referenced with the full "namespace.reponame.rolename" style,
+    # ansible will first look in the mazer content path.
+    #
+    # This traditional role 'alikins.everywhere.everwhere' will be
+    # found in ~/.ansible/content/content/alikins/everywhere/roles/everywhere
+    # - alikins.everywhere.everywhere
+    #
+    # If the role is references with the "namespace.name" style,
+    # ansible will first look in the mazer content path.
+    #
+    # This role 'alikins.everywhere'
+    # will be found in ~/.ansible/content/alikins/everywhere/roles/everywhere
+    # - alikins.everywhere
+
+    # A role from a multi-content repo
+    - testing.ansible_testing_content.test-role-a
+
+    # A multi-content repo referenced only by namespace.reponame
+    # will NOT work if a role is needed since there are multiple roles
+    # in 'testing.ansible_testing_content' but none called 'ansible_testing_content'
+    # - testing.ansible_testing_content
+    #
+
+```
 ## Configuration
-
 mazer is configured by a 'mazer.yml' config file in ~/.ansible.
 
 ``` yaml
@@ -220,9 +295,38 @@ Or install the requirements via pip:
 $ pip install -r requirements.txt
 ```
 
-### Via pip (from git)
+### Via pip (latest release)
+```
+pip install mazer
+```
+
+### Via pip (latest from git)
 ```
 pip install -v git+ssh://git@github.com/ansible/mazer.git
+```
+
+## Installing the companion branch of ansible
+
+### Via pip (from github ssh)
+```
+pip install -e  git+ssh://git@github.com/ansible/ansible.git@mazer_role_loader#egg=ansible
+```
+
+### Via pip (from github git)
+```
+pip install -e  git+git://github.com/ansible/ansible.git@mazer_role_loader#egg=ansible
+```
+
+### Verifying installed version of ansible supports mazer content
+
+The versions of ansible that support mazer content have a config option for setting the content path.
+If the install ansible has this config option, mazer content will work.
+
+To verify that, run the command 'ansible-config list | grep DEFAULT_CONTENT_PATH'. If 'DEFAULT_CONFIG_PATH' is found the correct branch of ansible is installed.
+
+```
+$ ansible-config list | grep DEFAULT_CONTENT_PATH
+DEFAULT_CONTENT_PATH:
 ```
 
 ## Testing
