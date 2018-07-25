@@ -1,7 +1,6 @@
 import logging
 import os
 
-import attr
 import pytest
 
 from ansible_galaxy import content_spec

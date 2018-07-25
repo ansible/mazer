@@ -1,10 +1,6 @@
 import io
 import logging
 
-import yaml
-
-from six import text_type
-
 from ansible_galaxy import role_metadata
 from ansible_galaxy.models.role_metadata import RoleMetadata
 
