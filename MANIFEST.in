@@ -6,6 +6,7 @@ include README.rst
 
 recursive-include tests *
 recursive-include ansible_galaxy_cli/data *
+include ansible_galaxy_cli/logger/default-mazer-logging.yml
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 
