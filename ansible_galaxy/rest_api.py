@@ -25,6 +25,7 @@ __metaclass__ = type
 import logging
 import json
 import sys
+import uuid
 
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.parse import quote as urlquote
@@ -107,59 +108,70 @@ class GalaxyAPI(object):
     def __call_galaxy(self, url, args=None, headers=None, http_method=None):
         http_method = http_method or 'GET'
         headers = headers or {}
+        request_id = uuid.uuid4().hex
+        headers['X-Request-ID'] = request_id
+
+        # The slug we use to identify a request by method, url and request id
+        # For ex, '"GET https://galaxy.ansible.com/api/v1/repositories" c48937f4e8e849828772c4a0ce0fd5ed'
+        request_slug = '"%s %s" %s' % (http_method, url, request_id)
+
         try:
-            http_log.info('"%s %s"', http_method, url)
-            request_log.debug('"%s %s" args=%s', http_method, url, args)
-            request_log.debug('"%s %s" headers=%s', http_method, url, headers)
+            # log the http request_slug with request_id to the main log and
+            # to the http log, both at INFO level for now.
+            http_log.info('%s', request_slug)
+            self.log.info('%s', request_slug)
+
+            request_log.debug('%s args=%s', request_slug, args)
+            request_log.debug('%s headers=%s', request_slug, headers)
 
             resp = open_url(url, data=args, validate_certs=self._validate_certs,
                             headers=headers, method=http_method,
                             http_agent=self.user_agent,
                             timeout=20)
 
-            response_log.info('"%s %s" http_status=%s', http_method, url, resp.getcode())
+            response_log.info('%s http_status=%s', request_slug, resp.getcode())
 
             final_url = resp.geturl()
             if final_url != url:
-                request_log.debug('"%s %s" Redirected to: %s', http_method, url, resp.geturl())
+                request_log.debug('%s Redirected to: %s', request_slug, resp.geturl())
 
             resp_info = resp.info()
-            response_log.debug('"%s %s" info:\n%s', http_method, url, resp_info)
+            response_log.debug('%s info:\n%s', request_slug, resp_info)
 
             # FIXME: making the request and loading the response should be sep try/except blocks
             response_body = to_text(resp.read(), errors='surrogate_or_strict')
 
             # debug log the raw response body
-            response_log.debug('"%s %s" response body:\n%s', http_method, url, response_body)
+            response_log.debug('%s response body:\n%s', request_slug, response_body)
 
             data = json.loads(response_body)
 
             # debug log a json version of the data that was created from the response
-            response_log.debug('"%s %s" data:\n%s', http_method, url, json.dumps(data, indent=2))
+            response_log.debug('%s data:\n%s', request_slug, json.dumps(data, indent=2))
         except HTTPError as http_exc:
-            self.log.debug('Exception on "%s %s"', http_method, url)
-            self.log.exception(http_exc)
+            self.log.debug('Exception on %s', request_slug)
+            self.log.exception("%s: %s", request_slug, http_exc)
 
             # FIXME: probably need a try/except here if the response body isnt json which
             #        can happen if a proxy mangles the response
             res = json.loads(to_text(http_exc.fp.read(), errors='surrogate_or_strict'))
 
-            http_log.error('%s %s data from server error response:\n%s', http_method, url, res)
+            http_log.error('%s data from server error response:\n%s', request_slug, res)
 
             try:
-                error_msg = '%s' % res['detail']
+                error_msg = 'HTTP error on request %s: %s' % (request_slug, res['detail'])
                 raise exceptions.GalaxyClientError(error_msg)
             except (KeyError, TypeError) as detail_parse_exc:
-                self.log.exception(detail_parse_exc)
-                self.log.warning('Unable to parse error detail from response: %s', detail_parse_exc)
+                self.log.exception("%s: %s", request_slug, detail_parse_exc)
+                self.log.warning('Unable to parse error detail from response for request: %s response:  %s', request_slug, detail_parse_exc)
 
             # TODO: great place to be able to use 'raise from'
             # FIXME: this needs to be tweaked so the
             raise exceptions.GalaxyClientError(http_exc)
         except (ssl.SSLError, socket.error) as e:
-            self.log.debug('Connection error to Galaxy API for request "%s %s": %s', http_method, url, e)
-            self.log.exception(e)
-            raise exceptions.GalaxyClientAPIConnectionError('Connection error to Galaxy API for request "%s %s": %s' % (http_method, url, e))
+            self.log.debug('Connection error to Galaxy API for request %s: %s', request_slug, e)
+            self.log.exception("%s: %s", request_slug, e)
+            raise exceptions.GalaxyClientAPIConnectionError('Connection error to Galaxy API for request %s: %s' % (request_slug, e))
 
         return data
 
