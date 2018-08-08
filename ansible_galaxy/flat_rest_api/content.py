@@ -274,7 +274,10 @@ class GalaxyContent(object):
             for content_name in content_names:
                 files_to_extract = []
 
-                match_pattern = '%s/%s/%s*' % (parent_dir, content_sub_dir, content_name)
+                # TODO: This only works for roles/apbs that have a dir matching the content
+                #       name. For other content like plugins or modules, we need to match
+                #       on parent_dir/content_sub_dir/content_name (/modules/my_module.py)
+                match_pattern = '%s/%s/%s/*' % (parent_dir, content_sub_dir, content_name)
 
                 member_matches = archive.filter_members_by_fnmatch(tar_file_members,
                                                                    match_pattern)
