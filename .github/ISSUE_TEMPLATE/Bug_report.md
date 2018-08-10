@@ -8,9 +8,9 @@ about: If something isn't working as expected 🤔.
 Verify first that your issue/request is not already reported on GitHub.
  -->
 
-## Bug Report 
+## Bug Report
 
-##### GALAXY CLI VERSION
+##### MAZER VERSION
 <!--- Paste, BELOW THIS COMMENT, verbatim output from "mazer version" between quotes below -->
 ```
 
@@ -36,7 +36,7 @@ For new features, show how the feature would be used. -->
 <!-- If using a requirements.yml file, paste the contents of that file between the quotes below --->
 ```yml
 
-``` 
+```
 
 <!--- You can also paste gist.github.com links for larger files -->
 

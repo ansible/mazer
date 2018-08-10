@@ -12,7 +12,7 @@ the change does.-->
  - Docs Pull Request
 
 
-##### GALAXY CLI VERSION
+##### MAZER VERSION
 <!--- Paste verbatim output from "mazer version" between quotes below -->
 ```
 
