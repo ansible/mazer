@@ -116,9 +116,6 @@ class GalaxyCLI(cli.CLI):
         if self.action not in ("init", "version"):
             # NOTE: while the option type=str, the default is a list, and the
             # callback will set the value to a list.
-            self.parser.add_option('-p', '--roles-path', dest='roles_path', action="append", default=[],
-                                   help='The path to the directory containing your roles. The default is the roles_path configured in your ansible.cfg'
-                                        'file (/etc/ansible/roles if not configured)', type='str')
             self.parser.add_option('-C', '--content-path', dest='content_path',
                                    help='The path to the directory containing your galaxy content. The default is the content_path configured in your'
                                         'ansible.cfg file (/etc/ansible/content if not configured)', type='str')
@@ -287,13 +284,6 @@ class GalaxyCLI(cli.CLI):
                 "- invalid Galaxy Content type provided: %s\n  - Expected one of: %s" %
                 (self.options.content_type, ", ".join(CONTENT_TYPES))
             )
-
-        # TODO: mv to GalaxyContext constructor
-        # If someone provides a --roles-path at the command line, we assume this is
-        # for use with a legacy role and we want to maintain backwards compat
-        if self.options.roles_path:
-            self.log.warn('Assuming content is of type "role" since --role-path was used')
-            install_content_type = 'role'
 
         self.log.debug('self.options: %s', self.options)
         galaxy_context = self._get_galaxy_context(self.options, self.config)
