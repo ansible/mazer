@@ -30,9 +30,10 @@ import sys
 
 from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
-from ansible_galaxy.actions import install
+from ansible_galaxy.actions import build
 from ansible_galaxy.actions import info
 from ansible_galaxy.actions import init
+from ansible_galaxy.actions import install
 from ansible_galaxy.actions import list as list_action
 from ansible_galaxy.actions import remove
 from ansible_galaxy.actions import version
@@ -41,6 +42,7 @@ from ansible_galaxy.config import config
 from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy import matchers
 from ansible_galaxy.models.context import GalaxyContext
+from ansible_galaxy.models.build_context import BuildContext
 
 from ansible_galaxy import rest_api
 
@@ -67,7 +69,7 @@ class GalaxyCLI(cli.CLI):
     '''command to manage Ansible roles in shared repostories, the default of which is Ansible Galaxy *https://galaxy.ansible.com*.'''
 
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
-    VALID_ACTIONS = ("info", "init", "install", "list", "remove", "version")
+    VALID_ACTIONS = ("build", "info", "init", "install", "list", "remove", "version")
     VALID_ACTION_ALIASES = {'content-install': 'install'}
 
     def __init__(self, args):
@@ -79,6 +81,13 @@ class GalaxyCLI(cli.CLI):
         super(GalaxyCLI, self).set_action()
 
         # specific to actions
+        if self.action == "build":
+            self.parser.set_usage("usage: %prog build [options]")
+            self.parser.add_option('--collection-path', dest='collection_path', default="./",
+                                   help='The path in which the collection repository is located. The default is the current working directory.')
+            self.parser.add_option('--output-path', dest='output_path', default="./",
+                                   help='The path in which the collection artifact will be created. The default is the current working directory.')
+
         if self.action == "info":
             self.parser.set_usage("usage: %prog info [options] repo_name[,version]")
 
@@ -191,11 +200,22 @@ class GalaxyCLI(cli.CLI):
         log.debug('execute action with options: %s', self.options)
         log.debug('execute action with args: %s', self.args)
 
-        self.execute()
+        return self.execute()
 
-############################
-# execute actions
-############################
+    def execute_build(self):
+        '''Create a collection artifact from a collection src repository.'''
+
+        log.debug('options: %s', self.options)
+        log.debug('args: %s', self.args)
+
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
+
+        build_context = BuildContext(collection_src_root=self.options.collection_path,
+                                     output_path=self.options.output_path)
+
+        return build.build(galaxy_context,
+                           build_context,
+                           display_callback=self.display)
 
     # TODO: most of this logic should be out of cli class
     def execute_init(self):

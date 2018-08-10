@@ -207,7 +207,7 @@ class TestGalaxy(unittest.TestCase):
                 'version': 'usage: %prog version',
             }
 
-            first_call = 'usage: %prog [info|init|install|list|remove|version] [--help] [options] ...'
+            first_call = 'usage: %prog [build|info|init|install|list|remove|version] [--help] [options] ...'
             second_call = formatted_call[action]
             calls = [call(first_call), call(second_call)]
             mocked_usage.assert_has_calls(calls)

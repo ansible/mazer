@@ -49,5 +49,6 @@ def main(args=None):
         # exit with EX_SOFTWARE on generic error
         exit_code = os.EX_SOFTWARE
 
+    log.debug('exit code: %s', exit_code)
     # do any return code setup we need here
     return exit_code

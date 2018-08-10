@@ -1,0 +1,5 @@
+namespace: "some_namespace"
+name: "some_name"
+version: "11.11.11"
+author: "Carlos Boozer"
+license: "GPLv2"

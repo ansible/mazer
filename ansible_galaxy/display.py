@@ -13,7 +13,7 @@ INFO_LEVEL = {
 
 DISPLAY_LEVEL_MAP = {
     'warning': {
-        'prefix': 'WARNING',
+        'prefix': 'WARNING| ',
         'log_level': logging.WARNING
     },
     'info': INFO_LEVEL
