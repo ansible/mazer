@@ -20,7 +20,7 @@ def test_build_no_args():
     cli.parse()
 
     log.debug('cli.options: %s', cli.options)
-    assert cli.options.output_path == './'
+    assert cli.options.output_path == './releases/'
     assert cli.args == []
 
 

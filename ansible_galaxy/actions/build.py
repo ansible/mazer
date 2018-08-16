@@ -16,10 +16,10 @@ def _build(galaxy_context,
 
     log.debug('build_context: %s', build_context)
 
-    collection_src_root = build_context.collection_src_root
-    collection_info_file_path = os.path.join(collection_src_root, collection_info.DEFAULT_FILENAME)
+    collection_path = build_context.collection_path
+    collection_info_file_path = os.path.join(collection_path, collection_info.DEFAULT_FILENAME)
 
-    results['src_root'] = collection_src_root
+    results['collection_path'] = collection_path
     results['info_file_path'] = collection_info_file_path
     results['errors'] = []
 

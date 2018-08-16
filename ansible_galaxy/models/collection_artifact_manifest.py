@@ -17,6 +17,7 @@ def convert_list_to_artifact_file_list(val):
 
     new_list = []
     for file_item in val:
+        log.debug('file_item: %s type: %s', file_item, type(file_item))
         if isinstance(file_item, CollectionArtifactFile):
             new_list.append(file_item)
         else:
@@ -35,7 +36,7 @@ def convert_list_to_artifact_file_list(val):
 @attr.s(frozen=True)
 class CollectionArtifactManifest(object):
     collection_info = attr.ib(type=CollectionInfo)
-    format_version = attr.ib()
+    format_version = attr.ib(default=0.0)
 
     files = attr.ib(factory=list, converter=convert_list_to_artifact_file_list)
 
