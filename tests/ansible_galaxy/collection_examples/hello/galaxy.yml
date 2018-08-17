@@ -1,0 +1,5 @@
+namespace: "greetings_namespace"
+name: "hello"
+version: "11.11.11"
+author: "Cowboy King Buzzo Lightyear"
+license: "GPLv2"

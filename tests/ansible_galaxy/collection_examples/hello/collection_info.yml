@@ -1,5 +1,5 @@
-namespace: "some_namespace"
-name: "some_name"
+namespace: "greetings_namespace"
+name: "greetings"
 version: "11.11.11"
-author: "Carlos Boozer"
+author: "Cowboy King Buzzo Lightyear"
 license: "GPLv2"

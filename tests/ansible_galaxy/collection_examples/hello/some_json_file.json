@@ -1,17 +1,25 @@
-collection_info:
-  namespace: "some_namespace"
-  name: "some_name"
-  version: "1.2.3"
-  format_version: 0.0
-  author: "Javale McGee"
-  license: "GPLv2"
-format_version: 0.0
-files:
-  - name: "roles/some_role/defaults/main.yml"
-    chksum_type: "sha256"
-    chksum_sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    ftype: "file"
-  - name: "callback_plugins/some_callback.py"
-    chksum_type: "sha256"
-    chksum_sha256: "bc7c8f9fd65865bcd3998107c119e39d1cd26935436fa965ddb8058beabbafc3"
-    ftype: "file"
+{
+    "some_dict": {
+        "some_key": "some_namespace",
+        "name": "some_name",
+        "weird_number": "1.2.3",
+        "thing": 0.0
+    },
+    "i_like_turtles": {
+        "i_like_turtles": {
+            "i_like_turtles": {
+                "more_turtles": ["another_turtle",
+                                 "even_more_turtles"]
+            },
+            "i_also_like_tortoises": [true, "yup", 1]
+        }
+    },
+    "the_only_things_i_need": ["ashtray",
+                               "paddle game",
+                               "remote control",
+                               "matches",
+                               "this lamp",
+                               "magazine",
+                               "the chair"],
+    "the_things_i_dont_need": ["my dog"]
+}
