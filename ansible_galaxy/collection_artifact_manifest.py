@@ -1,6 +1,7 @@
 
 import logging
 import pprint
+import os
 
 import yaml
 
@@ -13,7 +14,7 @@ from ansible_galaxy.models.collection_artifact_file import \
 log = logging.getLogger(__name__)
 pf = pprint.pformat
 
-DEFAULT_FILENAME = "MANIFEST.yml"
+COLLECTION_MANIFEST_FILENAME = "MANIFEST.json"
 
 
 # TODO: replace with a generic version for cases
@@ -34,19 +35,36 @@ def load(data_or_file_object, klass=None):
     return instance
 
 
-def collection_manifest_files(file_names=None, chksum_type=None):
+def gen_manifest_artifact_files(file_names, collection_path, chksum_type=None):
+    # file_names = file_names or []
     file_names = file_names or []
-    chksum_type = chksum_type or 'sha256'
+    default_chksum_type = chksum_type or 'sha256'
 
     for file_name in file_names:
 
-        # TODO: figure out the ftype (file/dir/link)
-        ftype = 'file'
-        chksum = chksums.sha256sum_from_path(file_name)
+        current_chksum_type = default_chksum_type
 
-        artifact_file = CollectionArtifactFile(name=file_name,
+        # TODO: enum
+        if os.path.isfile(file_name):
+            ftype = 'file'
+        if os.path.isdir(file_name):
+            ftype = 'dir'
+
+        chksum = None
+        if ftype == 'file':
+            chksum = chksums.sha256sum_from_path(file_name)
+        else:
+            chksum = None
+            current_chksum_type = None
+
+        dest_relative_path = os.path.relpath(file_name, collection_path)
+        arcname = dest_relative_path
+
+        artifact_file = CollectionArtifactFile(src_name=file_name,
+                                               # The path where the file will live inside the archive
+                                               name=arcname,
                                                ftype=ftype,
-                                               chksum_type=chksum_type,
+                                               chksum_type=current_chksum_type,
                                                chksum_sha256=chksum)
 
         yield artifact_file

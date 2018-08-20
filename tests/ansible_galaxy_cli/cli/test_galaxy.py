@@ -20,7 +20,8 @@ def test_build_no_args():
     cli.parse()
 
     log.debug('cli.options: %s', cli.options)
-    assert cli.options.output_path == './releases/'
+    assert cli.options.output_path is None
+    assert cli.options.collection_path is None
     assert cli.args == []
 
 
@@ -29,10 +30,9 @@ def test_build_run_no_args():
     cli.parse()
     log.debug('cli.options: %s', cli.options)
 
-    with pytest.raises(OSError) as exc_info:
-        cli.run()
+    rc = cli.run()
 
-    log.debug('exc_info: %s', exc_info)
+    assert rc == os.EX_SOFTWARE
 
 
 def test_build_run_tmp_collection_path(tmpdir):

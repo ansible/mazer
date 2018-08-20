@@ -10,7 +10,8 @@ from ansible_galaxy.models.collection_info import \
 log = logging.getLogger(__name__)
 pf = pprint.pformat
 
-DEFAULT_FILENAME = "collection_info.yml"
+# DEFAULT_FILENAME = "collection_info.yml"
+COLLECTION_INFO_FILENAME = "galaxy.yml"
 
 
 # TODO: replace with a generic version for cases

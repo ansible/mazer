@@ -13,11 +13,8 @@ log = logging.getLogger(__name__)
 def convert_list_to_artifact_file_list(val):
     '''Convert a list of dicts with file info into list of CollectionArtifactFile'''
 
-    log.debug('val: %s', val)
-
     new_list = []
     for file_item in val:
-        log.debug('file_item: %s type: %s', file_item, type(file_item))
         if isinstance(file_item, CollectionArtifactFile):
             new_list.append(file_item)
         else:
@@ -26,8 +23,6 @@ def convert_list_to_artifact_file_list(val):
                                                    chksum_type=file_item.get('chksum_type'),
                                                    chksum_sha256=file_item.get('chksum_sha256'))
             new_list.append(artifact_file)
-
-    log.debug('new_list: %s', new_list)
 
     return new_list
 

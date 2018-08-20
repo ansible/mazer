@@ -83,10 +83,10 @@ class GalaxyCLI(cli.CLI):
         # specific to actions
         if self.action == "build":
             self.parser.set_usage("usage: %prog build [options]")
-            self.parser.add_option('--collection-path', dest='collection_path', default="./",
+            self.parser.add_option('--collection-path', dest='collection_path', default=None,
                                    help='The path in which the collection repository is located. The default is the current working directory.')
-            self.parser.add_option('--output-path', dest='output_path', default="./releases/",
-                                   help='The path in which the collection artifact will be created. The default is the current working directory.')
+            self.parser.add_option('--output-path', dest='output_path', default=None,
+                                   help='The path in which the collection artifact will be created. The default is ./releases/.')
 
         if self.action == "info":
             self.parser.set_usage("usage: %prog info [options] repo_name[,version]")
@@ -210,8 +210,15 @@ class GalaxyCLI(cli.CLI):
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
-        build_context = BuildContext(collection_path=self.options.collection_path,
-                                     output_path=self.options.output_path)
+        # default to looking for collection in cwd if not specified
+        cwd = os.getcwd()
+        collection_path = self.options.collection_path or cwd
+        # write the output archive to output_path, which will default to collection
+        # relative releases/
+        output_path = self.options.output_path or os.path.join(collection_path, 'releases')
+
+        build_context = BuildContext(collection_path=collection_path,
+                                     output_path=output_path)
 
         return build.build(galaxy_context,
                            build_context,

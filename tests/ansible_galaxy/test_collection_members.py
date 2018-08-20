@@ -38,14 +38,10 @@ def test_file_walker_cwd():
     git_dir = os.path.join(cwd, '.git/')
 
     file_walker = collection_members.FileWalker(cwd, exclude_patterns=collection_members.DEFAULT_IGNORE_PATTERNS+['*.json'])
-    members = file_walker.walk()
-    member_list = []
-    for member in members:
-        assert not member.startswith(git_dir), '%s found in %s but should be excluded by default' % (git_dir, member)
-        assert '__pycache__' not in member, '__pycache__ found in path %s, but __pycache__ dirs should be ignored by default' % (member)
-        member_list.append(member)
-
-    # log.debug('members: %s', pf(sorted(member_list)))
+    file_names = file_walker.walk()
+    for file_name in file_names:
+        assert not file_name.startswith(git_dir), '%s found in %s but should be excluded by default' % (git_dir, file_name)
+        assert '__pycache__' not in file_name, '__pycache__ found in path %s, but __pycache__ dirs should be ignored by default' % (file_name)
 
 
 def test_file_walker_rel_path():
