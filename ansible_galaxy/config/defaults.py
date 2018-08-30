@@ -1,3 +1,17 @@
+import os
+
+
+def get_config_path():
+    paths = [
+        'mazer.yml',
+        '~/.ansible/mazer.yml'
+        '/etc/ansible/mazer.yml'
+    ]
+    for path in paths:
+        if os.path.exists(os.path.expanduser(path)):
+            return path
+    return paths[1]
+
 
 # a list of tuples that is fed to an OrderedDict
 DEFAULTS = [
@@ -19,4 +33,4 @@ DEFAULTS = [
 
 # FIXME: replace with logging config
 VERBOSITY = 0
-CONFIG_FILE = '~/.ansible/mazer.yml'
+CONFIG_FILE = get_config_path()

@@ -43,6 +43,9 @@ class ExpandTildeWatchedFileHandler(logging.handlers.WatchedFileHandler):
     def __init__(self, *args, **kwargs):
         orig_filename = kwargs.pop('filename', '~/.ansible/mazer.log')
         kwargs['filename'] = os.path.expandvars(os.path.expanduser(orig_filename))
+        logdir = os.path.dirname(kwargs['filename'])
+        if not os.path.exists(logdir):
+            os.makedirs(logdir)
         super(ExpandTildeWatchedFileHandler, self).__init__(*args, **kwargs)
 
 
