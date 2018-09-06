@@ -4,7 +4,7 @@ import os
 def get_config_path():
     paths = [
         'mazer.yml',
-        '~/.ansible/mazer.yml'
+        '~/.ansible/mazer.yml',
         '/etc/ansible/mazer.yml'
     ]
     for path in paths:
