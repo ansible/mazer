@@ -16,10 +16,7 @@ def test_content_type_dir_map():
 def test_content_type_dir_map_items():
     for content_type in content.CONTENT_TYPES:
         assert content_type in content.CONTENT_TYPE_DIR_MAP
-        if content_type == 'module':
-            expected = 'library'
-        else:
-            expected = '%ss' % content_type
+        expected = '%ss' % content_type
         assert content.CONTENT_TYPE_DIR_MAP[content_type] == expected
 
     assert 'role' in content.CONTENT_TYPES

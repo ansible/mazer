@@ -1,14 +1,13 @@
----
 disable_existing_loggers: false
 filters: {}
 formatters:
   console_verbose:
-    datefmt: '%H:%M:%S'
-    format: '[%(asctime)s,%(msecs)03d %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)-3d - %(message)s'
+    datefmt: "%H:%M:%S"
+    format: "[%(asctime)s,%(msecs)03d %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)-3d - %(message)s"
   console_plain:
-    format: '%(message)s'
+    format: "%(message)s"
   file_verbose:
-    format: '[%(asctime)s %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)-3d - %(message)s'
+    format: "[%(asctime)s %(process)05d %(levelname)-0.1s] %(name)s %(funcName)s:%(lineno)-3d - %(message)s"
 handlers:
   stderr_verbose:
     class: logging.StreamHandler
@@ -22,12 +21,12 @@ handlers:
     stream: ext://sys.stderr
   file:
     class: ansible_galaxy_cli.logger.setup.ExpandTildeWatchedFileHandler
-    filename: '~/.ansible/mazer.log'
+    filename: "~/.ansible/mazer.log"
     formatter: file_verbose
     level: DEBUG
   http_file:
     class: ansible_galaxy_cli.logger.setup.ExpandTildeWatchedFileHandler
-    filename: '~/.ansible/mazer-http.log'
+    filename: "~/.ansible/mazer-http.log"
     formatter: file_verbose
     level: DEBUG
 loggers:
@@ -50,6 +49,8 @@ loggers:
   ansible_galaxy.rest_api.(http):
     level: INFO
     propagate: false
+    handlers:
+      - file
     # to log verbose debug level logging to http_file handler:
     # level: DEBUG
     # handlers:

@@ -26,7 +26,6 @@ __metaclass__ = type
 import datetime
 import logging
 import os
-# import pprint
 from shutil import rmtree
 
 import attr
@@ -76,7 +75,7 @@ class GalaxyContent(object):
                  version=None,
                  scm=None,
                  path=None,
-                 type="role",
+                 content_type=None,
                  content_meta=None,
                  content_spec=None,
                  sub_name=None,
@@ -104,9 +103,12 @@ class GalaxyContent(object):
         """
 
         # what we are installing 'as', or what content subset we want to install
-        self.content_install_type = type
-        content_type = type
+        self.content_install_type = 'all'
 
+        if not content_type:
+            content_type = 'role'
+
+        self._content_type = content_type
         self._metadata = metadata
 
         self._install_info = install_info
@@ -142,7 +144,7 @@ class GalaxyContent(object):
                                       version=version,
                                       src=src,
                                       scm=scm,
-                                      content_type=content_type,
+                                      content_type=self._content_type,
                                       content_dir=CONTENT_TYPE_DIR_MAP.get(content_type, None),
                                       path=primary_galaxy_content_path)
 
@@ -199,7 +201,7 @@ class GalaxyContent(object):
 
     @property
     def content_type(self):
-        return self.content_meta.content_type
+        return self._content_type
 
     @property
     def path(self):
@@ -246,9 +248,7 @@ class GalaxyContent(object):
             log.debug('content_meta: %s', content_meta)
 
             log.info('About to extract "%s" to %s', label, content_meta.path)
-            # log.info('content_sub_dir: %s', content_sub_dir)
-
-            # log.debug('content_type_member_matches: %s', pprint.pformat(content_type_member_matches))
+            log.info('content_sub_dir: %s', content_sub_dir)
 
             # TODO: extract_file_list_to_path(content_tar_file, files_to_extract, extract_to_path, force_overwrite)
             # TODO: split into lists of each content objects (ie, each role, instead of all roles) and
@@ -263,12 +263,7 @@ class GalaxyContent(object):
                 # 2 is the content_name (role name, pluginfoo.py etc)
                 content_names.add(path_parts[2])
 
-            # content_names is all of the diffierent contents of install_content_type
             log.debug('content_names: %s', content_names)
-
-            # namespace_repo_name = content_meta.src
-            # namespace_repo_name = '%s.%s' % (content_meta.namespace, content_meta.name)
-            # log.debug('namespace_repo_name: %s', namespace_repo_name)
 
             # extract each content individually
             for content_name in content_names:
@@ -277,6 +272,7 @@ class GalaxyContent(object):
                 # TODO: This only works for roles/apbs that have a dir matching the content
                 #       name. For other content like plugins or modules, we need to match
                 #       on parent_dir/content_sub_dir/content_name (/modules/my_module.py)
+
                 match_pattern = '%s/%s/%s/*' % (parent_dir, content_sub_dir, content_name)
 
                 member_matches = archive.filter_members_by_fnmatch(tar_file_members,
@@ -310,8 +306,6 @@ class GalaxyContent(object):
 
                     files_to_extract.append(extract_info)
 
-                # log.debug('files_to_extract: %s', pprint.pformat(files_to_extract))
-
                 file_extractor = archive.extract_files(content_tar_file, files_to_extract)
 
                 installed_paths = [x for x in file_extractor]
@@ -332,6 +326,49 @@ class GalaxyContent(object):
 
         return all_installed_paths
 
+    def _install_contents(self, content_tar_file, archive_parent_dir,
+                          content_archive_type=None, content_meta=None,
+                          content_sub_name=None,
+                          force_overwrite=False):
+
+        if not content_meta.namespace:
+            raise exceptions.GalaxyError('While installing content from %s, no namespace was found. '
+                                         'Try providing one with --namespace' % content_meta.src)
+
+        all_installed_paths = []
+        files_to_extract = []
+        tar_members = content_tar_file.getmembers()
+        parent_dir = tar_members[0].name
+
+        for member in tar_members:
+            rel_path = member.name[len(parent_dir) + 1:]
+            namespaced_role_rel_path = os.path.join(content_meta.namespace, content_meta.name, rel_path)
+            files_to_extract.append({
+                'archive_member': member,
+                'dest_dir': content_meta.path,
+                'dest_filename': namespaced_role_rel_path,
+                'force_overwrite': force_overwrite})
+
+        file_extractor = archive.extract_files(content_tar_file, files_to_extract)
+
+        installed_paths = [x for x in file_extractor]
+        all_installed_paths.extend(installed_paths)
+
+        namespaced_content_path = '%s/%s' % (content_meta.namespace,
+                                             content_meta.name)
+
+        info_path = os.path.join(content_meta.path,
+                                 namespaced_content_path,
+                                 self.META_INSTALL)
+
+        install_datetime = datetime.datetime.utcnow()
+
+        content_install_info = InstallInfo.from_version_date(version=content_meta.version,
+                                                             install_datetime=install_datetime)
+
+        install_info.save(content_install_info, info_path)
+        return all_installed_paths
+
     # FIXME: This should really be shared with the bulk of install_for_content_type()
     #        and like a content type specific impl in a GalaxyContent subclass
     def _install_role_archive(self, content_tar_file, archive_meta, content_meta,
@@ -349,15 +386,11 @@ class GalaxyContent(object):
         tar_members = content_tar_file.members
         parent_dir = tar_members[0].name
 
-        # repo_name = content_meta.name
-        # namespace = content_meta.namespace
-
         namespaced_content_path = '%s/%s/%s/%s' % (content_meta.namespace,
                                                    content_meta.name,
                                                    'roles',
                                                    content_meta.name)
 
-        # log.debug('namespace: %s', content_meta.namespace)
         log.debug('namespaced role path: %s', namespaced_content_path)
 
         files_to_extract = []
@@ -365,17 +398,13 @@ class GalaxyContent(object):
             # rel_path ~  roles/some-role/meta/main.yml for ex
             rel_path = member.name[len(parent_dir) + 1:]
 
-            # namespaced_role_rel_path = os.path.join(namespace_repo_name, 'roles', content_meta.name, rel_path)
-            namespaced_role_rel_path = os.path.join(content_meta.namespace, content_meta.name,  'roles', content_meta.name, rel_path)
-
-            # log.debug('namespaced_role_rel_path: %s', namespaced_role_rel_path)
-
-            extract_info = {'archive_member': member,
-                            'dest_dir': content_meta.path,
-                            'dest_filename': namespaced_role_rel_path,
-                            'force_overwrite': force_overwrite}
-
-            files_to_extract.append(extract_info)
+            namespaced_role_rel_path = os.path.join(content_meta.namespace, content_meta.name, 'roles',
+                                                    content_meta.name, rel_path)
+            files_to_extract.append({
+                'archive_member': member,
+                'dest_dir': content_meta.path,
+                'dest_filename': namespaced_role_rel_path,
+                'force_overwrite': force_overwrite})
 
         file_extractor = archive.extract_files(content_tar_file, files_to_extract)
 
@@ -496,10 +525,9 @@ class GalaxyContent(object):
 
             os.makedirs(content_meta.path)
 
-        # TODO: need an install state machine real bad
-
-        if self.content_type != "all":
-            self.display_callback('- extracting %s "%s" to %s' % (self.content_type, content_meta.name, self.path))
+        if archive_meta.archive_type == 'multi-content':
+            self._content_type = 'all'
+            self.display_callback('- extracting all content from "%s" to %s' % (content_meta.name, self.path))
         else:
             self.display_callback("- extracting all content in %s to content directories" % content_meta.name)
 
@@ -515,19 +543,12 @@ class GalaxyContent(object):
 
             log.debug('content_meta: %s', content_meta)
 
-            content_types_to_install = [self.content_install_type]
-            if self.content_install_type == 'all':
-                content_types_to_install = SUPPORTED_CONTENT_TYPES
-
-            # content_type_parent_dir =
-            res = self._install_for_content_types(content_tar_file,
-                                                  archive_parent_dir,
-                                                  archive_meta.archive_type,
-                                                  content_meta,
-                                                  content_sub_name=self.sub_name,
-                                                  content_types_to_install=content_types_to_install,
-                                                  force_overwrite=force_overwrite)
-
+            res = self._install_contents(content_tar_file,
+                                         archive_parent_dir,
+                                         archive_meta.archive_type,
+                                         content_meta,
+                                         content_sub_name=self.sub_name,
+                                         force_overwrite=force_overwrite)
             installed.append((content_meta, res))
 
         elif archive_meta.archive_type == 'role':
@@ -555,7 +576,10 @@ class GalaxyContent(object):
         install_info.save(repo_install_info, repo_info_path)
 
         # return the parsed yaml metadata
-        self.display_callback("- %s was installed successfully to %s" % (str(self), self.path))
+        if archive_meta.archive_type == 'multi-content':
+            self.display_callback("- all content was succssfully installed to %s" % self.path)
+        else:
+            self.display_callback("- %s was installed successfully to %s" % (str(self), self.path))
 
         # rm any temp files created when getting the content archive
         self._fetcher.cleanup()

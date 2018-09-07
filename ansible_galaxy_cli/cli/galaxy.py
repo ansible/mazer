@@ -24,7 +24,6 @@ __metaclass__ = type
 
 import json
 import logging
-import optparse
 import os
 import sys
 
@@ -45,9 +44,6 @@ from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.build_context import BuildContext
 
 from ansible_galaxy import rest_api
-
-# FIXME: not a model...
-from ansible_galaxy.models.content import CONTENT_TYPES
 
 log = logging.getLogger(__name__)
 
@@ -106,9 +102,6 @@ class GalaxyCLI(cli.CLI):
                                    help='Ignore errors and continue with the next specified repo.')
             self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False, help='Don\'t download roles listed as dependencies')
             self.parser.add_option('-r', '--role-file', dest='role_file', help='A file containing a list of roles to be imported')
-            self.parser.add_option('-t', '--type', dest='content_type', default="all",
-                                   # help='A type of Galaxy Content to install: role, module, etc',
-                                   help=optparse.SUPPRESS_HELP)
             self.parser.add_option('--namespace', dest='namespace', default=None,
                                    help='The namespace to use when installing content (required for installs from local scm repo or archives)')
         elif self.action == "remove":
@@ -295,22 +288,7 @@ class GalaxyCLI(cli.CLI):
         can be a name (which will be downloaded via the galaxy API and github), or it can be a local .tar.gz file.
         """
 
-        install_content_type = self.options.content_type
-
-        # FIXME - still not sure where to put this or how best to handle it,
-        #         but for now just detect when it's not provided and offer up
-        #         default paths
-        #
-        # NOTE: kind of gaming the arg parsing here with self.options.content_path,
-        #       and how CLI.unfrack_paths works. It's a bit of a hack... should
-        #       probably find a better solution before this goes GA
-        #
-        # Fix content_path if this was not provided
-        if self.options.content_type != "all" and self.options.content_type not in CONTENT_TYPES:
-            raise cli_exceptions.CliOptionsError(
-                "- invalid Galaxy Content type provided: %s\n  - Expected one of: %s" %
-                (self.options.content_type, ", ".join(CONTENT_TYPES))
-            )
+        install_content_type = 'all'
 
         self.log.debug('self.options: %s', self.options)
         galaxy_context = self._get_galaxy_context(self.options, self.config)
