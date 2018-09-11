@@ -1,21 +1,21 @@
 ########################################################################
 #
-# (C) 2013, James Cammarata <jcammarata@ansible.com>
+# (C) 2018, Ansible by Red Hat
 #
-# This file is part of Ansible
+# This file is part of Mazer
 #
-# Ansible is free software: you can redistribute it and/or modify
+# Mazer is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Ansible is distributed in the hope that it will be useful,
+# Mazer is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+# along with Ansible. If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################
 
@@ -98,6 +98,9 @@ class GalaxyCLI(cli.CLI):
 
         elif self.action == "install":
             self.parser.set_usage("usage: %prog install [options] [-r FILE | repo_name(s)[,version] | scm+repo_url[,version] | tar_file(s)]")
+            self.parser.add_option('-g', '--global', dest='global_install', action='store_true',
+                                   help='Install content to the path containing your global or system-wide content. The default is the '
+                                   'global_content_path configured in your mazer.yml file (/usr/share/ansible/content, if not configured)')
             self.parser.add_option('-i', '--ignore-errors', dest='ignore_errors', action='store_true', default=False,
                                    help='Ignore errors and continue with the next specified repo.')
             self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False, help='Don\'t download roles listed as dependencies')
@@ -119,8 +122,9 @@ class GalaxyCLI(cli.CLI):
             # NOTE: while the option type=str, the default is a list, and the
             # callback will set the value to a list.
             self.parser.add_option('-C', '--content-path', dest='content_path',
-                                   help='The path to the directory containing your galaxy content. The default is the content_path configured in your'
-                                        'ansible.cfg file (/etc/ansible/content if not configured)', type='str')
+                                   help='The path to the directory containing your Galaxy content. The default is the content_path configured in your'
+                                        'mazer.yml file (~/.ansible/content, if not configured)', type='str')
+
         if self.action in ("init", "install"):
             self.parser.add_option('-f', '--force', dest='force', action='store_true', default=False, help='Force overwriting an existing repo')
 
@@ -141,6 +145,9 @@ class GalaxyCLI(cli.CLI):
 
         super(GalaxyCLI, self).parse()
 
+        if self.action == 'install' and getattr(self.options, 'content_path') and getattr(self.options, 'global_install'):
+            raise cli_exceptions.CliOptionsError('--content-path and --global are mutually exclusive')
+
     def _get_galaxy_context(self, options, config):
         # use content_path from options if availble but fallback to configured content_path
         options_content_path = None
@@ -149,11 +156,11 @@ class GalaxyCLI(cli.CLI):
 
         raw_content_path = options_content_path or config.content_path
 
+        if hasattr(options, 'global_install') and options.global_install:
+            raw_content_path = config.global_content_path
+
         content_path = os.path.expanduser(raw_content_path)
 
-        # server is a dict like:
-        # {'url': 'http://localhost',
-        #  'ignore_certs': False}
         server = config.server.copy()
 
         if getattr(options, 'server_url', None):
@@ -292,9 +299,6 @@ class GalaxyCLI(cli.CLI):
 
         self.log.debug('self.options: %s', self.options)
         galaxy_context = self._get_galaxy_context(self.options, self.config)
-
-        # FIXME - add more types here, PoC is just role/module
-        # TODO: more prep here?
         requested_content_specs = self.args
 
         try:

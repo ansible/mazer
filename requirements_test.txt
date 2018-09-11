@@ -2,7 +2,8 @@ coverage
 flake8
 mock
 pip
-pytest
+pytest>=3.6
+pytest-django>=3.4.2
 pytest-cov
 pytest-runner
 pytest-mock

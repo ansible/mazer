@@ -16,12 +16,13 @@ def get_config_path():
 # a list of tuples that is fed to an OrderedDict
 DEFAULTS = [
     ('server',
-     {'url': 'https://galaxy-qa.ansible.com',
+     {'url': 'https://galaxy.ansible.com',
       'ignore_certs': False}
      ),
 
     # In order of priority
     ('content_path', '~/.ansible/content'),
+    ('global_content_path', '/usr/share/ansible/content'),
 
     # runtime options
     ('options',

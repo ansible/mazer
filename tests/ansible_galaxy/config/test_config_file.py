@@ -62,6 +62,7 @@ server:
   ignore_certs: true
   url: https://someserver.example.com
 content_path: ~/.ansible/some_content_path
+global_content_path: /usr/local/share
 options:
   role_skeleton_ignore:
     - ^.git$
@@ -89,6 +90,7 @@ def test_load_valid_yaml():
     assert config_data['server']['url'] == 'https://someserver.example.com'
     assert config_data['server']['ignore_certs'] is True
     assert config_data['content_path'] == '~/.ansible/some_content_path'
+    assert config_data['global_content_path'] == '/usr/local/share'
     assert config_data['options']['role_skeleton_path'] == '~/.some_skeleton'
 
 

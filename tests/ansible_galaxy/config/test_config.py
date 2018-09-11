@@ -6,7 +6,7 @@ from ansible_galaxy.config import config
 
 log = logging.getLogger(__name__)
 
-CONFIG_SECTIONS = ['server', 'content_path', 'options']
+CONFIG_SECTIONS = ['server', 'content_path', 'global_content_path', 'options']
 
 
 def assert_object(config_obj):
@@ -66,6 +66,7 @@ def test_config_as_dict():
         ('server', {'url': 'some_url_value',
                     'ignore_certs': True}),
         ('content_path', None),
+        ('global_content_path', None),
         ('options', {'some_option': 'some_option_value'}),
     ])
 

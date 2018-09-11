@@ -11,13 +11,15 @@ class Config(object):
     def __init__(self):
         self.server = {}
         self.content_path = None
+        self.global_content_path = None
         self.options = {}
 
     def as_dict(self):
         return collections.OrderedDict([
-                ('server', self.server),
-                ('content_path', self.content_path),
-                ('options', self.options),
+            ('server', self.server),
+            ('content_path', self.content_path),
+            ('global_content_path', self.global_content_path),
+            ('options', self.options),
         ])
 
     @classmethod
@@ -25,6 +27,7 @@ class Config(object):
         inst = cls()
         inst.server = data.get('server', inst.server)
         inst.content_path = data.get('content_path', inst.content_path)
+        inst.global_content_path = data.get('global_content_path', inst.global_content_path)
         inst.options = data.get('options', inst.options)
         return inst
 
@@ -36,6 +39,11 @@ def load(full_file_path):
     _default_conf_data = collections.OrderedDict(defaults.DEFAULTS)
 
     config_data = config_file_data or _default_conf_data
+
+    for key in _default_conf_data:
+        # If an expected key is not defined, set it to the default value
+        if key not in config_data:
+            config_data[key] = _default_conf_data[key]
 
     log.debug('config_data: %s', config_data)
 
