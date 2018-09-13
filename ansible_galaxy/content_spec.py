@@ -3,6 +3,7 @@ import os
 
 from ansible_galaxy import galaxy_content_spec
 from ansible_galaxy import content_spec_parse
+from ansible_galaxy import exceptions
 from ansible_galaxy.models.content_spec import ContentSpec
 
 log = logging.getLogger(__name__)
@@ -21,9 +22,10 @@ class FetchMethods(object):
     LOCAL_FILE = 'LOCAL_FILE'
     REMOTE_URL = 'REMOTE_URL'
     GALAXY_URL = 'GALAXY_URL'
+    EDITABLE = 'EDITABLE'
 
 
-def choose_content_fetch_method(content_spec_string):
+def choose_content_fetch_method(content_spec_string, editable=False):
     log.debug('content_spec_string: %s', content_spec_string)
 
     if is_scm(content_spec_string):
@@ -32,15 +34,22 @@ def choose_content_fetch_method(content_spec_string):
 
     comma_parts = content_spec_string.split(',', 1)
     potential_filename = comma_parts[0]
-    if os.path.isfile(potential_filename):
+    fetch_method = None
+    if editable and os.path.isdir(potential_filename):
+        fetch_method = FetchMethods.EDITABLE
+    elif os.path.isfile(potential_filename):
         # installing a local tar.gz
-        return FetchMethods.LOCAL_FILE
-
-    if '://' in content_spec_string:
-        return FetchMethods.REMOTE_URL
-
-    # if it doesnt look like anything else, assume it's galaxy
-    return FetchMethods.GALAXY_URL
+        fetch_method = FetchMethods.LOCAL_FILE
+    elif '://' in content_spec_string:
+        fetch_method = FetchMethods.REMOTE_URL
+    elif '.' in content_spec_string and len(content_spec_string.split('.', 1)) == 2:
+        fetch_method = FetchMethods.GALAXY_URL
+    else:
+        msg = ('Failed to determine fetch method for content spec %s. '
+               'Expecting a Galaxy name, SCM path, remote URL, path to a local '
+               'archive file, or -e option and a directory path' % content_spec_string)
+        raise exceptions.GalaxyError(msg)
+    return fetch_method
 
 
 def resolve(data):
@@ -70,8 +79,8 @@ def resolve(data):
     return data
 
 
-def spec_data_from_string(content_spec_string):
-    fetch_method = choose_content_fetch_method(content_spec_string)
+def spec_data_from_string(content_spec_string, editable=False):
+    fetch_method = choose_content_fetch_method(content_spec_string, editable=editable)
 
     log.debug('fetch_method: %s', fetch_method)
 
@@ -91,8 +100,8 @@ def spec_data_from_string(content_spec_string):
     return spec_data
 
 
-def content_spec_from_string(content_spec_string, namespace_override=None):
-    spec_data = spec_data_from_string(content_spec_string)
+def content_spec_from_string(content_spec_string, namespace_override=None, editable=False):
+    spec_data = spec_data_from_string(content_spec_string, editable=editable)
 
     log.debug('spec_data: %s', spec_data)
 
@@ -115,7 +124,3 @@ def content_spec_from_string(content_spec_string, namespace_override=None):
                        spec_string=spec_data.get('spec_string'),
                        fetch_method=spec_data.get('fetch_method'),
                        src=spec_data.get('src'))
-
-    #    {'src': 'testing.fake_role_name', 'name': 'fake_role_name', 'namespace': 'testing', 'version': None, 'scm': None,
-    #     'spec_string': 'testing.fake_role_name', 'fetch_method': 'GALAXY_URL'}
-    # return ContentSpec(**spec_data)

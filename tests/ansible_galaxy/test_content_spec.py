@@ -1,9 +1,10 @@
 import logging
 import os
-
+import tempfile
 import pytest
 
 from ansible_galaxy import content_spec
+from ansible_galaxy import exceptions
 from ansible_galaxy.models.content_spec import ContentSpec
 
 log = logging.getLogger(__name__)
@@ -63,3 +64,21 @@ def test_content_spec_from_string(content_spec_case):
 
     # assert attr.asdict(result) == attr.asdict(content_spec_case['expected'])
     assert result == content_spec_case['expected']
+
+
+def test_content_spec_editable():
+    tmpdir = tempfile.mkdtemp()
+    result = content_spec.content_spec_from_string(tmpdir, editable=True)
+    os.rmdir(tmpdir)
+    assert result.name == tmpdir
+    assert result.fetch_method == 'EDITABLE'
+
+
+@pytest.mark.xfail(raises=exceptions.GalaxyError)
+def test_content_spec_fail():
+    content_spec.content_spec_from_string('foo.')
+
+
+@pytest.mark.xfail(raises=exceptions.GalaxyError)
+def test_content_editable_fail():
+    content_spec.content_spec_from_string('foo', editable=True)

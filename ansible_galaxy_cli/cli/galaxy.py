@@ -101,6 +101,8 @@ class GalaxyCLI(cli.CLI):
             self.parser.add_option('-g', '--global', dest='global_install', action='store_true',
                                    help='Install content to the path containing your global or system-wide content. The default is the '
                                    'global_content_path configured in your mazer.yml file (/usr/share/ansible/content, if not configured)')
+            self.parser.add_option('-e', '--editable', dest='editable_install', action='store_true',
+                                   help='Link a local directory into the content path for development and testing')
             self.parser.add_option('-i', '--ignore-errors', dest='ignore_errors', action='store_true', default=False,
                                    help='Ignore errors and continue with the next specified repo.')
             self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False, help='Don\'t download roles listed as dependencies')
@@ -303,6 +305,7 @@ class GalaxyCLI(cli.CLI):
 
         try:
             rc = install.install_content_specs(galaxy_context,
+                                               editable=self.options.editable_install,
                                                content_spec_strings=requested_content_specs,
                                                install_content_type=install_content_type,
                                                namespace_override=self.options.namespace,

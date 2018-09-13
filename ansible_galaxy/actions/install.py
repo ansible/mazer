@@ -1,4 +1,5 @@
 import logging
+import os
 
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
@@ -29,7 +30,7 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
 # TODO: this will eventually be replaced by a content_spec 'resolver' that may
 #       hit galaxy api
 def _build_content_set(content_spec_strings, install_content_type, galaxy_context,
-                       namespace_override=None):
+                       namespace_override=None, editable=False):
     # TODO: split this into methods that build GalaxyContent items from the content_specs
     #       and another that installs a set of GalaxyContents
     # roles were specified directly, so we'll just go out grab them
@@ -40,7 +41,8 @@ def _build_content_set(content_spec_strings, install_content_type, galaxy_contex
 
     for content_spec_string in content_spec_strings:
         content_spec_ = content_spec.content_spec_from_string(content_spec_string.strip(),
-                                                              namespace_override=namespace_override)
+                                                              namespace_override=namespace_override,
+                                                              editable=editable)
 
         log.info('content install content_spec: %s', content_spec_)
 
@@ -65,19 +67,22 @@ def _build_content_set(content_spec_strings, install_content_type, galaxy_contex
 
 # pass a list of content_spec objects
 def install_content_specs(galaxy_context, content_spec_strings, install_content_type,
+                          editable=False,
                           namespace_override=None,
                           display_callback=None,
                           # TODO: error handling callback ?
                           ignore_errors=False,
                           no_deps=False,
                           force_overwrite=False):
+    log.debug('editable: %s', editable)
     log.debug('content_spec_strings: %s', content_spec_strings)
     log.debug('install_content_type: %s', install_content_type)
 
     requested_contents = _build_content_set(content_spec_strings=content_spec_strings,
                                             install_content_type=install_content_type,
                                             galaxy_context=galaxy_context,
-                                            namespace_override=namespace_override)
+                                            namespace_override=namespace_override,
+                                            editable=editable)
 
     return install_contents(galaxy_context, requested_contents, install_content_type,
                             display_callback=display_callback,
@@ -123,6 +128,10 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
         # TODO: we could do all the downloads first, then install them. Likely
         #       less error prone mid 'transaction'
         log.debug('Processing %s as %s', content.name, content.content_type)
+
+        if content.content_spec.fetch_method == content_spec.FetchMethods.EDITABLE:
+            install_editable_content(content)
+            continue
 
         log.debug('About to find() requested content: %s', content)
 
@@ -228,3 +237,23 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
                                 display_callback('- dependency %s is already installed, skipping.' % dep_role.name)
 
     return 0
+
+
+def install_editable_content(content):
+    '''Link the content path to the local checkout, similar to pip install -e'''
+
+    # is it a directory or is it a tarball?
+    if not os.path.isdir(os.path.abspath(content.src)):
+        log.warning("%s needs to be a local directory for an editable install" % content.src)
+        raise_without_ignore(None, None)
+
+    namespace = content.content_spec.namespace
+    repository = content.content_spec.name
+    dst_ns_root = os.path.join(content.path, namespace)
+    dst_repo_root = os.path.join(content.path, namespace, repository)
+
+    if not os.path.exists(dst_ns_root):
+        os.makedirs(dst_ns_root)
+
+    if not os.path.exists(dst_repo_root):
+        os.symlink(os.path.abspath(content.src), dst_repo_root)

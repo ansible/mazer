@@ -4,7 +4,6 @@ import pytest
 
 from ansible_galaxy import content_spec_parse
 from ansible_galaxy import exceptions
-from ansible_galaxy import galaxy_content_spec
 
 log = logging.getLogger(__name__)
 
