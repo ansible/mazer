@@ -61,6 +61,18 @@ def exit_without_ignore(ignore_errors, msg=None, rc=1):
         raise cli_exceptions.GalaxyCliError(message)
 
 
+def get_config_path_from_env():
+    for env_var in ('MAZER_CONFIG', 'ANSIBLE_GALAXY_CONFIG'):
+        raw_config_file_path = os.environ.get(env_var, None)
+
+        if raw_config_file_path:
+            log.info("Using config file '%s' as specified by env var '%s'",
+                     raw_config_file_path, env_var)
+            return raw_config_file_path
+
+    return None
+
+
 class GalaxyCLI(cli.CLI):
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
     VALID_ACTIONS = ("build", "info", "init", "install", "list", "remove", "version")
@@ -176,7 +188,8 @@ class GalaxyCLI(cli.CLI):
 
     def run(self):
 
-        raw_config_file_path = os.environ.get('ANSIBLE_GALAXY_CONFIG', defaults.CONFIG_FILE)
+        raw_config_file_path = get_config_path_from_env() or defaults.CONFIG_FILE
+
         self.config_file_path = os.path.abspath(os.path.expanduser(raw_config_file_path))
 
         super(GalaxyCLI, self).run()
