@@ -67,7 +67,7 @@ class TestGalaxy(unittest.TestCase):
             shutil.rmtree("./delete_me")
 
         # creating framework for a role
-        gc = GalaxyCLI(args=["ansible-galaxy", "init", "--offline", "delete_me"])
+        gc = GalaxyCLI(args=["ansible-galaxy", "init", "--offline", "delete_me", "--type", "role"])
         gc.parse()
         gc.run()
         cls.role_dir = "./delete_me"
@@ -200,7 +200,7 @@ class TestGalaxy(unittest.TestCase):
             # self.assertIsInstance(galaxycli_obj.galaxy, ansible_galaxy.models.context.GalaxyContext)
             formatted_call = {
                 'info': 'usage: %prog info [options] repo_name[,version]',
-                'init': 'usage: %prog init [options] role_name',
+                'init': 'usage: %prog init [options] collection name',
                 'install': 'usage: %prog install [options] [-r FILE | repo_name(s)[,version] | scm+repo_url[,version] | tar_file(s)]',
                 'list': 'usage: %prog list [repo_name]',
                 'remove': 'usage: %prog remove repo1 repo2 ...',
@@ -273,18 +273,16 @@ class ValidRoleTests(object):
     def setup_class(cls):
         log.debug('setup_class container')
         log.debug('cls.content_type: %s', cls.content_type)
-        # content_type = 'container'
-        this_dir, this_filename = os.path.split(__file__)
-        # FIXME(alikins): kind of klugey, but original tests did that and I kind of see why (avoid duping lots of data)
+        if not cls.content_type:
+            cls.content_type = 'role'
         content_type_dir = cls.content_type
-        if cls.content_type == 'role':
-            content_type_dir = 'default'
-        _role_skeleton_path = os.path.join(this_dir, '../../../', 'ansible_galaxy_cli/data/', 'role_skeleton', content_type_dir)
+        this_dir, _ = os.path.split(__file__)
+        _role_skeleton_path = os.path.join(this_dir, '../../../', 'ansible_galaxy_cli/data/', 'skeleton', content_type_dir)
         log.debug('normpath(_role_skeleton_path): %s', os.path.normpath(_role_skeleton_path))
         cls.setUpRole('delete_me_%s' % cls.content_type,
+                      skeleton_path=_role_skeleton_path,
                       galaxy_args=['--type=%s' % cls.content_type,
-                                   '--role-skeleton=%s' % _role_skeleton_path],
-                      skeleton_path=_role_skeleton_path)
+                                   '--skeleton=%s' % _role_skeleton_path])
 
     @classmethod
     def setUpRole(cls, role_name, skeleton_path, galaxy_args=None):
@@ -297,8 +295,8 @@ class ValidRoleTests(object):
         #       with --role-skeleton path to avoid issues like
         #       https://github.com/ansible/galaxy-cli/issues/20
         cls.role_skeleton_path = skeleton_path
-        if '--role-skeleton' not in galaxy_args:
-            galaxy_args += ['--role-skeleton', skeleton_path]
+        if '--skeleton' not in galaxy_args:
+            galaxy_args += ['--skeleton', skeleton_path]
             log.debug('role_skeleton_path: %s', cls.role_skeleton_path)
 
         # Make temp directory for testing
@@ -312,7 +310,7 @@ class ValidRoleTests(object):
         log.debug('role_name: %s', cls.role_name)
 
         # create role using default skeleton
-        gc_args = ['ansible-galaxy', 'init', '-c', '--offline'] + galaxy_args + ['--init-path', cls.test_dir, cls.role_name]
+        gc_args = ['ansible-galaxy', 'init', '-c', '--offline'] + galaxy_args + ['--path', cls.test_dir, cls.role_name]
         log.debug('gc_args: %s', gc_args)
         gc = GalaxyCLI(args=gc_args)
         gc.parse()
@@ -326,7 +324,6 @@ class ValidRoleTests(object):
     def tearDownClass(cls):
         if not os.path.isdir(cls.test_dir):
             return
-
         log.debug('deleting %s', cls.test_dir)
         shutil.rmtree(cls.test_dir)
 
@@ -363,25 +360,9 @@ class ValidRoleTests(object):
 
         self.assertEqual(expected_contents, contents, msg='.travis.yml does not match expected')
 
-    def test_readme_contents(self):
-        log.debug('start')
-        written_path = os.path.join(os.path.join(self.role_dir, 'README.md'))
-        with open(written_path, 'r') as readme:
-            contents = readme.read()
-
-        read_path = os.path.join(self.role_skeleton_path, 'README.md')
-        with open(read_path, 'r') as f:
-            expected_contents = f.read()
-
-        log.debug('read_path:    %s', read_path)
-        log.debug('written_path: %s', written_path)
-        self.assertMultiLineEqual(expected_contents, contents)
-        # msg='README.md does not match expected')
-
     def test_test_yml(self):
         with open(os.path.join(self.role_dir, 'tests', 'test.yml'), 'r') as f:
             test_playbook = yaml.safe_load(f)
-        print(test_playbook)
         self.assertEqual(len(test_playbook), 1)
         self.assertEqual(test_playbook[0]['hosts'], 'localhost')
         self.assertEqual(test_playbook[0]['remote_user'], 'root')
@@ -398,16 +379,11 @@ class TestGalaxyInitDefault(unittest.TestCase, ValidRoleTests):
     def test_metadata_contents(self):
         with open(os.path.join(self.role_dir, 'meta', 'main.yml'), 'r') as mf:
             metadata = yaml.safe_load(mf)
-        self.assertEqual(metadata.get('galaxy_info', dict()).get('author'), 'your name', msg='author was not set properly in metadata')
+        self.assertEqual(metadata.get('galaxy_info', dict()).get('author'), 'Your name', msg='author was not set properly in metadata')
 
 
 class TestGalaxyInitAPB(unittest.TestCase, ValidRoleTests):
     content_type = 'apb'
-    # @classmethod
-    # def setUpClass(cls):
-    #    log.debug('_test_role_skeleton_path: %s', cls._test_role_skeleton_path)
-    #    cls.setUpRole('delete_me_apb', galaxy_args=['--type=apb', '--role-skeleton=%s' % cls._test_role_skeleton_path],
-    #                  skeleton_path=cls._test_role_skeleton_path)
 
     def test_metadata_apb_tag(self):
         meta_to_read = os.path.join(self.role_dir, 'meta', 'main.yml')
@@ -419,7 +395,7 @@ class TestGalaxyInitAPB(unittest.TestCase, ValidRoleTests):
     def test_metadata_contents(self):
         with open(os.path.join(self.role_dir, 'meta', 'main.yml'), 'r') as mf:
             metadata = yaml.safe_load(mf)
-        self.assertEqual(metadata.get('galaxy_info', dict()).get('author'), 'your name', msg='author was not set properly in metadata')
+        self.assertEqual(metadata.get('galaxy_info', dict()).get('author'), 'Your name', msg='author was not set properly in metadata')
 
     def test_apb_yml(self):
         self.assertTrue(os.path.exists(os.path.join(self.role_dir, 'apb.yml')), msg='apb.yml was not created')
@@ -432,8 +408,8 @@ class TestGalaxyInitAPB(unittest.TestCase, ValidRoleTests):
         log.debug('test_playbook: %s', test_playbook)
         self.assertEqual(len(test_playbook), 1)
         self.assertEqual(test_playbook[0]['hosts'], 'localhost')
-        self.assertFalse(test_playbook[0]['gather_facts'])
         self.assertEqual(test_playbook[0]['connection'], 'local')
+        self.assertFalse(test_playbook[0]['gather_facts'])
         self.assertIsNone(test_playbook[0]['tasks'], msg='We\'re expecting an unset list of tasks in test.yml')
 
 
@@ -472,4 +448,4 @@ class TestGalaxyInitSkeleton(unittest.TestCase, ValidRoleTests):
         self.assertTrue(os.path.exists(os.path.join(self.role_dir, 'templates_extra', 'templates.txt')))
 
     def test_skeleton_option(self):
-        self.assertEquals(self.role_skeleton_path, self.gc.options.role_skeleton, msg='Skeleton path was not parsed properly from the command line')
+        self.assertEquals(self.role_skeleton_path, self.gc.options.skeleton, msg='Skeleton path was not parsed properly from the command line')

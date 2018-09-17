@@ -53,7 +53,7 @@ def exit_without_ignore(ignore_errors, msg=None, rc=1):
     Exits with the specified return code unless the
     option --ignore-errors was specified
     """
-    ignore_error_blurb = '- you can use --ignore-errors to skip failed roles and finish processing the list.'
+    ignore_error_blurb = '- you can use --ignore-errors to skip failed content items and finish processing the list.'
     if not ignore_errors:
         message = ignore_error_blurb
         if msg:
@@ -62,8 +62,6 @@ def exit_without_ignore(ignore_errors, msg=None, rc=1):
 
 
 class GalaxyCLI(cli.CLI):
-    '''command to manage Ansible roles in shared repostories, the default of which is Ansible Galaxy *https://galaxy.ansible.com*.'''
-
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
     VALID_ACTIONS = ("build", "info", "init", "install", "list", "remove", "version")
     VALID_ACTION_ALIASES = {'content-install': 'install'}
@@ -76,7 +74,6 @@ class GalaxyCLI(cli.CLI):
 
         super(GalaxyCLI, self).set_action()
 
-        # specific to actions
         if self.action == "build":
             self.parser.set_usage("usage: %prog build [options]")
             self.parser.add_option('--collection-path', dest='collection_path', default=None,
@@ -88,13 +85,14 @@ class GalaxyCLI(cli.CLI):
             self.parser.set_usage("usage: %prog info [options] repo_name[,version]")
 
         elif self.action == "init":
-            self.parser.set_usage("usage: %prog init [options] role_name")
-            self.parser.add_option('--init-path', dest='init_path', default="./",
-                                   help='The path in which the skeleton role will be created. The default is the current working directory.')
-            self.parser.add_option('--type', dest='role_type', action='store', default='default',
-                                   help="Initialize using an alternate role type. Valid types include: 'default' and 'apb'.")
-            self.parser.add_option('--role-skeleton', dest='role_skeleton', default=None,
-                                   help='The path to a role skeleton that the new role should be based upon.')
+            self.parser.set_usage("usage: %prog init [options] collection name")
+            self.parser.add_option('-p', '--path', dest='init_path', default="./",
+                                   help='The path in which the collection will be created. Defaults to the current working directory.')
+            self.parser.add_option('-t', '--type', dest='artifact_type', action='store', default='collection',
+                                   choices=['apb', 'collection', 'role'],
+                                   help="Initialize using an alternate format. Valid types include: 'apb', 'collection' and 'role'.")
+            self.parser.add_option('--skeleton', dest='skeleton', default=None,
+                                   help='The path to a skeleton that the new collection should be based upon.')
 
         elif self.action == "install":
             self.parser.set_usage("usage: %prog install [options] [-r FILE | repo_name(s)[,version] | scm+repo_url[,version] | tar_file(s)]")
@@ -118,7 +116,7 @@ class GalaxyCLI(cli.CLI):
 
         # options that apply to more than one action
         if self.action in ['init', 'info']:
-            self.parser.add_option('--offline', dest='offline', default=False, action='store_true', help="Don't query the galaxy API when creating roles")
+            self.parser.add_option('--offline', dest='offline', default=False, action='store_true', help="Prevent Mazer from calling the galaxy API.")
 
         if self.action not in ("init", "version"):
             # NOTE: while the option type=str, the default is a list, and the
@@ -128,7 +126,7 @@ class GalaxyCLI(cli.CLI):
                                         'mazer.yml file (~/.ansible/content, if not configured)', type='str')
 
         if self.action in ("init", "install"):
-            self.parser.add_option('-f', '--force', dest='force', action='store_true', default=False, help='Force overwriting an existing repo')
+            self.parser.add_option('-f', '--force', dest='force', action='store_true', default=False, help='Force overwriting an existing collection')
 
     def parse(self):
         ''' create an options parser for bin/ansible '''
@@ -205,7 +203,9 @@ class GalaxyCLI(cli.CLI):
         return self.execute()
 
     def execute_build(self):
-        '''Create a collection artifact from a collection src repository.'''
+        """
+        Create a collection artifact from a collection src repository.
+        """
 
         log.debug('options: %s', self.options)
         log.debug('args: %s', self.args)
@@ -226,54 +226,46 @@ class GalaxyCLI(cli.CLI):
                            build_context,
                            display_callback=self.display)
 
-    # TODO: most of this logic should be out of cli class
     def execute_init(self):
         """
-        creates the skeleton framework of a role that complies with the galaxy metadata format.
+        Create a skeleton collection
         """
 
         init_path = self.options.init_path
         force = self.options.force
-        role_skeleton_path = self.options.role_skeleton
+        skeleton_path = self.options.skeleton
+        type_path = self.options.artifact_type
+        skeleton_ignore = ['^.*/.gitkeep$']
 
-        role_name = self.args.pop(0).strip() if self.args else None
-        if not role_name:
-            raise cli_exceptions.CliOptionsError("- no role name specified for init")
+        artifact_name = self.args.pop(0).strip() if self.args else None
+        if not artifact_name:
+            raise cli_exceptions.CliOptionsError("- no collection name specified for init")
 
-        role_path = os.path.join(init_path, role_name)
-        if os.path.exists(role_path):
-            if os.path.isfile(role_path):
-                raise cli_exceptions.GalaxyCliError("- the path %s already exists, but is a file - aborting" % role_path)
+        artifact_path = os.path.join(init_path, artifact_name)
+        if os.path.exists(artifact_path):
+            if os.path.isfile(artifact_path):
+                raise cli_exceptions.GalaxyCliError("- the path %s already exists, but is a file - aborting" % artifact_path)
             elif not force:
                 raise cli_exceptions.GalaxyCliError("- the directory %s already exists."
-                                                    "you can use --force to re-initialize this directory,\n"
-                                                    "however it will reset any main.yml files that may have\n"
-                                                    "been modified there already." % role_path)
+                                                    "Use --force to overwrite the existing directory." % artifact_path)
 
-        if role_skeleton_path is not None:
-            skeleton_ignore_expressions = self.config.options['role_skeleton_ignore']
-        else:
-            this_dir, this_filename = os.path.split(__file__)
+        if not skeleton_path:
+            this_dir, _ = os.path.split(__file__)
+            skeleton_path = os.path.join(this_dir, '../', 'data/skeleton', type_path)
+            self.log.debug('skeleton_path: %s', skeleton_path)
 
-            type_path = getattr(self.options, 'role_type', "default")
-            role_skeleton_path = os.path.join(this_dir, '../', 'data/role_skeleton', type_path)
-
-            self.log.debug('role_skeleton_path: %s', role_skeleton_path)
-
-            skeleton_ignore_expressions = ['^.*/.git_keep$']
-
-        return init.init(role_name,
+        return init.init(artifact_name,
                          init_path,
-                         role_path,
+                         artifact_path,
                          force,
-                         role_skeleton_path,
-                         skeleton_ignore_expressions,
-                         self.options.role_type,
+                         skeleton_path,
+                         skeleton_ignore,
+                         self.options.artifact_type,
                          display_callback=self.display)
 
     def execute_info(self):
         """
-        prints out detailed information about an installed role as well as info available from the galaxy API.
+        Display detailed information about an installed collection, as well as info available from the Galaxy API.
         """
 
         if len(self.args) == 0:
@@ -293,8 +285,7 @@ class GalaxyCLI(cli.CLI):
 
     def execute_install(self):
         """
-        uses the args list of roles to be installed, unless -f was specified. The list of roles
-        can be a name (which will be downloaded via the galaxy API and github), or it can be a local .tar.gz file.
+        Install a collection.
         """
 
         install_content_type = 'all'
@@ -321,7 +312,7 @@ class GalaxyCLI(cli.CLI):
 
     def execute_remove(self):
         """
-        removes the list of roles passed as arguments from the local system.
+        Remove a list of collections from the local system.
         """
 
         if len(self.args) == 0:
@@ -338,7 +329,7 @@ class GalaxyCLI(cli.CLI):
 
     def execute_list(self):
         """
-        lists the roles installed on the local system or matches a single role passed as an argument.
+        List roles installed on the local file system.
         """
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)

@@ -21,19 +21,11 @@ def init(role_name,
     # role_skeleton ends mostly being a list of file paths to copy
     inject_data = dict(
         role_name=role_name,
-        author='your name',
-        description='your description',
-        company='your company (optional)',
-        license='license (GPLv2, CC-BY, etc)',
-        issue_tracker_url='http://example.com/issue/tracker',
-        min_ansible_version='2.4',
-        role_type=role_type
     )
 
     import pprint
     log.debug('inject_data: %s', pprint.pformat(inject_data))
 
-    # create role directory
     if not os.path.exists(role_path):
         os.makedirs(role_path)
 
@@ -44,7 +36,6 @@ def init(role_name,
 
     template_env = Environment(loader=FileSystemLoader(role_skeleton))
 
-    # TODO: mv elsewhere, this is main role install logic
     for root, dirs, files in os.walk(role_skeleton, topdown=True):
         rel_root = os.path.relpath(root, role_skeleton)
         in_templates_dir = rel_root.split(os.sep, 1)[0] == 'templates'
