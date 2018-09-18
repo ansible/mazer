@@ -17,12 +17,14 @@ If you're installing Ansible content in a production environment, or need assist
 
 ## Proposed Features
 
-- Support repositories containing multiple roles. In other words, allow
-for multiple roles all in one repository.
+- Install content from Galaxy artifacts containing collections of Ansible roles, modules and plugins
+- Generate artifacts from local content that can then be published to the Galaxy server
+- Provide versioned management of installed content
+- Integrate with popular testing tools like Ansible Lint and Molecule
 
 ## Docs
 
-For additional documentation on mazer, see the [Ansible Galaxy Docs mazer docs](https://galaxy.ansible.com/docs/mazer/index.html)
+For additional documentation on mazer, view the [Mazer topic on Ansible Galaxy Docs](https://galaxy.ansible.com/docs/mazer/index.html)
 
 ## Examples
 
@@ -92,65 +94,7 @@ to ~/.ansible/content/testing/ansible_testing_content/roles/
             │   │   └── test.yml
             │   └── vars
             │       └── main.yml
-            ├── test-role-a
-            │   ├── defaults
-            │   │   └── main.yml
-            │   ├── handlers
-            │   │   └── main.yml
-            │   ├── meta
-            │   │   └── main.yml
-            │   ├── tasks
-            │   │   └── main.yml
-            │   ├── tests
-            │   │   ├── inventory
-            │   │   └── test.yml
-            │   └── vars
-            │       └── main.yml
-            ├── test-role-b
-            │   ├── defaults
-            │   │   └── main.yml
-            │   ├── handlers
-            │   │   └── main.yml
-            │   ├── meta
-            │   │   └── main.yml
-            │   ├── README.md
-            │   ├── tasks
-            │   │   └── main.yml
-            │   ├── tests
-            │   │   ├── inventory
-            │   │   └── test.yml
-            │   └── vars
-            │       └── main.yml
-            ├── test-role-c
-            │   ├── defaults
-            │   │   └── main.yml
-            │   ├── handlers
-            │   │   └── main.yml
-            │   ├── meta
-            │   │   └── main.yml
-            │   ├── README.md
-            │   ├── tasks
-            │   │   └── main.yml
-            │   ├── tests
-            │   │   ├── inventory
-            │   │   └── test.yml
-            │   └── vars
-            │       └── main.yml
-            └── test-role-d
-                ├── defaults
-                │   └── main.yml
-                ├── handlers
-                │   └── main.yml
-                ├── meta
-                │   └── main.yml
-                ├── README.md
-                ├── tasks
-                │   └── main.yml
-                ├── tests
-                │   ├── inventory
-                │   └── test.yml
-                └── vars
-                    └── main.yml
+            ...
 ```
 
 ### Install a role to a different content path
@@ -371,6 +315,10 @@ When installing content from an Ansible Galaxy server, requires Galaxy v3.0+.
 ## Roadmap
 
 To see what we're working on, and where we're headed, [view the roadmap](./ROADMAP.md).
+
+## Changelog
+
+To keep up with the latest changes, view the [changelog](./CHANGELOG.rst).
 
 ## Getting help
 
