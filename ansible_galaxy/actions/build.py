@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 def ensure_output_dir(output_path):
     if not os.path.isdir(output_path):
         log.debug('Creating output_path: %s', output_path)
-        os.makedirs(output_path, exist_ok=True)
+        os.makedirs(output_path)
     return output_path
 
 
