@@ -31,7 +31,6 @@ from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
 from ansible_galaxy.actions import build
 from ansible_galaxy.actions import info
-from ansible_galaxy.actions import init
 from ansible_galaxy.actions import install
 from ansible_galaxy.actions import list as list_action
 from ansible_galaxy.actions import remove
@@ -75,7 +74,7 @@ def get_config_path_from_env():
 
 class GalaxyCLI(cli.CLI):
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
-    VALID_ACTIONS = ("build", "info", "init", "install", "list", "remove", "version")
+    VALID_ACTIONS = ("build", "info", "install", "list", "remove", "version")
     VALID_ACTION_ALIASES = {'content-install': 'install'}
 
     def __init__(self, args):
@@ -95,17 +94,6 @@ class GalaxyCLI(cli.CLI):
 
         if self.action == "info":
             self.parser.set_usage("usage: %prog info [options] repo_name[,version]")
-
-        elif self.action == "init":
-            self.parser.set_usage("usage: %prog init [options] collection name")
-            self.parser.add_option('-p', '--path', dest='init_path', default="./",
-                                   help='The path in which the collection will be created. Defaults to the current working directory.')
-            self.parser.add_option('-t', '--type', dest='artifact_type', action='store', default='collection',
-                                   choices=['apb', 'collection', 'role'],
-                                   help="Initialize using an alternate format. Valid types include: 'apb', 'collection' and 'role'.")
-            self.parser.add_option('--skeleton', dest='skeleton', default=None,
-                                   help='The path to a skeleton that the new collection should be based upon.')
-
         elif self.action == "install":
             self.parser.set_usage("usage: %prog install [options] [-r FILE | repo_name(s)[,version] | scm+repo_url[,version] | tar_file(s)]")
             self.parser.add_option('-g', '--global', dest='global_install', action='store_true',
@@ -127,17 +115,17 @@ class GalaxyCLI(cli.CLI):
             self.parser.set_usage("usage: %prog version")
 
         # options that apply to more than one action
-        if self.action in ['init', 'info']:
+        if self.action in ("info",):
             self.parser.add_option('--offline', dest='offline', default=False, action='store_true', help="Prevent Mazer from calling the galaxy API.")
 
-        if self.action not in ("init", "version"):
+        if self.action not in ("version",):
             # NOTE: while the option type=str, the default is a list, and the
             # callback will set the value to a list.
             self.parser.add_option('-C', '--content-path', dest='content_path',
                                    help='The path to the directory containing your Galaxy content. The default is the content_path configured in your'
                                         'mazer.yml file (~/.ansible/content, if not configured)', type='str')
 
-        if self.action in ("init", "install"):
+        if self.action in ("install",):
             self.parser.add_option('-f', '--force', dest='force', action='store_true', default=False, help='Force overwriting an existing collection')
 
     def parse(self):
@@ -238,43 +226,6 @@ class GalaxyCLI(cli.CLI):
         return build.build(galaxy_context,
                            build_context,
                            display_callback=self.display)
-
-    def execute_init(self):
-        """
-        Create a skeleton collection
-        """
-
-        init_path = self.options.init_path
-        force = self.options.force
-        skeleton_path = self.options.skeleton
-        type_path = self.options.artifact_type
-        skeleton_ignore = ['^.*/.gitkeep$']
-
-        artifact_name = self.args.pop(0).strip() if self.args else None
-        if not artifact_name:
-            raise cli_exceptions.CliOptionsError("- no collection name specified for init")
-
-        artifact_path = os.path.join(init_path, artifact_name)
-        if os.path.exists(artifact_path):
-            if os.path.isfile(artifact_path):
-                raise cli_exceptions.GalaxyCliError("- the path %s already exists, but is a file - aborting" % artifact_path)
-            elif not force:
-                raise cli_exceptions.GalaxyCliError("- the directory %s already exists."
-                                                    "Use --force to overwrite the existing directory." % artifact_path)
-
-        if not skeleton_path:
-            this_dir, _ = os.path.split(__file__)
-            skeleton_path = os.path.join(this_dir, '../', 'data/skeleton', type_path)
-            self.log.debug('skeleton_path: %s', skeleton_path)
-
-        return init.init(artifact_name,
-                         init_path,
-                         artifact_path,
-                         force,
-                         skeleton_path,
-                         skeleton_ignore,
-                         self.options.artifact_type,
-                         display_callback=self.display)
 
     def execute_info(self):
         """
