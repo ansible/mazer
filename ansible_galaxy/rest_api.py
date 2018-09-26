@@ -22,21 +22,25 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import codecs
 import logging
 import json
+import os
+import socket
+import ssl
 import sys
 import uuid
 
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.parse import quote as urlquote
-import socket
-import ssl
+from six.moves.urllib.parse import urlparse
+from six.moves import http_client
 
 from ansible_galaxy import __version__ as mazer_version
 from ansible_galaxy import exceptions
+from ansible_galaxy.multipart_form import MultiPartForm
 from ansible_galaxy.utils.text import to_native, to_text
 
-# FIXME: would be nice to just use requests, or better, some async https client
 from ansible_galaxy.flat_rest_api.urls import open_url
 
 log = logging.getLogger(__name__)
@@ -58,6 +62,7 @@ def user_agent():
 
 def g_connect(method):
     ''' wrapper to lazily initialize connection info to galaxy '''
+
     def wrapped(self, *args, **kwargs):
         if not self.initialized:
             log.debug("Initial connection to galaxy_server: %s", self._api_server)
@@ -247,3 +252,44 @@ class GalaxyAPI(object):
             done = (data.get('next_link', None) is None)
 
         return results
+
+    @g_connect
+    def fetch_namespace(self, namespace):
+        namespace = urlquote(namespace)
+        url = '%s/namespaces/?name=%s' % (self.baseurl, namespace)
+        data = self.__call_galaxy(url, http_method='GET')
+        if data["results"]:
+            return data["results"][0]
+        return {}
+
+    @g_connect
+    def publish_file(self, namespace_id, data, archive_path):
+        form = MultiPartForm()
+        for key in data:
+            form.add_field(key, data[key])
+
+        form.add_file('file', os.path.basename(archive_path),
+                      fileHandle=codecs.open(archive_path, "rb"))
+
+        url = '%s/namespaces/%s/collection/' % (self.baseurl, namespace_id)
+        _, netloc, url, _, _, _ = urlparse(url)
+        try:
+            form_buffer = form.get_binary().getvalue()
+            http = http_client.HTTPConnection(netloc)
+            http.connect()
+            http.putrequest("POST", url)
+            http.putheader('Content-type', form.get_content_type())
+            http.putheader('Content-length', str(len(form_buffer)))
+            http.endheaders()
+            http.send(form_buffer)
+        except socket.error as exc:
+            exceptions.GalaxyPublishError(
+                "Error transferring file to Galaxy server: %s" % str(exc)
+            )
+        r = http.getresponse()
+        if r.status == 201:
+            return r.read()
+        else:
+            exceptions.GalaxyPublishError(
+                "Error transferring file to Galaxy server: %s - %s" % (r.status, r.reason)
+            )

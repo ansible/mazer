@@ -33,7 +33,7 @@ from ansible_galaxy.actions import install
 from ansible_galaxy.actions import list as list_action
 from ansible_galaxy.actions import remove
 from ansible_galaxy.actions import version
-
+from ansible_galaxy.actions import publish
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
 
@@ -77,7 +77,7 @@ def get_config_path_from_env():
 
 class GalaxyCLI(cli.CLI):
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
-    VALID_ACTIONS = ("build", "info", "install", "list", "remove", "version")
+    VALID_ACTIONS = ("build", "info", "install", "list", "publish", "remove", "version")
     VALID_ACTION_ALIASES = {'content-install': 'install'}
 
     def __init__(self, args):
@@ -94,6 +94,8 @@ class GalaxyCLI(cli.CLI):
                                    help='The path in which the collection is located. The default is the current working directory.')
             self.parser.add_option('--output-path', dest='output_path', default=None,
                                    help='The path in which the collection artifact will be created. The default is ./releases/.')
+        if self.action == "publish":
+            self.parser.set_usage("usage: %prog publish [options] archive_path")
 
         if self.action == "info":
             self.parser.set_usage("usage: %prog info [options] repo_name[,version]")
@@ -122,7 +124,7 @@ class GalaxyCLI(cli.CLI):
         if self.action in ("info",):
             self.parser.add_option('--offline', dest='offline', default=False, action='store_true', help="Prevent Mazer from calling the galaxy API.")
 
-        if self.action not in ("version",):
+        if self.action not in ("publish", "version",):
             # NOTE: while the option type=str, the default is a list, and the
             # callback will set the value to a list.
             self.parser.add_option('-C', '--content-path', dest='content_path',
@@ -272,6 +274,20 @@ class GalaxyCLI(cli.CLI):
                                                    force_overwrite=self.options.force)
 
         return rc
+
+    def execute_publish(self):
+        """
+        Publish a collection artifact to Galaxy.
+        """
+
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
+
+        if not len(self.args) or not os.path.isfile(self.args[0]):
+            raise cli_exceptions.CliOptionsError("- you must specify a path to a collection archive")
+
+        return publish.publish(galaxy_context,
+                               self.args[0],
+                               display_callback=self.display)
 
     def execute_remove(self):
         """

@@ -70,3 +70,16 @@ class GalaxyArchiveError(GalaxyClientError):
         archive_path = kwargs.pop('archive_path', None)
         super(GalaxyArchiveError, self).__init__(*args, **kwargs)
         self.archive_path = archive_path
+
+
+class GalaxyPublishError(GalaxyClientError):
+    ''' Raised for errors related to publish command '''
+
+    def __init__(self, msg, *args, **kwargs):
+        self.msg = msg
+        self.archive_path = kwargs.pop('archive_path', None)
+        super(GalaxyPublishError, self).__init__(*args, **kwargs)
+
+    def __str__(self, *args, **kwargs):
+        msg = 'Error publishing %s - %s' % (self.archive_path, self.msg)
+        return msg

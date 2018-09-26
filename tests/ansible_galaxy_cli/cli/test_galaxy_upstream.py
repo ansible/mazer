@@ -191,11 +191,12 @@ class TestGalaxy(unittest.TestCase):
                 'info': 'usage: %prog info [options] repo_name[,version]',
                 'install': 'usage: %prog install [options] [-r FILE | repo_name(s)[,version] | scm+repo_url[,version] | tar_file(s)]',
                 'list': 'usage: %prog list [repo_name]',
+                'publish': 'usage: %prog publish [options] archive_path',
                 'remove': 'usage: %prog remove repo1 repo2 ...',
                 'version': 'usage: %prog version',
             }
 
-            first_call = 'usage: %prog [build|info|install|list|remove|version] [--help] [options] ...'
+            first_call = 'usage: %prog [build|info|install|list|publish|remove|version] [--help] [options] ...'
             second_call = formatted_call[action]
             calls = [call(first_call), call(second_call)]
             mocked_usage.assert_has_calls(calls)
@@ -229,6 +230,12 @@ class TestGalaxy(unittest.TestCase):
         ''' testing the options parser when the action 'list' is given '''
         gc = GalaxyCLI(args=["ansible-galaxy", "list"])
         self.run_parse_common(gc, "list")
+        self.assertEqual(gc.options.verbosity, 0)
+
+    def test_parse_publish(self):
+        ''' testing the options parser when the action 'publish' is given '''
+        gc = GalaxyCLI(args=["ansible-galaxy", "publish"])
+        self.run_parse_common(gc, "publish")
         self.assertEqual(gc.options.verbosity, 0)
 
     def test_parse_remove(self):

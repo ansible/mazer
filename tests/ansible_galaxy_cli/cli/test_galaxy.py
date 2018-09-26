@@ -72,3 +72,10 @@ def test_run_info():
     cli.parse()
     with pytest.raises(cli_exceptions.CliOptionsError, match="you must specify a user/role name"):
         cli.run()
+
+
+def test_publish_no_args():
+    cli = galaxy.GalaxyCLI(args=['publish'])
+    cli.parse()
+    with pytest.raises(cli_exceptions.CliOptionsError, match="you must specify a path"):
+        cli.run()
