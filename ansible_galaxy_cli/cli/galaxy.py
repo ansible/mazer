@@ -259,15 +259,15 @@ class GalaxyCLI(cli.CLI):
         requested_content_specs = self.args
 
         try:
-            rc = install.install_content_specs(galaxy_context,
-                                               editable=self.options.editable_install,
-                                               content_spec_strings=requested_content_specs,
-                                               install_content_type=install_content_type,
-                                               namespace_override=self.options.namespace,
-                                               display_callback=self.display,
-                                               ignore_errors=self.options.ignore_errors,
-                                               no_deps=self.options.no_deps,
-                                               force_overwrite=self.options.force)
+            rc = install.install_content_specs_loop(galaxy_context,
+                                                    editable=self.options.editable_install,
+                                                    content_spec_strings=requested_content_specs,
+                                                    install_content_type=install_content_type,
+                                                    namespace_override=self.options.namespace,
+                                                    display_callback=self.display,
+                                                    ignore_errors=self.options.ignore_errors,
+                                                    no_deps=self.options.no_deps,
+                                                    force_overwrite=self.options.force)
         except Exception as e:
             log.exception(e)
             raise

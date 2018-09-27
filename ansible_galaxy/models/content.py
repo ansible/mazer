@@ -38,6 +38,7 @@ class GalaxyContentMeta(object):
     name = attr.ib()
     version = attr.ib()
     content_type = attr.ib()
+    requirements = attr.ib(factory=list)
     src = attr.ib(default=None)
     scm = attr.ib(default=None)
     content_dir = attr.ib(default=None)
