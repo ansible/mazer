@@ -12,3 +12,7 @@ class ContentRepository(object):
     content_spec = attr.ib(type=ContentSpec)
     path = attr.ib(default=None)
     installed = attr.ib(default=False, type=bool, cmp=False)
+
+    @property
+    def label(self):
+        return self.content_spec.label
