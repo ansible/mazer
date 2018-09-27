@@ -9,9 +9,10 @@ from ansible_galaxy_cli import exceptions as cli_exceptions
 log = logging.getLogger(__name__)
 
 COLLECTION_INFO1 = '''
-namespace: some_namespace
-name: some_name
+name: some_namespace.some_name
 version: 3.1.4
+license: GPL-3.0-or-later
+description: 'a thing'
 '''
 
 

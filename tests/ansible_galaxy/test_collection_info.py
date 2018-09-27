@@ -1,12 +1,13 @@
-
+import attr
 import logging
 import os
-
-import attr
+import pytest
+import yaml
 
 from ansible_galaxy import collection_info
 from ansible_galaxy.models.collection_info import CollectionInfo
 from ansible_galaxy import yaml_persist
+from ansible_galaxy import exceptions
 
 log = logging.getLogger(__name__)
 
@@ -14,12 +15,14 @@ log = logging.getLogger(__name__)
 def test_load():
     file_name = "example_collection_info1.yml"
     test_data_path = os.path.join(os.path.dirname(__file__), '%s' % file_name)
-    expected = {'namespace': 'some_namespace',
-                'name': 'some_name',
+    expected = {'name': 'some_namespace.some_name',
                 'version': '11.11.11',
-                'author': 'Carlos Boozer',
-                'license': 'GPLv2',
-                'format_version': 0.0}
+                'authors': ['Carlos Boozer'],
+                'description': 'something',
+                'license': 'GPL-3.0-or-later',
+                'keywords': [],
+                'readme': 'README.md',
+                'dependencies': []}
 
     with open(test_data_path, 'r') as data_fd:
         res = collection_info.load(data_fd)
@@ -62,3 +65,17 @@ def test_save(tmpdir):
             read_fd.seek(0)
             buf = read_fd.read()
             log.debug('buf: %s', buf)
+
+
+def test_parse_error(tmpdir):
+    test_data = {
+        'name': 'foo.foo',
+        'authors': ['chouseknecht'],
+        'license': 'GPL-3.0-or-later',
+        'version': '0.0.1',
+        'description': 'unit testing thing',
+        'foo': 'foo',
+    }
+    collection_yaml = yaml.safe_dump(test_data, stream=None)
+    with pytest.raises(exceptions.GalaxyClientError):
+        collection_info.load(collection_yaml)

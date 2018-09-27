@@ -31,7 +31,7 @@ def convert_list_to_artifact_file_list(val):
 @attr.s(frozen=True)
 class CollectionArtifactManifest(object):
     collection_info = attr.ib(type=CollectionInfo)
-    format_version = attr.ib(default=0.0)
+    format = attr.ib(default=1)
 
     files = attr.ib(factory=list, converter=convert_list_to_artifact_file_list)
 

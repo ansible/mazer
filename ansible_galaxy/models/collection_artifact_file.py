@@ -15,5 +15,4 @@ class CollectionArtifactFile(object):
     src_name = attr.ib(default=None)
     chksum_type = attr.ib(default="sha256")
     chksum_sha256 = attr.ib(default=None)
-    # name = attr.ib(default=None)
-    format_version = attr.ib(default=0.0)
+    _format = attr.ib(default=1)

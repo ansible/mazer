@@ -6,6 +6,7 @@ import yaml
 
 from ansible_galaxy.models.collection_info import \
     CollectionInfo
+from ansible_galaxy import exceptions
 
 log = logging.getLogger(__name__)
 pf = pprint.pformat
@@ -24,9 +25,12 @@ def load(data_or_file_object, klass=None):
 
     log.debug('data: %s', pf(data_dict))
 
-    klass = CollectionInfo
-    collection_info = CollectionInfo(**data_dict)
-    collection_info = klass(**data_dict)
+    try:
+        collection_info = CollectionInfo(**data_dict)
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise exceptions.GalaxyClientError("Error parsing collection metadata: %s" % str(exc))
 
     log.debug('artifact_manifest from_kwargs: %s', collection_info)
 

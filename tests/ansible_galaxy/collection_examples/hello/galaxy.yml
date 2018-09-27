@@ -1,5 +1,5 @@
-namespace: "greetings_namespace"
-name: "hello"
+name: "greetings_namespace.hello"
 version: "11.11.11"
-author: "Cowboy King Buzzo Lightyear"
-license: "GPLv2"
+description: "hello world"
+authors: ["Cowboy King Buzzo Lightyear"]
+license: "GPL-3.0-or-later"
