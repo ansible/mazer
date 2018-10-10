@@ -5,7 +5,7 @@ import pprint
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy import content_spec
-from ansible_galaxy import installed_repository_db
+from ansible_galaxy import installed_collection_db
 from ansible_galaxy import matchers
 from ansible_galaxy.utils import yaml_parse
 
@@ -32,7 +32,7 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
 # FIXME: install_content_type is wrong, should be option to GalaxyContent.install()?
 # TODO: this will eventually be replaced by a content_spec 'resolver' that may
 #       hit galaxy api
-def _build_content_set(content_spec_strings, install_content_type, galaxy_context,
+def _build_content_set(collection_spec_strings, install_content_type, galaxy_context,
                        namespace_override=None, editable=False):
     # TODO: split this into methods that build GalaxyContent items from the content_specs
     #       and another that installs a set of GalaxyContents
@@ -42,8 +42,8 @@ def _build_content_set(content_spec_strings, install_content_type, galaxy_contex
     # FIXME: could be a generator...
     content_left = []
 
-    for content_spec_string in content_spec_strings:
-        content_spec_ = content_spec.content_spec_from_string(content_spec_string.strip(),
+    for collection_spec_string in collection_spec_strings:
+        content_spec_ = content_spec.content_spec_from_string(collection_spec_string.strip(),
                                                               namespace_override=namespace_override,
                                                               editable=editable)
 
@@ -69,19 +69,21 @@ def _build_content_set(content_spec_strings, install_content_type, galaxy_contex
 
 
 # pass a list of content_spec objects
-def install_content_specs(galaxy_context, content_spec_strings, install_content_type,
-                          editable=False,
-                          namespace_override=None,
-                          display_callback=None,
-                          # TODO: error handling callback ?
-                          ignore_errors=False,
-                          no_deps=False,
-                          force_overwrite=False):
+def install_collections_matching_collection_specs(galaxy_context,
+                                                  collection_spec_strings,
+                                                  install_content_type=None,
+                                                  editable=False,
+                                                  namespace_override=None,
+                                                  display_callback=None,
+                                                  # TODO: error handling callback ?
+                                                  ignore_errors=False,
+                                                  no_deps=False,
+                                                  force_overwrite=False):
     log.debug('editable: %s', editable)
-    log.debug('content_spec_strings: %s', content_spec_strings)
+    log.debug('collection_spec_strings: %s', collection_spec_strings)
     log.debug('install_content_type: %s', install_content_type)
 
-    requested_contents = _build_content_set(content_spec_strings=content_spec_strings,
+    requested_contents = _build_content_set(collection_spec_strings=collection_spec_strings,
                                             install_content_type=install_content_type,
                                             galaxy_context=galaxy_context,
                                             namespace_override=namespace_override,
@@ -90,10 +92,10 @@ def install_content_specs(galaxy_context, content_spec_strings, install_content_
     # FIXME: mv mv this filtering to it's own method
     # match any of the content specs for stuff we want to install
     # ie, see if it is already installed
-    repository_match_filter = matchers.MatchContentSpec([x.content_spec for x in requested_contents])
+    collection_match_filter = matchers.MatchContentSpec([x.content_spec for x in requested_contents])
 
-    icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    already_installed_generator = icdb.select(repository_match_filter=repository_match_filter)
+    icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
+    already_installed_generator = icdb.select(collection_match_filter=collection_match_filter)
 
     log.debug('requested_contents before: %s', requested_contents)
 
@@ -109,57 +111,58 @@ def install_content_specs(galaxy_context, content_spec_strings, install_content_
     requested_contents = needs_installed
     log.debug('requested_contents after: %s', requested_contents)
 
-    return install_contents(galaxy_context, requested_contents, install_content_type,
-                            display_callback=display_callback,
-                            ignore_errors=ignore_errors,
-                            no_deps=no_deps,
-                            force_overwrite=force_overwrite)
+    return install_collections(galaxy_context, requested_contents, install_content_type,
+                               display_callback=display_callback,
+                               ignore_errors=ignore_errors,
+                               no_deps=no_deps,
+                               force_overwrite=force_overwrite)
 
 
 # FIXME: probably pass the point where passing around all the data to methods makes sense
 #        so probably needs a stateful class here
-def install_content_specs_loop(galaxy_context, content_spec_strings, install_content_type,
-                               editable=False,
-                               namespace_override=None,
-                               display_callback=None,
-                               # TODO: error handling callback ?
-                               ignore_errors=False,
-                               no_deps=False,
-                               force_overwrite=False):
+def install_collection_specs_loop(galaxy_context, collection_spec_strings, install_content_type,
+                                  editable=False,
+                                  namespace_override=None,
+                                  display_callback=None,
+                                  # TODO: error handling callback ?
+                                  ignore_errors=False,
+                                  no_deps=False,
+                                  force_overwrite=False):
 
-    requested_content_spec_strings = content_spec_strings
+    requested_collection_spec_strings = collection_spec_strings
 
     while True:
-        if not requested_content_spec_strings:
+        if not requested_collection_spec_strings:
             break
 
-        new_requested_content_spec_strings = \
-            install_content_specs(galaxy_context,
-                                  requested_content_spec_strings,
-                                  install_content_type,
-                                  editable=editable,
-                                  namespace_override=namespace_override,
-                                  display_callback=display_callback,
-                                  ignore_errors=ignore_errors,
-                                  no_deps=no_deps,
-                                  force_overwrite=force_overwrite)
+        new_requested_collection_spec_strings = \
+            install_collections_matching_collection_specs(galaxy_context,
+                                                          requested_collection_spec_strings,
+                                                          install_content_type,
+                                                          editable=editable,
+                                                          namespace_override=namespace_override,
+                                                          display_callback=display_callback,
+                                                          ignore_errors=ignore_errors,
+                                                          no_deps=no_deps,
+                                                          force_overwrite=force_overwrite)
 
-        log.debug('new_requested_content_spec_strings: %s', pprint.pformat(new_requested_content_spec_strings))
+        log.debug('new_requested_collection_spec_strings: %s', pprint.pformat(new_requested_collection_spec_strings))
 
         # set the content_specs to search for to whatever the install reported as being needed yet
-        requested_content_spec_strings = new_requested_content_spec_strings
+        requested_collection_spec_strings = new_requested_collection_spec_strings
 
     # FIXME: what results to return?
     return 0
 
 
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
-def install_contents(galaxy_context, requested_contents, install_content_type,
-                     display_callback=None,
-                     # TODO: error handling callback ?
-                     ignore_errors=False,
-                     no_deps=False,
-                     force_overwrite=False):
+def install_collections(galaxy_context, requested_contents,
+                        install_content_type=None,
+                        display_callback=None,
+                        # TODO: error handling callback ?
+                        ignore_errors=False,
+                        no_deps=False,
+                        force_overwrite=False):
 
     display_callback = display_callback or display.display_callback
     log.debug('requested_contents: %s', requested_contents)
@@ -178,13 +181,13 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
     #        iterating until there is nothing left
     for content in requested_contents:
         log.debug('content: %s', content)
-        new_dep_requirement_content_specs = install_content(galaxy_context,
-                                                            content,
-                                                            install_content_type,
-                                                            display_callback=display_callback,
-                                                            ignore_errors=ignore_errors,
-                                                            no_deps=no_deps,
-                                                            force_overwrite=force_overwrite)
+        new_dep_requirement_content_specs = install_collection(galaxy_context,
+                                                               content,
+                                                               # install_content_type,
+                                                               display_callback=display_callback,
+                                                               ignore_errors=ignore_errors,
+                                                               no_deps=no_deps,
+                                                               force_overwrite=force_overwrite)
 
         log.debug('new_dep_requirement_content_specs: %s', pprint.pformat(new_dep_requirement_content_specs))
         log.debug('dep_requirement_content_specs1: %s', pprint.pformat(dep_requirement_content_specs))
@@ -198,12 +201,13 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
     return dep_requirement_content_specs
 
 
-def install_content(galaxy_context, content, install_content_type,
-                    display_callback=None,
-                    # TODO: error handling callback ?
-                    ignore_errors=False,
-                    no_deps=False,
-                    force_overwrite=False):
+def install_collection(galaxy_context, content,
+                       install_content_type=None,
+                       display_callback=None,
+                       # TODO: error handling callback ?
+                       ignore_errors=False,
+                       no_deps=False,
+                       force_overwrite=False):
 
     dep_requirement_content_specs = []
 
@@ -213,7 +217,7 @@ def install_content(galaxy_context, content, install_content_type,
 
     if content.content_spec.fetch_method == content_spec.FetchMethods.EDITABLE:
         install_editable_content(content)
-        log.debug('not installing/extractings because of install_content')
+        log.debug('not installing/extractings because of install_collection')
         return
 
     log.debug('About to find() requested content: %s', content)
@@ -282,6 +286,8 @@ def install_content(galaxy_context, content, install_content_type,
         return None
         # continue
 
+    log.debug('installed result: %s', installed)
+
     if not installed:
         log.warning("- %s was NOT installed successfully.", content.name)
         raise_without_ignore(ignore_errors)
@@ -321,6 +327,9 @@ def install_content(galaxy_context, content, install_content_type,
             collection_dependencies = installed_content.metadata.dependencies or []
         log.debug('collection_dependencies: %s', pprint.pformat(collection_dependencies))
 
+        # TODO: also check for Collections requirements.yml via Collection.requirements?
+        #       and/or requirements in its MANIFEST.json
+
         for dep in collection_dependencies:
             log.debug('Installing dep %s', dep)
 
@@ -339,26 +348,26 @@ def install_content(galaxy_context, content, install_content_type,
     return dep_requirement_content_specs
     # return 0
 
-def role_install_post_check():
-    if False:
-        dep_role = GalaxyContent(galaxy_context, **dep_info)
-
-        if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
-            # we know we can skip this, as it's not going to
-            # be found on galaxy.ansible.com
-            continue
-        if dep_role.install_info is None:
-            if dep_role not in requested_contents:
-                display_callback('- adding dependency: %s' % str(dep_role))
-                requested_contents.append(dep_role)
-            else:
-                display_callback('- dependency %s already pending installation.' % dep_role.name)
-        else:
-            if dep_role.install_info['version'] != dep_role.version:
-                log.warning('- dependency %s from role %s differs from already installed version (%s), skipping',
-                            str(dep_role), installed_content.name, dep_role.install_info['version'])
-            else:
-                display_callback('- dependency %s is already installed, skipping.' % dep_role.name)
+# def role_install_post_check():
+#    if False:
+#        dep_role = GalaxyContent(galaxy_context, **dep_info)
+#
+#        if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
+#            # we know we can skip this, as it's not going to
+#            # be found on galaxy.ansible.com
+#            continue
+#        if dep_role.install_info is None:
+#            if dep_role not in requested_contents:
+#                display_callback('- adding dependency: %s' % str(dep_role))
+#                requested_contents.append(dep_role)
+#            else:
+#                display_callback('- dependency %s already pending installation.' % dep_role.name)
+#        else:
+#            if dep_role.install_info['version'] != dep_role.version:
+#                log.warning('- dependency %s from role %s differs from already installed version (%s), skipping',
+#                            str(dep_role), installed_content.name, dep_role.install_info['version'])
+#            else:
+#                display_callback('- dependency %s is already installed, skipping.' % dep_role.name)
 
 
 def install_editable_content(content):

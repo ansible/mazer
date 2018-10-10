@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 
 
 @attr.s(frozen=True)
-class ContentRepository(object):
+class Collection(object):
     content_spec = attr.ib(type=ContentSpec)
     path = attr.ib(default=None)
     installed = attr.ib(default=False, type=bool, cmp=False)

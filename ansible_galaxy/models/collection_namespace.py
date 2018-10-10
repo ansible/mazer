@@ -9,6 +9,6 @@ log = logging.getLogger(__name__)
 
 
 @attr.s(frozen=True)
-class RepositoryNamespace(object):
+class CollectionNamespace(object):
     namespace = attr.ib()
     path = attr.ib(default=None, cmp=False)

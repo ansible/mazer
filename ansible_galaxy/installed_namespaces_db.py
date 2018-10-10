@@ -3,7 +3,7 @@ import logging
 import os
 
 from ansible_galaxy import matchers
-from ansible_galaxy.models.repository_namespace import RepositoryNamespace
+from ansible_galaxy.models.collection_namespace import CollectionNamespace
 
 log = logging.getLogger(__name__)
 
@@ -40,12 +40,12 @@ def installed_namespace_iterator(galaxy_context,
     for namespace_path in namespace_paths:
         namespace_full_path = os.path.join(content_path, namespace_path)
 
-        repository_namespace = RepositoryNamespace(namespace=namespace_path,
+        collection_namespace = CollectionNamespace(namespace=namespace_path,
                                                    path=namespace_full_path)
 
-        if namespace_match_filter(repository_namespace):
-            log.debug('Found namespace "%s"', repository_namespace.namespace)
-            yield repository_namespace
+        if namespace_match_filter(collection_namespace):
+            log.debug('Found namespace "%s"', collection_namespace.namespace)
+            yield collection_namespace
 
 
 class InstalledNamespaceDatabase(object):

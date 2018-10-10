@@ -18,12 +18,12 @@ def test__list(galaxy_context, mocker):
     # galaxy_context.content_path = os.path.join(galaxy_context.content_path, 'doesntexist')
     mocker.patch('ansible_galaxy.installed_namespaces_db.get_namespace_paths',
                  return_value=iter(['ns_blip', 'ns_foo']))
-    mocker.patch('ansible_galaxy.installed_repository_db.get_repository_paths',
+    mocker.patch('ansible_galaxy.installed_collection_db.get_collection_paths',
                  return_value=iter(['n_bar', 'n_baz']))
 
     # The content type specific content iterator is determined at runtime, so we need to patch the value
-    # of the 'roles' item in installed_repository_content_iterator_map to patch the right method used
-    mocker.patch.dict('ansible_galaxy.installed_content_db.installed_repository_content_iterator_map',
+    # of the 'roles' item in installed_collection_content_iterator_map to patch the right method used
+    mocker.patch.dict('ansible_galaxy.installed_content_db.installed_collection_content_iterator_map',
                       {'roles': mocker.Mock(return_value=iter(['/dev/null/content/ns_foo/n_bar/roles/role-1',
                                                                '/dev/null/content/ns_blip/n_bar/roles/role-3',
                                                                '/dev/null/content/ns_blip/n_baz/roles/role-2']))})

@@ -6,6 +6,12 @@ import tempfile
 from ansible_galaxy.actions import install
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.context import GalaxyContext
+from ansible_galaxy.models.role_metadata import RoleMetadata
+
+# FIXME: get rid of GalaxyContentMeta
+from ansible_galaxy.models.content import GalaxyContentMeta
+
+from ansible_galaxy.flat_rest_api.content import InstalledContent
 
 log = logging.getLogger(__name__)
 
@@ -25,48 +31,67 @@ def _galaxy_context():
 def test_install_contents_empty_contents(galaxy_context):
     contents = []
 
-    ret = install.install_contents(galaxy_context,
-                                   requested_contents=contents,
-                                   install_content_type='role',
-                                   display_callback=display_callback)
+    ret = install.install_collections(galaxy_context,
+                                      requested_contents=contents,
+                                      install_content_type='role',
+                                      display_callback=display_callback)
 
     log.debug('ret: %s', ret)
-    assert ret == 0
+    assert isinstance(ret, list)
+    assert ret == []
 
 
-def test_install_contents(galaxy_context):
+
+# TODO: replace InstalledContent with @attr thing, then shouldn't need a mock
+def test_install_collections(galaxy_context):
+    needed_deps = ['some_namespace.some_name']
+    mock_role_metadata = RoleMetadata(name='some_role', dependencies=needed_deps)
+    mock_installed = [mock.Mock(name='a mock InstalledCollection maybe',
+                                spec=InstalledContent,
+                                metadata=mock_role_metadata)]
     contents = [mock.Mock(content_type='role',
                           # FIXME: install bases update on install_info existing, so will fail for other content
                           install_info=None,
+                          install=mock.Mock(return_value=mock_installed),
                           metadata={'content_type': 'role'})]
 
-    ret = install.install_contents(galaxy_context,
-                                   requested_contents=contents,
-                                   install_content_type='role',
-                                   display_callback=display_callback)
+    ret = install.install_collections(galaxy_context,
+                                      requested_contents=contents,
+                                      # install_content_type='role',
+                                      display_callback=display_callback)
 
     log.debug('ret: %s', ret)
-    assert ret == 0
+    assert isinstance(ret, list)
+    assert ret == needed_deps
 
 
-def test_install_contents_module(galaxy_context):
-    contents = [mock.Mock(content_type='module',
+def test_install_collections_no_deps_required(galaxy_context):
+    needed_deps = []
+    mock_role_metadata = RoleMetadata(name='some_role', dependencies=needed_deps)
+    mock_installed = [mock.Mock(name='a mock InstalledCollection maybe',
+                                spec=InstalledContent,
+                                metadata=mock_role_metadata)]
+    contents = [mock.Mock(content_type='role',
                           # FIXME: install bases update on install_info existing, so will fail for other content
                           install_info=None,
-                          metadata={'content_type': 'module'})]
+                          install=mock.Mock(return_value=mock_installed),
+                          metadata={'content_type': 'role'})]
 
-    ret = install.install_contents(galaxy_context,
-                                   requested_contents=contents,
-                                   install_content_type='module',
-                                   display_callback=display_callback)
+    ret = install.install_collections(galaxy_context,
+                                      requested_contents=contents,
+                                      # install_content_type='role',
+                                      display_callback=display_callback)
 
     log.debug('ret: %s', ret)
-    # assert ret == 0
+    assert isinstance(ret, list)
+    assert ret == needed_deps
 
 
 def test_build_content_set_empty(galaxy_context):
     ret = install._build_content_set([], 'role', galaxy_context)
+
     log.debug('ret: %s', ret)
+    assert isinstance(ret, list)
     assert ret == []
 
 

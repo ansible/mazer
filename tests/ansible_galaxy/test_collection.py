@@ -3,7 +3,7 @@ import json
 import logging
 import os
 
-from ansible_galaxy import content_repository
+from ansible_galaxy import collection
 
 log = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ def _load_path(file_name):
     log.debug('test_data_path=%s', test_data_path)
 
     data = open(test_data_path, 'r').read()
-    ret = content_repository.load(data)
+    ret = collection.load(data)
     return ret
 
 

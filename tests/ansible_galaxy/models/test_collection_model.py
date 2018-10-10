@@ -5,7 +5,7 @@ import attr
 import pytest
 import six
 
-from ansible_galaxy.models import content_repository
+from ansible_galaxy.models import collection
 from ansible_galaxy.models import content_spec
 
 log = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ def csf(request):
 
 
 def test_frozen(csf):
-    cr = content_repository.ContentRepository(content_spec=csf)
+    cr = collection.Collection(content_spec=csf)
 
     new_cr = content_spec.ContentSpec(namespace='somenamespace', name='somename', version='1.2.3')
 
@@ -34,7 +34,7 @@ def test_frozen(csf):
 
 def test_cr_init_no_args():
     with pytest.raises(TypeError) as exc_info:
-        content_repository.ContentRepository()
+        collection.Collection()
 
     log.debug('exc_info.getrepr(): %s', exc_info.getrepr(showlocals=True, style='native'))
 
@@ -48,26 +48,26 @@ def test_cr_init_no_args():
 
 
 def test_cr_init(csf):
-    cr = content_repository.ContentRepository(content_spec=csf)
+    cr = collection.Collection(content_spec=csf)
 
-    assert isinstance(cr, content_repository.ContentRepository)
-    assert 'ContentRepository' in repr(cr)
+    assert isinstance(cr, collection.Collection)
+    assert 'Collection' in repr(cr)
 
 
 def test_cr_init_path(csf):
     path = '/dev/null/wherever'
-    cr = content_repository.ContentRepository(content_spec=csf,
-                                              path=path)
+    cr = collection.Collection(content_spec=csf,
+                               path=path)
 
-    assert isinstance(cr, content_repository.ContentRepository)
+    assert isinstance(cr, collection.Collection)
     assert path in repr(cr)
     assert cr.path == path
 
 
 def CR(content_spec=None, path=None):
     if path:
-        return content_repository.ContentRepository(content_spec=content_spec, path=path)
-    return content_repository.ContentRepository(content_spec=content_spec)
+        return collection.Collection(content_spec=content_spec, path=path)
+    return collection.Collection(content_spec=content_spec)
 
 
 ns_n = content_spec.ContentSpec(namespace='ns', name='n', version='1.0.0')

@@ -328,10 +328,10 @@ class GalaxyContent(object):
 
         return all_installed_paths
 
-    def _install_contents(self, content_tar_file, archive_parent_dir,
-                          content_archive_type=None, content_meta=None,
-                          content_sub_name=None,
-                          force_overwrite=False):
+    def _install_collection(self, content_tar_file, archive_parent_dir,
+                            content_archive_type=None, content_meta=None,
+                            content_sub_name=None,
+                            force_overwrite=False):
 
         if not content_meta.namespace:
             raise exceptions.GalaxyError('While installing content from %s, no namespace was found. '
@@ -545,12 +545,12 @@ class GalaxyContent(object):
 
             log.debug('content_meta: %s', content_meta)
 
-            res = self._install_contents(content_tar_file,
-                                         archive_parent_dir,
-                                         archive_meta.archive_type,
-                                         content_meta,
-                                         content_sub_name=self.sub_name,
-                                         force_overwrite=force_overwrite)
+            res = self._install_collection(content_tar_file,
+                                           archive_parent_dir,
+                                           archive_meta.archive_type,
+                                           content_meta,
+                                           content_sub_name=self.sub_name,
+                                           force_overwrite=force_overwrite)
             installed.append((content_meta, res))
 
         elif archive_meta.archive_type == 'role':

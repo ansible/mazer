@@ -88,7 +88,7 @@ class GalaxyCLI(cli.CLI):
         if self.action == "build":
             self.parser.set_usage("usage: %prog build [options]")
             self.parser.add_option('--collection-path', dest='collection_path', default=None,
-                                   help='The path in which the collection repository is located. The default is the current working directory.')
+                                   help='The path in which the collection is located. The default is the current working directory.')
             self.parser.add_option('--output-path', dest='output_path', default=None,
                                    help='The path in which the collection artifact will be created. The default is ./releases/.')
 
@@ -256,18 +256,18 @@ class GalaxyCLI(cli.CLI):
 
         self.log.debug('self.options: %s', self.options)
         galaxy_context = self._get_galaxy_context(self.options, self.config)
-        requested_content_specs = self.args
+        requested_collection_specs = self.args
 
         try:
-            rc = install.install_content_specs_loop(galaxy_context,
-                                                    editable=self.options.editable_install,
-                                                    content_spec_strings=requested_content_specs,
-                                                    install_content_type=install_content_type,
-                                                    namespace_override=self.options.namespace,
-                                                    display_callback=self.display,
-                                                    ignore_errors=self.options.ignore_errors,
-                                                    no_deps=self.options.no_deps,
-                                                    force_overwrite=self.options.force)
+            rc = install.install_collection_specs_loop(galaxy_context,
+                                                       editable=self.options.editable_install,
+                                                       collection_spec_strings=requested_collection_specs,
+                                                       install_content_type=install_content_type,
+                                                       namespace_override=self.options.namespace,
+                                                       display_callback=self.display,
+                                                       ignore_errors=self.options.ignore_errors,
+                                                       no_deps=self.options.no_deps,
+                                                       force_overwrite=self.options.force)
         except Exception as e:
             log.exception(e)
             raise
@@ -288,7 +288,7 @@ class GalaxyCLI(cli.CLI):
             match_filter = matchers.MatchLabels(self.args)
 
         return remove.remove(galaxy_context,
-                             repository_match_filter=match_filter,
+                             collection_match_filter=match_filter,
                              display_callback=self.display)
 
     def execute_list(self):
@@ -304,7 +304,7 @@ class GalaxyCLI(cli.CLI):
             match_filter = matchers.MatchNamespacesOrLabels(self.args)
 
         return list_action.list(galaxy_context,
-                                repository_match_filter=match_filter,
+                                collection_match_filter=match_filter,
                                 display_callback=self.display)
 
     def execute_version(self):

@@ -33,9 +33,9 @@ def get_download_url(repo_data=None, external_url=None, repoversion=None):
         return archive_url
 
 
-def select_repository_version(repoversions, version):
-    # repository_version's 'version' is 'not null' so should always exist
-    # however, the list of repository_versions can be empty
+def select_collection_version(repoversions, version):
+    # collection_version's 'version' is 'not null' so should always exist
+    # however, the list of collection_versions can be empty
 
     # If the rest api returns a empty list for repo versions, return an
     # empty dict for 'no version'
@@ -52,7 +52,7 @@ def select_repository_version(repoversions, version):
     if not results:
         return {}
 
-    # repository_versions is uniq on (version, repo.id) so for any given repo,
+    # collection_versions is uniq on (version, repo.id) so for any given repo,
     # there should only be one result here
     repoversion = results.pop()
     return repoversion
@@ -127,7 +127,7 @@ class GalaxyUrlFetch(base.BaseFetch):
                                                                 content_content_name=content_name)
 
         # get the RepositoryVersion obj (or its data anyway)
-        _repoversion = select_repository_version(repoversions, repo_version_best)
+        _repoversion = select_collection_version(repoversions, repo_version_best)
         # FIXME: stop munging state
         # self.content_meta.version = _content_version
 
