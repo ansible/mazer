@@ -73,7 +73,8 @@ def installed_content_iterator(galaxy_context,
 
             # TODO: should probably sep the generator for getting the InstalledContent objects from the generator that
             #       creates the content_info returns instead of intertwining them
-            if gr.metadata or gr.install_info:
+            # if gr.metadata or gr.install_info:
+            if gr.install_info:
                 version = gr.install_info.version or "(unknown version)"
 
             if not content_match_filter(gr):

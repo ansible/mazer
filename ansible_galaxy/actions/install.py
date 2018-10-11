@@ -5,6 +5,7 @@ import pprint
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy import content_spec
+from ansible_galaxy import install
 from ansible_galaxy import installed_collection_db
 from ansible_galaxy import matchers
 from ansible_galaxy.utils import yaml_parse
@@ -209,6 +210,7 @@ def install_collection(galaxy_context, content,
                        no_deps=False,
                        force_overwrite=False):
 
+    # INITIAL state
     dep_requirement_content_specs = []
 
     # TODO: we could do all the downloads first, then install them. Likely
@@ -216,16 +218,29 @@ def install_collection(galaxy_context, content,
     log.debug('Processing %s as %s', content.name, content.content_type)
 
     if content.content_spec.fetch_method == content_spec.FetchMethods.EDITABLE:
+        # trans to INSTALL_EDITABLE state
         install_editable_content(content)
+        # check results, then transition to either DONE or INSTALL_EDIBLE_FAILED
         log.debug('not installing/extractings because of install_collection')
         return
+    # else trans to ... FIND_FETCHER?
 
     log.debug('About to find() requested content: %s', content)
 
+    fetcher = install.fetcher(galaxy_context, content_spec=content.content_spec)
+    # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
+    # could also move some of the logic in fetcher_factory to be driven from here
+    # and make the steps of mapping collection spec -> fetcher method part of the
+    # state machine. That might be a good place to support multiple galaxy servers
+    # or preferring local content to remote content, etc.
+
+    # FIND state
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
     try:
-        content.find()
+        find_results = install.find(fetcher, collection=content)
+        log.debug('standalone find_results: %s', find_results)
+        # content.find()
     except exceptions.GalaxyError as e:
         log.warning('Unable to find metadata for %s: %s', content.name, e)
         # FIXME: raise dep error exception?
@@ -233,11 +248,23 @@ def install_collection(galaxy_context, content,
         # continue
         return None
 
+    # TODO: state transition, if find_results -> INSTALL
+    #       if not, then FIND_FAILED
+
     log.debug('About to download requested content: %s', content)
 
+    # FETCH state
     try:
-        content.fetch()
+        fetch_results = install.fetch(fetcher,
+                                      content_spec=content.content_spec,
+                                      find_results=find_results)
+        # content.fetch()
+        log.debug('fetch_results: %s', fetch_results)
+        # fetch_results will include a 'archive_path' pointing to where the artifact
+        # was saved to locally.
     except exceptions.GalaxyError as e:
+        # fetch error probably should just go to a FAILED state, at least until
+        # we have to implement retries
         log.warning('Unable to fetch %s: %s', content.name, e)
         raise_without_ignore(ignore_errors, e)
         # continue
@@ -272,14 +299,20 @@ def install_collection(galaxy_context, content,
                     # continue
                     return None
 
+
     # FIXME: seems like we want to resolve deps before trying install
     #        We need the role (or other content) deps from meta before installing
     #        though, and sometimes (for galaxy case) we dont know that until we've downloaded
     #        the file, which we dont do until somewhere in the begin of content.install (fetch).
     #        We can get that from the galaxy API though.
     #
+    # FIXME: exc handling
     try:
-        installed = content.install(force_overwrite=force_overwrite)
+        installed = install.install(galaxy_context,
+                                    fetcher,
+                                    fetch_results,
+                                    content.content_meta,
+                                    force_overwrite=force_overwrite)
     except exceptions.GalaxyError as e:
         log.warning("- %s was NOT installed successfully: %s ", content.name, str(e))
         raise_without_ignore(ignore_errors, e)
@@ -297,6 +330,7 @@ def install_collection(galaxy_context, content,
         log.warning('- %s was installed but any deps will not be installed because of no_deps',
                     content.name)
 
+    # TODO?: update the install receipt for 'installed' if succesull?
     # oh dear god, a dep solver...
 
     #
