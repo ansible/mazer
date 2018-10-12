@@ -10,9 +10,6 @@ from ansible_galaxy import installed_collection_db
 from ansible_galaxy import matchers
 from ansible_galaxy.utils import yaml_parse
 
-# FIXME: get rid of flat_rest_api
-from ansible_galaxy.flat_rest_api.content import GalaxyContent
-
 log = logging.getLogger(__name__)
 
 
@@ -33,15 +30,14 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
 # FIXME: install_content_type is wrong, should be option to GalaxyContent.install()?
 # TODO: this will eventually be replaced by a content_spec 'resolver' that may
 #       hit galaxy api
-def _build_content_set(collection_spec_strings, install_content_type, galaxy_context,
-                       namespace_override=None, editable=False):
+def _build_content_spec_list(collection_spec_strings, install_content_type, galaxy_context,
+                             namespace_override=None, editable=False):
     # TODO: split this into methods that build GalaxyContent items from the content_specs
     #       and another that installs a set of GalaxyContents
     # roles were specified directly, so we'll just go out grab them
     # (and their dependencies, unless the user doesn't want us to).
 
-    # FIXME: could be a generator...
-    content_left = []
+    content_spec_list = []
 
     for collection_spec_string in collection_spec_strings:
         content_spec_ = content_spec.content_spec_from_string(collection_spec_string.strip(),
@@ -55,18 +51,17 @@ def _build_content_set(collection_spec_strings, install_content_type, galaxy_con
                 'The content spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % content_spec_.spec_string,
                 content_spec=content_spec_)
 
-        # TODO: a content spec resolver to extend this info, find it, build a GalaxyContent
-        #       and return it.
-        content_left.append(GalaxyContent(galaxy_context,
-                                          namespace=content_spec_.namespace,
-                                          name=content_spec_.name,
-                                          src=content_spec_.src,
-                                          scm=content_spec_.scm,
-                                          version=content_spec_.version,
-                                          content_spec=content_spec_,
-                                          ))
+        content_spec_list.append(content_spec_)
+#        content_spec_list.append(GalaxyContent(galaxy_context,
+#                                               namespace=content_spec_.namespace,
+#                                               name=content_spec_.name,
+#                                               src=content_spec_.src,
+#                                               scm=content_spec_.scm,
+#                                               version=content_spec_.version,
+#                                               content_spec=content_spec_,
+#                                               ))
 
-    return content_left
+    return content_spec_list
 
 
 # pass a list of content_spec objects
@@ -86,21 +81,21 @@ def install_collections_matching_collection_specs(galaxy_context,
     log.debug('collection_spec_strings: %s', collection_spec_strings)
     log.debug('install_content_type: %s', install_content_type)
 
-    requested_contents = _build_content_set(collection_spec_strings=collection_spec_strings,
-                                            install_content_type=install_content_type,
-                                            galaxy_context=galaxy_context,
-                                            namespace_override=namespace_override,
-                                            editable=editable)
+    requested_content_specs = _build_content_spec_list(collection_spec_strings=collection_spec_strings,
+                                                       install_content_type=install_content_type,
+                                                       galaxy_context=galaxy_context,
+                                                       namespace_override=namespace_override,
+                                                       editable=editable)
 
     # FIXME: mv mv this filtering to it's own method
     # match any of the content specs for stuff we want to install
     # ie, see if it is already installed
-    collection_match_filter = matchers.MatchContentSpec([x.content_spec for x in requested_contents])
+    collection_match_filter = matchers.MatchContentSpec([x for x in requested_content_specs])
 
     icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
     already_installed_generator = icdb.select(collection_match_filter=collection_match_filter)
 
-    log.debug('requested_contents before: %s', requested_contents)
+    log.debug('requested_content_specs before: %s', requested_content_specs)
 
     # FIXME: if/when GalaxyContent and InstalledGalaxyContent are attr.ib based and frozen and hashable
     #        we can simplify this filter with set ops
@@ -114,13 +109,12 @@ def install_collections_matching_collection_specs(galaxy_context,
 
         raise exceptions.GalaxyError(msg)
 
-    needs_installed = [y for y in requested_contents if y.content_spec not in already_installed_content_spec_set or force_overwrite]
-    log.debug('needs_installed: %s', pprint.pformat(needs_installed))
+    content_specs_to_install = [y for y in requested_content_specs if y not in already_installed_content_spec_set or force_overwrite]
+    log.debug('content_specs_to_install: %s', pprint.pformat(content_specs_to_install))
 
-    requested_contents = needs_installed
-    log.debug('requested_contents after: %s', requested_contents)
+    log.debug('content_specs_to_install after: %s', content_specs_to_install)
 
-    return install_collections(galaxy_context, requested_contents, install_content_type,
+    return install_collections(galaxy_context, content_specs_to_install, install_content_type,
                                display_callback=display_callback,
                                ignore_errors=ignore_errors,
                                no_deps=no_deps,
@@ -168,7 +162,7 @@ def install_collection_specs_loop(galaxy_context,
 
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
 def install_collections(galaxy_context,
-                        requested_contents,
+                        content_specs_to_install,
                         install_content_type=None,
                         display_callback=None,
                         # TODO: error handling callback ?
@@ -177,7 +171,7 @@ def install_collections(galaxy_context,
                         force_overwrite=False):
 
     display_callback = display_callback or display.display_callback
-    log.debug('requested_contents: %s', requested_contents)
+    log.debug('content_specs_to_install: %s', content_specs_to_install)
     log.debug('install_content_type: %s', install_content_type)
     log.debug('no_deps: %s', no_deps)
     log.debug('force_overwrite: %s', force_overwrite)
@@ -191,10 +185,10 @@ def install_collections(galaxy_context,
 
     # FIXME: should be while? or some more func style processing
     #        iterating until there is nothing left
-    for content in requested_contents:
-        log.debug('content: %s', content)
+    for content_spec_to_install in content_specs_to_install:
+        log.debug('content_spec_to_install: %s', content_spec_to_install)
         new_dep_requirement_content_specs = install_collection(galaxy_context,
-                                                               content,
+                                                               content_spec_to_install,
                                                                # install_content_type,
                                                                display_callback=display_callback,
                                                                ignore_errors=ignore_errors,
@@ -213,8 +207,9 @@ def install_collections(galaxy_context,
     return dep_requirement_content_specs
 
 
+
 def install_collection(galaxy_context,
-                       content,
+                       content_spec_to_install,
                        install_content_type=None,
                        display_callback=None,
                        # TODO: error handling callback ?
@@ -228,19 +223,19 @@ def install_collection(galaxy_context,
 
     # TODO: we could do all the downloads first, then install them. Likely
     #       less error prone mid 'transaction'
-    log.debug('Processing %s as %s', content.name, content.content_type)
+    log.debug('Processing %s', content_spec_to_install.name)
 
-    if content.content_spec.fetch_method == content_spec.FetchMethods.EDITABLE:
+    if content_spec_to_install.fetch_method == content_spec.FetchMethods.EDITABLE:
         # trans to INSTALL_EDITABLE state
-        install_editable_content(content)
+        install_editable_content(content_spec_to_install)
         # check results, then transition to either DONE or INSTALL_EDIBLE_FAILED
         log.debug('not installing/extractings because of install_collection')
         return
     # else trans to ... FIND_FETCHER?
 
-    log.debug('About to find() requested content: %s', content)
+    log.debug('About to find() requested content_spec_to_install: %s', content_spec_to_install)
 
-    fetcher = install.fetcher(galaxy_context, content_spec=content.content_spec)
+    fetcher = install.fetcher(galaxy_context, content_spec=content_spec_to_install)
     # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
     # could also move some of the logic in fetcher_factory to be driven from here
     # and make the steps of mapping collection spec -> fetcher method part of the
@@ -251,11 +246,11 @@ def install_collection(galaxy_context,
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
     try:
-        find_results = install.find(fetcher, collection=content)
+        find_results = install.find(fetcher, content_spec=content_spec_to_install)
         log.debug('standalone find_results: %s', find_results)
         # content.find()
     except exceptions.GalaxyError as e:
-        log.warning('Unable to find metadata for %s: %s', content.name, e)
+        log.warning('Unable to find metadata for %s: %s', content_spec_to_install.name, e)
         # FIXME: raise dep error exception?
         raise_without_ignore(ignore_errors, e)
         # continue
@@ -264,12 +259,12 @@ def install_collection(galaxy_context,
     # TODO: state transition, if find_results -> INSTALL
     #       if not, then FIND_FAILED
 
-    log.debug('About to download requested content: %s', content)
+    log.debug('About to download requested content_spec_to_install: %s', content_spec_to_install)
 
     # FETCH state
     try:
         fetch_results = install.fetch(fetcher,
-                                      content_spec=content.content_spec,
+                                      content_spec=content_spec_to_install,
                                       find_results=find_results)
         # content.fetch()
         log.debug('fetch_results: %s', fetch_results)
@@ -278,41 +273,11 @@ def install_collection(galaxy_context,
     except exceptions.GalaxyError as e:
         # fetch error probably should just go to a FAILED state, at least until
         # we have to implement retries
-        log.warning('Unable to fetch %s: %s', content.name, e)
+        log.warning('Unable to fetch %s: %s', content_spec_to_install.name, e)
         raise_without_ignore(ignore_errors, e)
         # continue
         # FIXME: raise ?
         return None
-
-    # TODO: Need some sort of ContentTransaction for encapsulating pairs of remove and install
-    #       (or any set of ops needed)
-    # FIXME - Unsure if we want to handle the install info for all galaxy
-    #         content. Skipping for non-role types for now.
-    # FIXME: this is just deciding if the content is installed or not, should check for it in
-    #        a 'installed_content_db' once we have one
-    if content.content_type == "role":
-        if content.install_info is not None:
-            # FIXME: seems like this should be up to the content type specific serializer/installer to figure out
-            # FIXME: this just checks for version difference, will need to enfore update/replace policy somewhre
-            if content.install_info['version'] != content.version or force_overwrite:
-                if force_overwrite:
-                    display_callback('- changing role %s from %s to %s' %
-                                     (content.name, content.install_info['version'], content.version or "unspecified"))
-                    # FIXME: when we get to setting up a tranaction/update plan,
-                    #        this would add a remove step there and an install
-                    #        step (or an update maybe)
-                    content.remove()
-                else:
-                    # eventually need to build a results object here
-                    log.warn('- %s (%s) is already installed - use --force to change version to %s',
-                             content.name, content.install_info['version'], content.version or "unspecified")
-                    # continue
-                    return None
-            else:
-                if not force_overwrite:
-                    display_callback('- %s is already installed, skipping.' % str(content))
-                    # continue
-                    return None
 
 
     # FIXME: seems like we want to resolve deps before trying install
@@ -326,10 +291,11 @@ def install_collection(galaxy_context,
         installed = install.install(galaxy_context,
                                     fetcher,
                                     fetch_results,
-                                    content.content_meta,
+                                    # content.content_meta,
+                                    content_spec=content_spec_to_install,
                                     force_overwrite=force_overwrite)
     except exceptions.GalaxyError as e:
-        log.warning("- %s was NOT installed successfully: %s ", content.name, str(e))
+        log.warning("- %s was NOT installed successfully: %s ", content_spec_to_install.name, str(e))
         raise_without_ignore(ignore_errors, e)
         return None
         # continue
@@ -337,20 +303,20 @@ def install_collection(galaxy_context,
     log.debug('installed result: %s', installed)
 
     if not installed:
-        log.warning("- %s was NOT installed successfully.", content.name)
+        log.warning("- %s was NOT installed successfully.", content_spec_to_install.label)
         raise_without_ignore(ignore_errors)
 
     log.debug('installed: %s', pprint.pformat(installed))
     if no_deps:
         log.warning('- %s was installed but any deps will not be installed because of no_deps',
-                    content.name)
+                    content_spec_to_install.label)
 
     # TODO?: update the install receipt for 'installed' if succesull?
     # oh dear god, a dep solver...
 
-    #
     if no_deps:
         return dep_requirement_content_specs
+
     # FIXME: should install all of init 'deps', then build a list of new deps, and repeat
 
     # install dependencies, if we want them
@@ -417,6 +383,41 @@ def install_collection(galaxy_context,
 #                            str(dep_role), installed_content.name, dep_role.install_info['version'])
 #            else:
 #                display_callback('- dependency %s is already installed, skipping.' % dep_role.name)
+
+    # TODO: Need some sort of ContentTransaction for encapsulating pairs of remove and install
+
+
+# FIXME: do we need this? archive.extract_files() may do this for us now
+def stuff_for_updating(content, display_callback, force_overwrite=False):
+
+    #       (or any set of ops needed)
+    # FIXME - Unsure if we want to handle the install info for all galaxy
+    #         content. Skipping for non-role types for now.
+    # FIXME: this is just deciding if the content is installed or not, should check for it in
+    #        a 'installed_content_db' once we have one
+    if content.content_type == "role":
+        if content.install_info is not None:
+            # FIXME: seems like this should be up to the content type specific serializer/installer to figure out
+            # FIXME: this just checks for version difference, will need to enfore update/replace policy somewhre
+            if content.install_info['version'] != content.version or force_overwrite:
+                if force_overwrite:
+                    display_callback('- changing role %s from %s to %s' %
+                                     (content.name, content.install_info['version'], content.version or "unspecified"))
+                    # FIXME: when we get to setting up a tranaction/update plan,
+                    #        this would add a remove step there and an install
+                    #        step (or an update maybe)
+                    content.remove()
+                else:
+                    # eventually need to build a results object here
+                    log.warn('- %s (%s) is already installed - use --force to change version to %s',
+                             content.name, content.install_info['version'], content.version or "unspecified")
+                    # continue
+                    return None
+            else:
+                if not force_overwrite:
+                    display_callback('- %s is already installed, skipping.' % str(content))
+                    # continue
+                    return None
 
 
 def install_editable_content(content):

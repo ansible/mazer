@@ -41,17 +41,17 @@ def fetcher(galaxy_context, content_spec):
     return fetcher
 
 
-def find(fetcher, collection):
+def find(fetcher, content_spec):
     """find/discover info about the content
 
     This is all side effect, setting self._find_results."""
 
-    log.debug('Attempting to find() content_spec=%s', collection.content_spec)
+    log.debug('Attempting to find() content_spec=%s', content_spec)
 
     # TODO: sep method, called from actions.install
     find_results = fetcher.find()
 
-    log.debug('find() found info for %s: %s', collection, find_results)
+    log.debug('find() found info for %s: %s', content_spec.label, find_results)
 
     return find_results
 
@@ -135,14 +135,15 @@ def verify(fetch_results,
 def install(galaxy_context,
             fetcher,
             fetch_results,
-            content_meta,
+            content_spec,
+            content_meta=None,
             force_overwrite=False):
     """extract the archive to the filesystem and write out install metadata.
 
     MUST be called after self.fetch()."""
 
-    log.debug('install: content_meta=%s, force_overwrite=%s',
-              content_meta, force_overwrite)
+    log.debug('install: content_spec=%s, force_overwrite=%s',
+              content_spec, force_overwrite)
     installed = []
     archive_parent_dir = None
 
@@ -170,24 +171,24 @@ def install(galaxy_context,
     content_archive_ = content_archive.load_archive(archive_path)
     log.debug('content_archive_: %s', content_archive_)
 
-    log.debug('content_archive_.archive_meta: %s', content_archive_.info)
+    log.debug('content_archive_.info: %s', content_archive_.info)
 
     # we strip off any higher-level directories for all of the files contained within
     # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other
     # hand, does not have a parent directory at all.
 
     # preparation for archive extraction
-    if not os.path.isdir(content_meta.path):
-        log.debug('No content path (%s) found so creating it', content_meta.path)
+    if not os.path.isdir(galaxy_context.content_path):
+        log.debug('No content path (%s) found so creating it', galaxy_context.content_path)
 
-        os.makedirs(content_meta.path)
+        os.makedirs(galaxy_context.content_path)
 
     # FIXME: guess might as well pass in content_meta
-    res = content_archive_.install(content_namespace=content_meta.namespace,
-                                   content_name=content_meta.name,
-                                   content_version=content_meta.version,
+    res = content_archive_.install(content_namespace=content_spec.namespace,
+                                   content_name=content_spec.name,
+                                   content_version=content_spec.version,
                                    # surely wrong...
-                                   extract_to_path=content_meta.path,
+                                   extract_to_path=galaxy_context.content_path,
                                    force_overwrite=force_overwrite)
     installed.append((content_meta, res))
 

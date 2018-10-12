@@ -17,6 +17,7 @@ class ContentSpec(object):
     scm = attr.ib(default=None, cmp=False)
     spec_string = attr.ib(default=None, cmp=False)
     src = attr.ib(default=None, cmp=False)
+    operation = attr.ib(default=None)
 
     @property
     def label(self):
