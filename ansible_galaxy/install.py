@@ -136,7 +136,7 @@ def install(galaxy_context,
             fetcher,
             fetch_results,
             content_spec,
-            content_meta=None,
+            # content_meta=None,
             force_overwrite=False):
     """extract the archive to the filesystem and write out install metadata.
 
@@ -190,7 +190,7 @@ def install(galaxy_context,
                                    # surely wrong...
                                    extract_to_path=galaxy_context.content_path,
                                    force_overwrite=force_overwrite)
-    installed.append((content_meta, res))
+    installed.append((content_spec, res))
 
     # self.display_callback("- all content was succssfully installed to %s" % self.path)
 
@@ -200,17 +200,17 @@ def install(galaxy_context,
 
     installed_contents = []
     for item in installed:
-        installed_content_meta = item[0]
-        log.info('Installed content: %s', installed_content_meta)
+        installed_content_spec = item[0]
+        log.info('Installed content_spec: %s', installed_content_spec)
         #  name=test-role-c, namespace=alikins, path=/home/adrian/.ansible/content/alikins/ansible_testing_content/roles/test-role-c
 
         # TODO: Replace with InstalledCollection ?
         # FIXME:
         installed_content = InstalledContent(galaxy_context,
-                                             name=installed_content_meta.name,
-                                             namespace=installed_content_meta.namespace,
+                                             name=installed_content_spec.name,
+                                             namespace=installed_content_spec.namespace,
                                              # TESTME:
-                                             path=content_meta.path,
+                                             # path=content_meta.path,
                                              # path=repo_install_path,
                                              )
         installed_contents.append(installed_content)
