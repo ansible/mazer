@@ -80,6 +80,8 @@ def install_collections_matching_collection_specs(galaxy_context,
                                                   ignore_errors=False,
                                                   no_deps=False,
                                                   force_overwrite=False):
+    '''Install a set of packages specified by collection_spec_strings if they are not already installed'''
+
     log.debug('editable: %s', editable)
     log.debug('collection_spec_strings: %s', collection_spec_strings)
     log.debug('install_content_type: %s', install_content_type)
@@ -106,7 +108,13 @@ def install_collections_matching_collection_specs(galaxy_context,
     already_installed_content_spec_set = set([installed.content_spec for installed in already_installed_generator])
     log.debug('already_installed_content_spec_set: %s', already_installed_content_spec_set)
 
-    needs_installed = [y for y in requested_contents if y.content_spec not in already_installed_content_spec_set]
+    if already_installed_content_spec_set and not force_overwrite:
+        msg = 'The following packages are already installed. Use --force to overwrite:\n%s' % \
+            '\n'.join([x.label for x in already_installed_content_spec_set])
+
+        raise exceptions.GalaxyError(msg)
+
+    needs_installed = [y for y in requested_contents if y.content_spec not in already_installed_content_spec_set or force_overwrite]
     log.debug('needs_installed: %s', pprint.pformat(needs_installed))
 
     requested_contents = needs_installed
@@ -121,7 +129,9 @@ def install_collections_matching_collection_specs(galaxy_context,
 
 # FIXME: probably pass the point where passing around all the data to methods makes sense
 #        so probably needs a stateful class here
-def install_collection_specs_loop(galaxy_context, collection_spec_strings, install_content_type,
+def install_collection_specs_loop(galaxy_context,
+                                  collection_spec_strings,
+                                  install_content_type,
                                   editable=False,
                                   namespace_override=None,
                                   display_callback=None,
@@ -157,7 +167,8 @@ def install_collection_specs_loop(galaxy_context, collection_spec_strings, insta
 
 
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
-def install_collections(galaxy_context, requested_contents,
+def install_collections(galaxy_context,
+                        requested_contents,
                         install_content_type=None,
                         display_callback=None,
                         # TODO: error handling callback ?
@@ -202,13 +213,15 @@ def install_collections(galaxy_context, requested_contents,
     return dep_requirement_content_specs
 
 
-def install_collection(galaxy_context, content,
+def install_collection(galaxy_context,
+                       content,
                        install_content_type=None,
                        display_callback=None,
                        # TODO: error handling callback ?
                        ignore_errors=False,
                        no_deps=False,
                        force_overwrite=False):
+    '''This installs a single package by finding it, fetching it, verifying it and installing it.'''
 
     # INITIAL state
     dep_requirement_content_specs = []
@@ -271,6 +284,8 @@ def install_collection(galaxy_context, content,
         # FIXME: raise ?
         return None
 
+    # TODO: Need some sort of ContentTransaction for encapsulating pairs of remove and install
+    #       (or any set of ops needed)
     # FIXME - Unsure if we want to handle the install info for all galaxy
     #         content. Skipping for non-role types for now.
     # FIXME: this is just deciding if the content is installed or not, should check for it in
