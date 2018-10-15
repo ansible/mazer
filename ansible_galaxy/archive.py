@@ -104,6 +104,10 @@ def extract_file(tar_file, file_to_extract):
         raise exceptions.GalaxyArchiveError('The archive "%s" has no file "%s"' % (tar_file.name, archive_member.name),
                                             archive_path=tar_file.name)
 
+    # TODO: set a default owner/group
+    # MAYBE TODO: pick a 'install time' and make sure all the mtime/ctime values of extracted files
+    #             match the 'install time' used in .galaxy_install_info ?
+
     # change the tar file member name in place to just the filename ('myfoo.py') so that extract places that file in
     # dest_dir directly instead of using adding the archive path as well
     # like '$dest_dir/archive-roles/library/myfoo.py'

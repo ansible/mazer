@@ -42,16 +42,13 @@ def fetcher(galaxy_context, content_spec):
 
 
 def find(fetcher, content_spec):
-    """find/discover info about the content
-
-    This is all side effect, setting self._find_results."""
+    """find/discover info about the content"""
 
     log.debug('Attempting to find() content_spec=%s', content_spec)
 
-    # TODO: sep method, called from actions.install
     find_results = fetcher.find()
 
-    log.debug('find() found info for %s: %s', content_spec.label, find_results)
+    # log.debug('find() found info for %s: %s', content_spec.label, find_results)
 
     return find_results
 
@@ -86,9 +83,6 @@ def fetch(fetcher, content_spec, find_results):
         #       if we want to skip some of them
         raise
 
-    # self._fetch_results = fetch_results
-    # self._archive_path = fetch_results['archive_path']
-
     return fetch_results
 
 #
@@ -104,32 +98,36 @@ def fetch(fetcher, content_spec, find_results):
     # return install_time? an InstallInfo? list of InstalledCollection?
 
 
-def verify(fetch_results,
-           content_meta=None):
+def update_content_spec(fetch_results,
+                        content_spec=None,
+                        # content_meta=None,
+                        ):
     '''Verify we got the archive we asked for, checksums, check sigs, etc
 
-    At the moment, also side effect and evols content_meta to match fetch results
+    At the moment, also side effect and evols content_spec to match fetch results
     so that needs to be extracted'''
     # TODO: do we still need to check the fetched version against the spec version?
+    #       We do, since the unspecific version is None, so fetched versions wont match
+    #       so we need a new content_spec for install.
     # TODO: this is more or less a verify/validate step or state transition
     content_data = fetch_results.get('content', {})
 
     # If the requested namespace/version is different than the one we got via find()/fetch()...
-    if content_data.get('fetched_version', content_meta.version) != content_meta.version:
+    if content_data.get('fetched_version', content_spec.version) != content_spec.version:
         log.info('Version "%s" for %s was requested but fetch found version "%s"',
-                 content_meta.version, '%s.%s' % (content_meta.namespace, content_meta.name),
-                 content_data.get('fetched_version', content_meta.version))
+                 content_spec.version, '%s.%s' % (content_spec.namespace, content_spec.name),
+                 content_data.get('fetched_version', content_spec.version))
 
-        content_meta = attr.evolve(content_meta, version=content_data['fetched_version'])
+        content_spec = attr.evolve(content_spec, version=content_data['fetched_version'])
 
-    if content_data.get('content_namespace', content_meta.namespace) != content_meta.namespace:
+    if content_data.get('content_namespace', content_spec.namespace) != content_spec.namespace:
         log.info('Namespace "%s" for %s was requested but fetch found namespace "%s"',
-                 content_meta.namespace, '%s.%s' % (content_meta.namespace, content_meta.name),
-                 content_data.get('content_namespace', content_meta.namespace))
+                 content_spec.namespace, '%s.%s' % (content_spec.namespace, content_spec.name),
+                 content_data.get('content_namespace', content_spec.namespace))
 
-        content_meta = attr.evolve(content_meta, namespace=content_data['content_namespace'])
+        content_spec = attr.evolve(content_spec, namespace=content_data['content_namespace'])
 
-    return content_meta
+    return content_spec
 
 
 def install(galaxy_context,
@@ -183,7 +181,7 @@ def install(galaxy_context,
 
         os.makedirs(galaxy_context.content_path)
 
-    # FIXME: guess might as well pass in content_meta
+    # FIXME: guess might as well pass in content_spec
     res = content_archive_.install(content_namespace=content_spec.namespace,
                                    content_name=content_spec.name,
                                    content_version=content_spec.version,

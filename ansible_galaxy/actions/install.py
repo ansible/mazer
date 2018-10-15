@@ -247,14 +247,15 @@ def install_collection(galaxy_context,
     # remove an installed version...
     try:
         find_results = install.find(fetcher, content_spec=content_spec_to_install)
-        log.debug('standalone find_results: %s', find_results)
-        # content.find()
+        # log.debug('standalone find_results: %s', pprint.pformat(find_results))
     except exceptions.GalaxyError as e:
         log.warning('Unable to find metadata for %s: %s', content_spec_to_install.name, e)
         # FIXME: raise dep error exception?
         raise_without_ignore(ignore_errors, e)
         # continue
         return None
+
+    # TODO: make sure content_spec version is correct and set
 
     # TODO: state transition, if find_results -> INSTALL
     #       if not, then FIND_FAILED
@@ -266,7 +267,6 @@ def install_collection(galaxy_context,
         fetch_results = install.fetch(fetcher,
                                       content_spec=content_spec_to_install,
                                       find_results=find_results)
-        # content.fetch()
         log.debug('fetch_results: %s', fetch_results)
         # fetch_results will include a 'archive_path' pointing to where the artifact
         # was saved to locally.
@@ -279,6 +279,17 @@ def install_collection(galaxy_context,
         # FIXME: raise ?
         return None
 
+    # TODO: if we want client side content whitelist/blacklist, or pinned versions,
+    #       or rules to only update within some semver range (ie, only 'patch' level),
+    #       we could hook rule validation stuff here.
+
+    # TODO: build a new content_spec based on what we actually fetched to feed to
+    #       install etc. The fetcher.fetch() could return a datastructure needed to build
+    #       the new one instead of doing it in verify()
+    fetched_content_spec = install.update_content_spec(fetch_results,
+                                                       content_spec_to_install)
+
+    log.debug('fetched_content_spec: %s', fetched_content_spec)
 
     # FIXME: seems like we want to resolve deps before trying install
     #        We need the role (or other content) deps from meta before installing
@@ -292,10 +303,10 @@ def install_collection(galaxy_context,
                                     fetcher,
                                     fetch_results,
                                     # content.content_meta,
-                                    content_spec=content_spec_to_install,
+                                    content_spec=fetched_content_spec,
                                     force_overwrite=force_overwrite)
     except exceptions.GalaxyError as e:
-        log.warning("- %s was NOT installed successfully: %s ", content_spec_to_install.name, str(e))
+        log.warning("- %s was NOT installed successfully: %s ", fetched_content_spec.name, str(e))
         raise_without_ignore(ignore_errors, e)
         return None
         # continue
@@ -303,13 +314,13 @@ def install_collection(galaxy_context,
     log.debug('installed result: %s', installed)
 
     if not installed:
-        log.warning("- %s was NOT installed successfully.", content_spec_to_install.label)
+        log.warning("- %s was NOT installed successfully.", fetched_content_spec.label)
         raise_without_ignore(ignore_errors)
 
     log.debug('installed: %s', pprint.pformat(installed))
     if no_deps:
         log.warning('- %s was installed but any deps will not be installed because of no_deps',
-                    content_spec_to_install.label)
+                    fetched_content_spec.label)
 
     # TODO?: update the install receipt for 'installed' if succesull?
     # oh dear god, a dep solver...
