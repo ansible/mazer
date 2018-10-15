@@ -1,6 +1,6 @@
 # strategy for installing a Collection (name resolve it, find it,
 #  fetch it's artifact, validate/verify it, install/extract it, update install dbs, etc)
-import datetime
+# import datetime
 import logging
 import os
 import pprint
@@ -9,12 +9,15 @@ import attr
 
 from ansible_galaxy import content_archive
 from ansible_galaxy import exceptions
+from ansible_galaxy import installed_collection_db
+from ansible_galaxy import matchers
 from ansible_galaxy.fetch import fetch_factory
-from ansible_galaxy import install_info
-from ansible_galaxy.models.install_info import InstallInfo
+# from ansible_galaxy import install_info
+# from ansible_galaxy.models.install_info import InstallInfo
+from ansible_galaxy.models.content import InstalledContent
 
 # FIXME: remove
-from ansible_galaxy.flat_rest_api.content import InstalledContent
+# from ansible_galaxy.flat_rest_api.content import InstalledContent
 
 log = logging.getLogger(__name__)
 
@@ -143,7 +146,6 @@ def install(galaxy_context,
     log.debug('install: content_spec=%s, force_overwrite=%s',
               content_spec, force_overwrite)
     installed = []
-    archive_parent_dir = None
 
     # FIXME: enum/constant/etc demagic
     # content_archive_type = 'multi'
@@ -156,7 +158,7 @@ def install(galaxy_context,
 
     # TODO: this could be pulled up a layer, after getting fetch_results but before install()
     if not archive_path:
-        raise exceptions.GalaxyClientError('No valid content data found for %s', self.src)
+        raise exceptions.GalaxyClientError('No valid content data found for...')
 
     log.debug("installing from %s", archive_path)
 
@@ -182,9 +184,10 @@ def install(galaxy_context,
         os.makedirs(galaxy_context.content_path)
 
     # FIXME: guess might as well pass in content_spec
-    res = content_archive_.install(content_namespace=content_spec.namespace,
-                                   content_name=content_spec.name,
-                                   content_version=content_spec.version,
+    res = content_archive_.install(content_spec=content_spec,
+                                   # content_namespace=content_spec.namespace,
+                                   # content_name=content_spec.name,
+                                   # content_version=content_spec.version,
                                    # surely wrong...
                                    extract_to_path=galaxy_context.content_path,
                                    force_overwrite=force_overwrite)
@@ -196,17 +199,49 @@ def install(galaxy_context,
     # TODO: use some sort of callback?
     fetcher.cleanup()
 
+    # TODO: load installed collections back from disk now?
+    installed_content_specs = [x[0] for x in installed]
+    log.debug('installed_content_specs: %s', installed_content_specs)
+
+    collection_match_filter = matchers.MatchContentSpecsNamespaceNameVersion(installed_content_specs)
+
+    log.debug('collectio_match_filter: %s', collection_match_filter)
+
+    icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
+    already_installed_generator = icdb.select(collection_match_filter=collection_match_filter)
+
+    log.debug('already_installed_generator: %s', already_installed_generator)
+
     installed_contents = []
-    for item in installed:
-        installed_content_spec = item[0]
-        log.info('Installed content_spec: %s', installed_content_spec)
+
+    # log.debug('FOOO: %s', [x for x in already_installed_generator])
+    for collection_item in already_installed_generator:
+        log.debug('installed collection item: %s', pprint.pformat(collection_item))
+
+        # TODO: InstallationResults object
+        installed_content_spec = collection_item.content_spec
+        # installation_results = item[1]
+        path = collection_item.path
+
+        log.info('Installed collection content_spec: %s', installed_content_spec)
+        log.info('installed collection path: %s', path)
+        # log.info('Installation results: %s', pprint.pformat(attr.asdict(installation_results)))
         #  name=test-role-c, namespace=alikins, path=/home/adrian/.ansible/content/alikins/ansible_testing_content/roles/test-role-c
 
         # TODO: Replace with InstalledCollection ?
         # FIXME:
-        installed_content = InstalledContent(galaxy_context,
-                                             name=installed_content_spec.name,
+
+        all_deps = collection_item.requirements or []
+        all_deps.extend(collection_item.dependencies or [])
+
+        installed_content = InstalledContent(name=installed_content_spec.name,
                                              namespace=installed_content_spec.namespace,
+                                             version=installed_content_spec.version,
+                                             # dependencies=collection_item.dependencies,
+                                             requirements=all_deps,
+                                             # install_info=installation_results.install_info,
+                                             # meta_main=installation_results.meta_main,
+                                             # content_type=installed_content_spec.content_type,
                                              # TESTME:
                                              # path=content_meta.path,
                                              # path=repo_install_path,

@@ -207,7 +207,6 @@ def install_collections(galaxy_context,
     return dep_requirement_content_specs
 
 
-
 def install_collection(galaxy_context,
                        content_spec_to_install,
                        install_content_type=None,
@@ -306,8 +305,14 @@ def install_collection(galaxy_context,
                                     content_spec=fetched_content_spec,
                                     force_overwrite=force_overwrite)
     except exceptions.GalaxyError as e:
+        log.exception(e)
         log.warning("- %s was NOT installed successfully: %s ", fetched_content_spec.name, str(e))
-        raise_without_ignore(ignore_errors, e)
+        raise
+
+
+        # raise_without_ignore(ignore_errors, e)
+
+
         return None
         # continue
 
@@ -336,11 +341,11 @@ def install_collection(galaxy_context,
     #         easier to have that introspection there. In the future this should be more
     #         unified and have a clean API
     for installed_content in installed:
-        log.debug('installed_content: %s %s', installed_content, installed_content.content_type)
+        log.debug('installed_content: %s', installed_content)
 
         # TODO: generalize to collections/repos
         # if installed_content.content_type == "role":
-        if not installed_content.metadata:
+        if not installed_content.meta_main:
             log.warning("Meta file %s is empty. Skipping meta main dependencies.", installed_content.path)
             # continue
 
@@ -348,9 +353,9 @@ def install_collection(galaxy_context,
         #       GalaxyContent -> GalaxyCollection (and general getting rid of GalaxyContent)
         #       InstalledCollection.requirements for install time requirements
         #        so collections and trad roles have same interface
-        collection_dependencies = []
-        if installed_content.metadata:
-            collection_dependencies = installed_content.metadata.dependencies or []
+        collection_dependencies = installed_content.requirements or []
+        # if installed_content.meta_main:
+        #    collection_dependencies = installed_content.meta_main.dependencies or []
         log.debug('collection_dependencies: %s', pprint.pformat(collection_dependencies))
 
         # TODO: also check for Collections requirements.yml via Collection.requirements?

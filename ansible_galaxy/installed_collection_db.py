@@ -1,6 +1,7 @@
 import logging
 import os
 
+from ansible_galaxy import collection
 from ansible_galaxy import matchers
 from ansible_galaxy import installed_namespaces_db
 from ansible_galaxy.models.collection import Collection
@@ -51,18 +52,22 @@ def installed_collection_iterator(galaxy_context,
             # use the default 'local' style content_spec_parse and name resolver
             # spec_data = content_spec_parse.spec_data_from_string(collection_path)
 
-            collection_full_path = os.path.join(content_path, namespace.namespace, collection_path)
+            collection_ = collection.load_from_name(content_path,
+                                                    namespace=namespace.namespace,
+                                                    name=collection_path,
+                                                    installed=True)
+            # collection_full_path = os.path.join(content_path, namespace.namespace, collection_path)
             # log.debug('repo_fll_path: %s', collection_full_path)
-            content_spec = ContentSpec(namespace=namespace.namespace,
-                                       name=collection_path)
-            collection = Collection(content_spec=content_spec,
-                                    path=collection_full_path)
+            # content_spec = ContentSpec(namespace=namespace.namespace,
+            #                           name=collection_path)
+            # collection_ = Collection(content_spec=content_spec,
+            #                         path=collection_full_path)
 
-            # log.debug('content_repo: %s', collection)
+            log.debug('content_repo(collection): %s', collection_)
             # log.debug('match: %s(%s) %s', collection_match_filter, collection, collection_match_filter(collection))
-            if collection_match_filter(collection):
+            if collection_match_filter(collection_):
                 log.debug('Found collection "%s" in namespace "%s"', collection_path, namespace.namespace)
-                yield collection
+                yield collection_
 
 
 class InstalledCollectionDatabase(object):

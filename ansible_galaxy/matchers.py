@@ -45,8 +45,17 @@ class MatchContentSpec(Match):
         self.content_specs = content_specs or []
 
     def match(self, other):
-        # log.debug('is %s in %s', other.content_spec, self.content_specs)
+        log.debug('is %s in %s', other.content_spec, self.content_specs)
         return other.content_spec in self.content_specs
+
+
+class MatchContentSpecsNamespaceNameVersion(Match):
+    def __init__(self, content_specs):
+        self.namespaces_names_versions = [(x.namespace, x.name, x.version) for x in content_specs] or []
+
+    def match(self, other):
+        log.debug('is %s in %s', (other.content_spec.namespace, other.content_spec.name, other.content_spec.version), self.namespaces_names_versions)
+        return (other.content_spec.namespace, other.content_spec.name, other.content_spec.version) in self.namespaces_names_versions
 
 
 class MatchNamespacesOrLabels(Match):

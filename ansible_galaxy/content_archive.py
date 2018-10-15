@@ -8,9 +8,11 @@ import attr
 from ansible_galaxy import archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
+from ansible_galaxy import role_metadata
 from ansible_galaxy.models import content
 from ansible_galaxy.models.content_archive import ContentArchiveInfo
 from ansible_galaxy.models.install_info import InstallInfo
+from ansible_galaxy.models.installation_results import InstallationResults
 
 log = logging.getLogger(__name__)
 
@@ -117,30 +119,56 @@ class BaseContentArchive(object):
         # TODO: InstallResults object? installedPaths, InstallInfo, etc?
         return all_installed_paths, install_datetime
 
-    def install_info(self, content_namespace, content_name, content_version, install_datetime, extract_to_path):
-        namespaced_content_path = '%s/%s' % (content_namespace,
-                                             content_name)
+    def install_info(self, content_version, install_datetime):
+
+        content_install_info = InstallInfo.from_version_date(version=content_version,
+                                                             install_datetime=install_datetime)
+
+        return content_install_info
+
+    def install(self, content_spec, extract_to_path, force_overwrite=False):
+
+        all_installed_files, install_datetime = \
+            self.extract(content_spec.namespace, content_spec.name,
+
+                         extract_to_path, force_overwrite=force_overwrite)
+
+        namespaced_content_path = '%s/%s' % (content_spec.namespace,
+                                             content_spec.name)
 
         info_path = os.path.join(extract_to_path,
                                  namespaced_content_path,
                                  self.META_INSTALL)
 
-        content_install_info = InstallInfo.from_version_date(version=content_version,
-                                                             install_datetime=install_datetime)
+        meta_main_path = os.path.join(extract_to_path,
+                                      namespaced_content_path,
+                                      'roles',
+                                      content_spec.name,
+                                      'meta',
+                                      'main.yml')
+
+        log.debug('meta_main_path: %s', meta_main_path)
+        meta_main = role_metadata.load_from_filename(meta_main_path,
+                                                     role_name=namespaced_content_path)
+
+        log.debug('meta_main: %s', meta_main)
+
+        installed_to_path = os.path.join(extract_to_path,
+                                         namespaced_content_path)
+
+        install_info_ = self.install_info(content_spec.version,
+                                          install_datetime=install_datetime)
 
         # TODO: this save will need to be moved to a step later. after validating install?
-        install_info.save(content_install_info, info_path)
+        install_info.save(install_info_, info_path)
 
-    def install(self, content_namespace, content_name, content_version, extract_to_path, force_overwrite=False):
-
-        all_installed_files, install_datetime = \
-            self.extract(content_namespace, content_name,
-                         extract_to_path, force_overwrite=force_overwrite)
-
-        install_info = self.install_info(content_namespace, content_name, content_version,
-                                         install_datetime=install_datetime,
-                                         extract_to_path=extract_to_path)
-        return install_info
+        installation_results = InstallationResults(install_info_path=info_path,
+                                                   install_info=install_info_,
+                                                   installed_to_path=installed_to_path,
+                                                   installed_datetime=install_datetime,
+                                                   installed_files=all_installed_files,
+                                                   meta_main=meta_main)
+        return installation_results
 
 
 @attr.s()
