@@ -4,7 +4,7 @@ import os
 
 from ansible_galaxy import installed_collection_db
 from ansible_galaxy import matchers
-from ansible_galaxy.flat_rest_api.content import InstalledContent
+from ansible_galaxy.models.content_item import ContentItem
 
 log = logging.getLogger(__name__)
 
@@ -22,18 +22,18 @@ def installed_collection_role_iterator(collection_path):
 installed_collection_content_iterator_map = {'roles': installed_collection_role_iterator}
 
 
-def installed_content_iterator(galaxy_context,
-                               namespace_match_filter=None,
-                               collection_match_filter=None,
-                               content_match_filter=None,
-                               content_type=None):
+def installed_content_item_iterator(galaxy_context,
+                                    namespace_match_filter=None,
+                                    collection_match_filter=None,
+                                    content_match_filter=None,
+                                    content_item_type=None):
 
     # match_all works for all types
     namespace_match_filter = namespace_match_filter or matchers.MatchAll()
     collection_match_filter = collection_match_filter or matchers.MatchAll()
     content_match_filter = content_match_filter or matchers.MatchAll()
 
-    content_type = content_type or 'roles'
+    content_item_type = content_item_type or 'roles'
 
     installed_coll_db = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
 
@@ -50,32 +50,27 @@ def installed_content_iterator(galaxy_context,
         # since we will need a different iterator for each specific type of content, consult
         # a map of content_type->iterator_method however there is only a 'roles' iterator for now
         installed_collection_content_iterator_method = \
-            installed_collection_content_iterator_map.get(content_type)
+            installed_collection_content_iterator_map.get(content_item_type)
 
         if installed_collection_content_iterator_method is None:
             continue
 
         installed_collection_content_iterator = installed_collection_content_iterator_method(installed_collection_full_path)
 
-        log.debug('Looking for %s in collection at %s', content_type, installed_collection_full_path)
+        log.debug('Looking for %s in collection at %s', content_item_type, installed_collection_full_path)
         for installed_content_full_path in installed_collection_content_iterator:
 
             repo_namespace = installed_collection.content_spec.namespace
             path_file = os.path.basename(installed_content_full_path)
 
-            gr = InstalledContent(galaxy_context, path_file, namespace=repo_namespace, path=installed_content_full_path)
+            gr = ContentItem(namespace=repo_namespace, name=path_file,
+                             path=installed_content_full_path,
+                             content_item_type=content_item_type,
+                             version=None)
 
-            log.debug('Found %s "%s" at %s', gr.content_type, gr.name, installed_content_full_path)
-
-            log.debug('gr.metadata: %s', gr.metadata)
+            log.debug('Found %s "%s" at %s', gr, gr.name, installed_content_full_path)
 
             version = None
-
-            # TODO: should probably sep the generator for getting the InstalledContent objects from the generator that
-            #       creates the content_info returns instead of intertwining them
-            # if gr.metadata or gr.install_info:
-            if gr.install_info:
-                version = gr.install_info.version or "(unknown version)"
 
             if not content_match_filter(gr):
                 log.debug('%s was not matched by content_match_filter: %s', gr, content_match_filter)
@@ -91,7 +86,7 @@ def installed_content_iterator(galaxy_context,
             yield content_info
 
 
-class InstalledContentDatabase(object):
+class InstalledContentItemDatabase(object):
 
     def __init__(self, installed_context=None):
         self.installed_context = installed_context
@@ -102,10 +97,11 @@ class InstalledContentDatabase(object):
         collection_match_filter = collection_match_filter or matchers.MatchAll()
         content_match_filter = content_match_filter or matchers.MatchAll()
 
-        roles_content_iterator = installed_content_iterator(self.installed_context,
-                                                            content_type='roles',
-                                                            collection_match_filter=collection_match_filter,
-                                                            content_match_filter=content_match_filter)
+        roles_content_iterator = \
+            installed_content_item_iterator(self.installed_context,
+                                            content_item_type='roles',
+                                            collection_match_filter=collection_match_filter,
+                                            content_match_filter=content_match_filter)
 
         for matched_content in roles_content_iterator:
             yield matched_content

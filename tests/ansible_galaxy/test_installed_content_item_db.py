@@ -2,21 +2,22 @@ import logging
 import os
 import fnmatch
 
-from ansible_galaxy import installed_content_db
+from ansible_galaxy import installed_content_item_db
 from ansible_galaxy import matchers
+from ansible_galaxy.models.collection import Collection
 
 log = logging.getLogger(__name__)
 
 
 def test_installed_content_db(galaxy_context):
-    icd = installed_content_db.InstalledContentDatabase(galaxy_context)
+    icd = installed_content_item_db.InstalledContentItemDatabase(galaxy_context)
 
     for x in icd.select():
         log.debug('x: %s', x)
 
 
 def test_installed_content_db_match_names(galaxy_context):
-    icd = installed_content_db.InstalledContentDatabase(galaxy_context)
+    icd = installed_content_item_db.InstalledContentItemDatabase(galaxy_context)
 
     match_filter = matchers.MatchNames(['foo.bar'])
     for x in icd.select(content_match_filter=match_filter):
@@ -24,8 +25,8 @@ def test_installed_content_db_match_names(galaxy_context):
 
 
 def test_installed_content_iterator(galaxy_context):
-    ici = installed_content_db.installed_content_iterator(galaxy_context,
-                                                          content_type='role')
+    ici = installed_content_item_db.installed_content_item_iterator(galaxy_context,
+                                                                    content_item_type='role')
 
     for i in ici:
         log.debug(i)
@@ -49,14 +50,16 @@ def test_installed_content_iterator_empty(galaxy_context, mocker):
                  return_value=iter(['foo', 'blip']))
     mocker.patch('ansible_galaxy.installed_collection_db.get_collection_paths',
                  return_value=iter(['bar', 'baz']))
+    # mocker.patch('ansible_galaxy.collection.load_from_name',
+    #            return_value=Collection())
 
     # The content type specific content iterator is determined at runtime, so we need to patch the value
     # of the 'roles' item in installed_collection_content_iterator_map to patch the right method used
-    mocker.patch.dict('ansible_galaxy.installed_content_db.installed_collection_content_iterator_map',
+    mocker.patch.dict('ansible_galaxy.installed_content_item_db.installed_collection_content_iterator_map',
                       {'roles': mocker.Mock(return_value=iter(['/dev/null/content/foo/bar/roles/role-1', '/dev/null/content/blip/baz/roles/role-2']))})
 
-    ici = installed_content_db.installed_content_iterator(galaxy_context,
-                                                          content_type='roles')
+    ici = installed_content_item_db.installed_content_item_iterator(galaxy_context,
+                                                                    content_item_type='roles')
     log.debug('ici: %s', ici)
 
     installed_content = list(ici)
@@ -65,8 +68,8 @@ def test_installed_content_iterator_empty(galaxy_context, mocker):
 
 
 def test_installed_content_iterator_tmp_content(galaxy_context):
-    ici = installed_content_db.installed_content_iterator(galaxy_context,
-                                                          content_type='roles')
+    ici = installed_content_item_db.installed_content_item_iterator(galaxy_context,
+                                                                    content_item_type='roles')
 
     content_path = galaxy_context.content_path
 
@@ -97,9 +100,10 @@ def test_installed_content_iterator_tmp_content(galaxy_context):
     for i in ici:
         log.debug('ici stuff: %s', i)
 
-    ici2 = installed_content_db.installed_content_iterator(galaxy_context,
-                                                           content_match_filter=MatchContentNamesFnmatch(['somerole*', 'asdfsd']),
-                                                           content_type='roles')
+    ici2 = \
+        installed_content_item_db.installed_content_item_iterator(galaxy_context,
+                                                                  content_match_filter=MatchContentNamesFnmatch(['somerole*', 'asdfsd']),
+                                                                  content_item_type='roles')
 
     for i in ici2:
         log.debug('i2: %s', i)
