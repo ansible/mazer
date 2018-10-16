@@ -182,6 +182,10 @@ def install_collections(galaxy_context,
         log.debug('new_dep_requirement_content_specs: %s', pprint.pformat(new_dep_requirement_content_specs))
         log.debug('dep_requirement_content_specs1: %s', pprint.pformat(dep_requirement_content_specs))
 
+        if not new_dep_requirement_content_specs:
+            log.debug('install_collection return None for content_spec_to_install: %s', content_spec_to_install)
+            continue
+
         dep_requirement_content_specs.extend(new_dep_requirement_content_specs)
 
         log.debug('dep_requirement_content_specs2: %s', pprint.pformat(dep_requirement_content_specs))

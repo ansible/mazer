@@ -1,15 +1,11 @@
 import logging
-import os
 import pprint
 
 import yaml
 
-from ansible_galaxy import yaml_persist
 from ansible_galaxy.models.requirement import RequirementSpec
-from ansible_galaxy.models.content_spec import ContentSpec
 from ansible_galaxy.content_spec import spec_data_from_string
 from ansible_galaxy.utils import yaml_parse
-from ansible_galaxy.utils import content_name
 
 log = logging.getLogger(__name__)
 
@@ -33,11 +29,6 @@ def load(data_or_file_object):
         # log.debug('name_info: %s', name_info)
 
         req_spec = RequirementSpec.from_dict(req_spec_data)
-        #req_spec = RequirementSpec(namespace=content_spec_data['namespace'],
-        #                           name=content_spec_data['name'],
-        #                           version=content_spec_data['version'],
-        #                           src=content_spec_data['src'],
-        #                           scm=content_spec_data['scm'])
 
         log.debug('req_spec: %s', req_spec)
 

@@ -41,7 +41,7 @@ EXAMPLE_REPO_VERSIONS_LIST = \
     ]
 
 
-# Note that select_repository_version just gets the full version object
+# Note that select_collection_version just gets the full version object
 # from repoversions. It does not sort or compare versions aside from equality
 @pytest.mark.parametrize("repoversions,version,expected", [
     ([], None, {}),
@@ -79,11 +79,11 @@ EXAMPLE_REPO_VERSIONS_LIST = \
      {'version': '1.2.2',
       'url': 'http://thesecondurl.example.com'}),
 ])
-def test_select_repository_versions(repoversions, version, expected):
+def test_select_collection_version(repoversions, version, expected):
     log.debug('repoversions: %s', repoversions)
     log.debug('version: %s', version)
     log.debug('expected: %s', expected)
-    res = galaxy_url.select_repository_version(repoversions, version)
+    res = galaxy_url.select_collection_version(repoversions, version)
 
     assert isinstance(res, dict)
 
@@ -94,11 +94,11 @@ def test_select_repository_versions(repoversions, version, expected):
 
 
 # see https://github.com/ansible/mazer/issues/79
-def test_select_repository_version_empty_repoversions():
+def test_select_collection_version_empty_repoversions():
     repoversions = []
     version = '1.2.3'
 
-    res = galaxy_url.select_repository_version(repoversions, version)
+    res = galaxy_url.select_collection_version(repoversions, version)
 
     assert isinstance(res, dict)
     assert res == {}

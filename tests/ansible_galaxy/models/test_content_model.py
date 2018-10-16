@@ -22,25 +22,24 @@ def test_content_type_dir_map_items():
     assert 'role' in content.CONTENT_TYPES
 
 
-def test_galaxy_content_meta_no_args():
+def test_content_no_args():
     try:
-        content.GalaxyContentMeta()
+        content.Content()
     except TypeError as e:
         log.exception(e)
         return
 
-    assert False, 'GalaxyContentMeta() with no args should raise a TypeError but did not'
+    assert False, 'Content() with no args should raise a TypeError but did not'
 
 
 def test_galaxy_content_frozen():
-    content_meta = content.GalaxyContentMeta(namespace='somenamespace',
-                                             name='some_content',
-                                             version='1.0.0',
-                                             src='some_src',
-                                             scm='some_scm',
-                                             content_type='role',
-                                             content_dir='roles',
-                                             path='/dev/null/roles')
+    content_meta = content.Content(namespace='somenamespace',
+                                   name='some_content',
+                                   version='1.0.0',
+                                   src='some_src',
+                                   scm='some_scm',
+                                   content_dir='roles',
+                                   path='/dev/null/roles')
     with pytest.raises(attr.exceptions.FrozenInstanceError):
         content_meta.namespace = 'adiffnamespace'
 
@@ -67,34 +66,32 @@ def test_galaxy_content_frozen():
 
 
 def test_galaxy_content_meta():
-    content_meta = content.GalaxyContentMeta(namespace='somenamespace',
-                                             name='some_content',
-                                             version='1.0.0',
-                                             src='some_src',
-                                             scm='some_scm',
-                                             content_type='role',
-                                             content_dir='roles',
-                                             path='/dev/null/roles')
+    content_meta = content.Content(namespace='somenamespace',
+                                   name='some_content',
+                                   version='1.0.0',
+                                   src='some_src',
+                                   scm='some_scm',
+                                   content_dir='roles',
+                                   path='/dev/null/roles')
 
     assert content_meta.name == 'some_content'
-    assert content_meta.content_type == 'role'
 
 
 def test_galaxy_content_equality():
-    content_meta = content.GalaxyContentMeta(namespace='some_namespace',
-                                             name='some_content',
-                                             version='1.0.0',
-                                             content_type='role')
+    content_meta = content.Content(namespace='some_namespace',
+                                   name='some_content',
+                                   version='1.0.0',
+                                   )
 
-    content_meta_newer = content.GalaxyContentMeta(namespace='some_namespace',
-                                                   name='some_content',
-                                                   version='2.3.4',
-                                                   content_type='role')
+    content_meta_newer = content.Content(namespace='some_namespace',
+                                         name='some_content',
+                                         version='2.3.4',
+                                         )
 
-    content_meta_newer_dupe = content.GalaxyContentMeta(namespace='some_namespace',
-                                                        name='some_content',
-                                                        version='2.3.4',
-                                                        content_type='role')
+    content_meta_newer_dupe = content.Content(namespace='some_namespace',
+                                              name='some_content',
+                                              version='2.3.4',
+                                              )
 
     assert content_meta != content_meta_newer
     assert content_meta_newer != content_meta

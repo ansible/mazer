@@ -178,6 +178,7 @@ def test_yaml_parse_a_dict_with_extra_invalid_keys():
     result_keys = set(result.keys())
     valid_keys = set(VALID_ROLE_SPEC_KEYS)
     valid_keys.add('namespace')
+    valid_keys.add('fetch_method')
     extra_keys = result_keys.difference(valid_keys)
     assert not extra_keys, \
         'Found extra invalid keys in the result. extra_keys=%s, result=%s, valid_keys=%s' % \

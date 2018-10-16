@@ -9,7 +9,7 @@ import pprint
 
 from ansible_galaxy import archive
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.content import GalaxyContentMeta
+from ansible_galaxy.models.content import Content
 
 
 log = logging.getLogger(__name__)
@@ -292,16 +292,16 @@ def test_extract_by_content_type():
     mock_tar_file_obj = mock.Mock(members=members)
     res = archive.extract_by_content_type(tar_file_obj=mock_tar_file_obj,
                                           parent_dir=None,
-                                          content_meta=GalaxyContentMeta(namespace='alikins',
-                                                                         name="ansible-testing-content",
-                                                                         version="3.1.0",
-                                                                         src="alikins.ansible-testing-content",
-                                                                         scm=None,
-                                                                         content_type="all",
-                                                                         content_dir=None,
-                                                                         content_sub_dir=None,
-                                                                         path="/home/adrian/.ansible/content",
-                                                                         requires_meta_main=None),
+                                          content_meta=Content(namespace='alikins',
+                                                               name="ansible-testing-content",
+                                                               version="3.1.0",
+                                                               src="alikins.ansible-testing-content",
+                                                               scm=None,
+                                                               # content_type="all",
+                                                               content_dir=None,
+                                                               content_sub_dir=None,
+                                                               path="/home/adrian/.ansible/content",
+                                                               requires_meta_main=None),
                                           files_to_extract=members,
                                           extract_to_path='/home/adrian/.ansible/content')
 
