@@ -166,9 +166,9 @@ def spec_data_from_string(content_spec_string, resolver=None):
         if fetch_method == FetchMethods.GALAXY_URL:
             resolver = galaxy_content_spec.resolve
 
-#    log.debug('resolver: %s', resolver)
+    log.debug('resolver: %s', resolver)
     resolved_name = resolver(spec_data)
-#    log.debug('resolved_name: %s', resolved_name)
+    log.debug('resolved_name: %s', resolved_name)
     spec_data.update(resolved_name)
 
     return spec_data

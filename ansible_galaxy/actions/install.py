@@ -8,6 +8,7 @@ from ansible_galaxy import content_spec
 from ansible_galaxy import install
 from ansible_galaxy import installed_collection_db
 from ansible_galaxy import matchers
+from ansible_galaxy import requirements
 from ansible_galaxy.utils import yaml_parse
 
 log = logging.getLogger(__name__)
@@ -27,22 +28,12 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
         raise exceptions.GalaxyError(message)
 
 
-# FIXME: install_content_type is wrong, should be option to GalaxyContent.install()?
-# TODO: this will eventually be replaced by a content_spec 'resolver' that may
-#       hit galaxy api
-def _build_content_spec_list(collection_spec_strings, install_content_type, galaxy_context,
-                             namespace_override=None, editable=False):
-    # TODO: split this into methods that build GalaxyContent items from the content_specs
-    #       and another that installs a set of GalaxyContents
-    # roles were specified directly, so we'll just go out grab them
-    # (and their dependencies, unless the user doesn't want us to).
-
+def _verify_content_specs_have_namespace(collection_specs):
     content_spec_list = []
 
-    for collection_spec_string in collection_spec_strings:
-        content_spec_ = content_spec.content_spec_from_string(collection_spec_string.strip(),
-                                                              namespace_override=namespace_override,
-                                                              editable=editable)
+    for collection_spec in collection_specs:
+        # FIXME: be consistent about collection/content
+        content_spec_ = collection_spec
 
         log.info('content install content_spec: %s', content_spec_)
 
@@ -52,22 +43,13 @@ def _build_content_spec_list(collection_spec_strings, install_content_type, gala
                 content_spec=content_spec_)
 
         content_spec_list.append(content_spec_)
-#        content_spec_list.append(GalaxyContent(galaxy_context,
-#                                               namespace=content_spec_.namespace,
-#                                               name=content_spec_.name,
-#                                               src=content_spec_.src,
-#                                               scm=content_spec_.scm,
-#                                               version=content_spec_.version,
-#                                               content_spec=content_spec_,
-#                                               ))
 
     return content_spec_list
 
 
 # pass a list of content_spec objects
 def install_collections_matching_collection_specs(galaxy_context,
-                                                  collection_spec_strings,
-                                                  install_content_type=None,
+                                                  collection_specs,
                                                   editable=False,
                                                   namespace_override=None,
                                                   display_callback=None,
@@ -78,14 +60,9 @@ def install_collections_matching_collection_specs(galaxy_context,
     '''Install a set of packages specified by collection_spec_strings if they are not already installed'''
 
     log.debug('editable: %s', editable)
-    log.debug('collection_spec_strings: %s', collection_spec_strings)
-    log.debug('install_content_type: %s', install_content_type)
+    log.debug('collection_specs: %s', collection_specs)
 
-    requested_content_specs = _build_content_spec_list(collection_spec_strings=collection_spec_strings,
-                                                       install_content_type=install_content_type,
-                                                       galaxy_context=galaxy_context,
-                                                       namespace_override=namespace_override,
-                                                       editable=editable)
+    requested_content_specs = _verify_content_specs_have_namespace(collection_specs=collection_specs)
 
     # FIXME: mv mv this filtering to it's own method
     # match any of the content specs for stuff we want to install
@@ -114,7 +91,7 @@ def install_collections_matching_collection_specs(galaxy_context,
 
     log.debug('content_specs_to_install after: %s', content_specs_to_install)
 
-    return install_collections(galaxy_context, content_specs_to_install, install_content_type,
+    return install_collections(galaxy_context, content_specs_to_install,
                                display_callback=display_callback,
                                ignore_errors=ignore_errors,
                                no_deps=no_deps,
@@ -124,8 +101,8 @@ def install_collections_matching_collection_specs(galaxy_context,
 # FIXME: probably pass the point where passing around all the data to methods makes sense
 #        so probably needs a stateful class here
 def install_collection_specs_loop(galaxy_context,
-                                  collection_spec_strings,
-                                  install_content_type,
+                                  collection_spec_strings=None,
+                                  requirement_specs=None,
                                   editable=False,
                                   namespace_override=None,
                                   display_callback=None,
@@ -134,16 +111,26 @@ def install_collection_specs_loop(galaxy_context,
                                   no_deps=False,
                                   force_overwrite=False):
 
-    requested_collection_spec_strings = collection_spec_strings
+    requirement_specs = requirement_specs or []
+
+    # Turn the collection / requirement names from the cli into a list of RequirementSpec objects
+    if collection_spec_strings:
+        more_req_specs = requirements.from_requirement_spec_strings(collection_spec_strings,
+                                                                    editable=editable)
+        log.debug('more_req_specs: %s', more_req_specs)
+
+        # a new list is ok/better here
+        requirement_specs += more_req_specs
+
+    log.debug('req_specs: %s', requirement_specs)
 
     while True:
-        if not requested_collection_spec_strings:
+        if not requirement_specs:
             break
 
-        new_requested_collection_spec_strings = \
+        new_requested_collection_specs = \
             install_collections_matching_collection_specs(galaxy_context,
-                                                          requested_collection_spec_strings,
-                                                          install_content_type,
+                                                          requirement_specs,
                                                           editable=editable,
                                                           namespace_override=namespace_override,
                                                           display_callback=display_callback,
@@ -151,10 +138,10 @@ def install_collection_specs_loop(galaxy_context,
                                                           no_deps=no_deps,
                                                           force_overwrite=force_overwrite)
 
-        log.debug('new_requested_collection_spec_strings: %s', pprint.pformat(new_requested_collection_spec_strings))
+        log.debug('new_requested_collection_specs: %s', pprint.pformat(new_requested_collection_specs))
 
         # set the content_specs to search for to whatever the install reported as being needed yet
-        requested_collection_spec_strings = new_requested_collection_spec_strings
+        requirement_specs = new_requested_collection_specs
 
     # FIXME: what results to return?
     return 0
@@ -163,7 +150,6 @@ def install_collection_specs_loop(galaxy_context,
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
 def install_collections(galaxy_context,
                         content_specs_to_install,
-                        install_content_type=None,
                         display_callback=None,
                         # TODO: error handling callback ?
                         ignore_errors=False,
@@ -172,7 +158,6 @@ def install_collections(galaxy_context,
 
     display_callback = display_callback or display.display_callback
     log.debug('content_specs_to_install: %s', content_specs_to_install)
-    log.debug('install_content_type: %s', install_content_type)
     log.debug('no_deps: %s', no_deps)
     log.debug('force_overwrite: %s', force_overwrite)
 
@@ -189,7 +174,6 @@ def install_collections(galaxy_context,
         log.debug('content_spec_to_install: %s', content_spec_to_install)
         new_dep_requirement_content_specs = install_collection(galaxy_context,
                                                                content_spec_to_install,
-                                                               # install_content_type,
                                                                display_callback=display_callback,
                                                                ignore_errors=ignore_errors,
                                                                no_deps=no_deps,
@@ -209,7 +193,6 @@ def install_collections(galaxy_context,
 
 def install_collection(galaxy_context,
                        content_spec_to_install,
-                       install_content_type=None,
                        display_callback=None,
                        # TODO: error handling callback ?
                        ignore_errors=False,
@@ -364,14 +347,14 @@ def install_collection(galaxy_context,
         for dep in collection_dependencies:
             log.debug('Installing dep %s', dep)
 
-            dep_info = yaml_parse.yaml_parse(dep)
-            log.debug('dep_info: %s', pprint.pformat(dep_info))
+            # dep_info = yaml_parse.yaml_parse(dep)
+            # log.debug('dep_info: %s', pprint.pformat(dep_info))
 
-            if '.' not in dep_info['name'] and '.' not in dep_info['src'] and dep_info['scm'] is None:
-                log.debug('the dep %s doesnt look like a galaxy dep, skipping for now', dep_info)
-                # we know we can skip this, as it's not going to
-                # be found on galaxy.ansible.com
-                continue
+            # if '.' not in dep_info['name'] and '.' not in dep_info['src'] and dep_info['scm'] is None:
+            #    log.debug('the dep %s doesnt look like a galaxy dep, skipping for now', dep_info)
+            #    # we know we can skip this, as it's not going to
+            #    # be found on galaxy.ansible.com
+            #    continue
 
             dep_requirement_content_specs.append(dep)
 

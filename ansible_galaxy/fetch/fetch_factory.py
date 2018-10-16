@@ -7,7 +7,7 @@ from ansible_galaxy.fetch import local_file
 from ansible_galaxy.fetch import remote_url
 from ansible_galaxy.fetch import scm_url
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 def get(galaxy_context, content_spec):
@@ -18,6 +18,9 @@ def get(galaxy_context, content_spec):
     # server(galaxy_context.server['ignore_certs'])
     # does not really imply that the repo archive download should ignore certs as well
     # (galaxy api server vs cdn) but for now, we use the value for both
+    log.debug('content_spec: %s', content_spec)
+    log.debug('content_spec.fetch_method %s dir(fetchMethods): %s', content_spec.fetch_method, dir(FetchMethods))
+
     if content_spec.fetch_method == FetchMethods.SCM_URL:
         fetcher = scm_url.ScmUrlFetch(content_spec=content_spec)
     elif content_spec.fetch_method == FetchMethods.LOCAL_FILE:

@@ -7,13 +7,15 @@ import yaml
 from ansible_galaxy import collection_info
 from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
-
+from ansible_galaxy import requirements
 
 from ansible_galaxy.models.content_spec import ContentSpec
 from ansible_galaxy.models.collection import Collection
 
+
 log = logging.getLogger(__name__)
 
+log.setLevel(logging.INFO)
 # aka, persistence of ansible_galaxy.models.collection
 
 
@@ -45,15 +47,16 @@ def load_from_name(content_dir, namespace, name, installed=True):
     log.debug('collection_info_data: %s', collection_info_data)
 
     requirements_filename = os.path.join(path_name, 'requirements.yml')
-    requirements_data = None
+    requirements_list = []
 
     try:
         with open(requirements_filename, 'r') as rfd:
-            requirements_data = yaml.safe_load(rfd)
+            # requirements_data = yaml.safe_load(rfd)
+            requirements_list = requirements.load(rfd)
     except EnvironmentError as e:
         log.warning('No requirements.yml found for collection %s.%s: %s', namespace, name, e)
 
-    log.debug('requirements_data: %s', requirements_data)
+    log.debug('requirements_list: %s', requirements_list)
 
     # Now try the collection as a role-as-collection
     # look for
@@ -81,7 +84,7 @@ def load_from_name(content_dir, namespace, name, installed=True):
         log.warning('Unable to find or load meta/.galaxy_install_info for collection %s.%s: %s', namespace, name, e)
 
     log.debug('install_info: %s', install_info_data)
-    install_info_version = getattr(install_info, 'version', None)
+    install_info_version = getattr(install_info_data, 'version', None)
 
     content_spec = ContentSpec(namespace=namespace,
                                name=name,
@@ -90,7 +93,7 @@ def load_from_name(content_dir, namespace, name, installed=True):
     collection = Collection(content_spec=content_spec,
                             path=path_name,
                             installed=installed,
-                            requirements=requirements_data,
+                            requirements=requirements_list,
                             dependencies=role_deps)
 
     log.debug('collection: %s', collection)

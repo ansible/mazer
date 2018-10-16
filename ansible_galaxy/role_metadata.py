@@ -10,13 +10,13 @@ log = logging.getLogger(__name__)
 
 
 def load(data_or_file_object, role_name=None):
-    log.debug('loading role metadata from %s', data_or_file_object)
+    # log.debug('loading role metadata from %s', data_or_file_object)
 
     # TODO: potentially want to let yaml errors bubble up more
     #       so errors have more useful info if there is yaml parse error
     data_dict = yaml.safe_load(data_or_file_object)
 
-    log.debug('data_dict: %s', pprint.pformat(data_dict))
+    # log.debug('data_dict: %s', pprint.pformat(data_dict))
 
     galaxy_info = data_dict.get('galaxy_info', {})
     dependencies = data_dict.get('dependencies', [])
@@ -41,7 +41,8 @@ def load(data_or_file_object, role_name=None):
                            dependencies=dependencies,
                            allow_duplicates=allow_duplicates)
 
-    log.debug('loaded role metadata: %s', role_md)
+    # log.debug('loaded role metadata: %s', role_md)
+    log.debug('loaded role metadata for %s from %s', role_name, data_or_file_object)
     return role_md
 
 

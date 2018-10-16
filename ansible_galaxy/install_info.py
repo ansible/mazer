@@ -15,12 +15,12 @@ def load(data_or_file_object):
 
     info_dict = yaml.safe_load(data_or_file_object)
 
-    log.debug('info_dict: %s', info_dict)
+    # log.debug('info_dict: %s', info_dict)
     install_info = InstallInfo(version=info_dict.get('version', None),
                                install_date=info_dict.get('install_date', None),
                                install_date_iso=info_dict.get('install_date_iso', None))
 
-    log.debug('install_info: %s', install_info)
+    # log.debug('install_info loaded from %s', install_info)
     return install_info
 
 

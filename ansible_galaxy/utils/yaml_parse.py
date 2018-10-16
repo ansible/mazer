@@ -2,7 +2,7 @@ import copy
 import logging
 import six
 
-from ansible_galaxy import content_spec_parse
+from ansible_galaxy import content_spec as content_spec_parse
 # from ansible_galaxy import content_spec
 from ansible_galaxy.utils.role_spec import role_spec_parse
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
@@ -32,7 +32,7 @@ def yaml_parse(content, resolver=None):
     if isinstance(content, six.string_types):
         log.debug('parsing content="%s" as a string', content)
         orig_content = copy.deepcopy(content)
-        res = content_spec_parse.spec_data_from_string(content, resolver=resolver)
+        res = content_spec_parse.spec_data_from_string(content)
         # res = content_spec_parse.parse_string(content)
         log.debug('parsed spec="%s" -> %s', content, res)
         return res
@@ -67,6 +67,7 @@ def yaml_parse(content, resolver=None):
         # FIXME: this fails for objects with no dict attribute, like a list
         content_copy = content.copy()
 
+        log.debug('content_copy: %s', content_copy)
         data = {'src': None, 'version': None, 'name': None, 'scm': None}
         data.update(content_copy)
         content = data
@@ -74,7 +75,7 @@ def yaml_parse(content, resolver=None):
         if data.get('src', None):
             # valid_kw = ('src', 'version', 'name', 'scm')
             # new_data = content_spec_parse.parse_string(data['src'], VALID_ROLE_SPEC_KEYS)
-            new_data = content_spec_parse.spec_data_from_string(data['src'], resolver=resolver)
+            new_data = content_spec_parse.spec_data_from_string(data['src'])
             log.debug('new_data: %s', new_data)
 
             for key in new_data:
@@ -93,7 +94,7 @@ def yaml_parse(content, resolver=None):
 
     for key in list(content.keys()):
         # sub_name doesnt mean anything to role spec
-        if key not in VALID_ROLE_SPEC_KEYS and key not in ('sub_name', 'namespace'):
+        if key not in VALID_ROLE_SPEC_KEYS and key not in ('sub_name', 'namespace', 'fetch_method'):
             log.debug('removing invalid key: %s', key)
 
             content.pop(key)

@@ -79,7 +79,7 @@ def resolve(data):
     return data
 
 
-def spec_data_from_string(content_spec_string, editable=False):
+def spec_data_from_string(content_spec_string, namespace_override=None, editable=False):
     fetch_method = choose_content_fetch_method(content_spec_string, editable=editable)
 
     log.debug('fetch_method: %s', fetch_method)
@@ -97,14 +97,6 @@ def spec_data_from_string(content_spec_string, editable=False):
     log.debug('resolved_name: %s', resolved_name)
     spec_data.update(resolved_name)
 
-    return spec_data
-
-
-def content_spec_from_string(content_spec_string, namespace_override=None, editable=False):
-    spec_data = spec_data_from_string(content_spec_string, editable=editable)
-
-    log.debug('spec_data: %s', spec_data)
-
     if namespace_override:
         if spec_data.get('namespace'):
             log.debug('using --namespace provided namespace "%s" to override detected namespace "%s"',
@@ -116,6 +108,14 @@ def content_spec_from_string(content_spec_string, namespace_override=None, edita
                       content_spec_string)
 
         spec_data['namespace'] = namespace_override
+
+    return spec_data
+
+
+def content_spec_from_string(content_spec_string, namespace_override=None, editable=False):
+    spec_data = spec_data_from_string(content_spec_string, namespace_override=None, editable=editable)
+
+    log.debug('spec_data: %s', spec_data)
 
     return ContentSpec(name=spec_data.get('name'),
                        namespace=spec_data.get('namespace'),

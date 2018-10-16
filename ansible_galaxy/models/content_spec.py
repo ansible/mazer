@@ -22,3 +22,15 @@ class ContentSpec(object):
     @property
     def label(self):
         return '%s.%s' % (self.namespace, self.name)
+
+    @classmethod
+    def from_dict(cls, data):
+        instance = cls(namespace=data['namespace'],
+                       name=data['name'],
+                       version=data.get('version', None),
+                       fetch_method=data.get('fetch_method', None),
+                       scm=data.get('scm', None),
+                       spec_string=data.get('spec_string', None),
+                       src=data.get('src', None),
+                       )
+        return instance

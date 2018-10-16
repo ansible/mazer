@@ -27,22 +27,27 @@ import logging
 import os
 import sys
 
-from ansible_galaxy_cli import cli
-from ansible_galaxy_cli import __version__ as galaxy_cli_version
+
 from ansible_galaxy.actions import build
 from ansible_galaxy.actions import info
 from ansible_galaxy.actions import install
 from ansible_galaxy.actions import list as list_action
 from ansible_galaxy.actions import remove
 from ansible_galaxy.actions import version
+
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
-from ansible_galaxy_cli import exceptions as cli_exceptions
+
+from ansible_galaxy import content_spec
 from ansible_galaxy import matchers
+from ansible_galaxy import rest_api
+
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.build_context import BuildContext
 
-from ansible_galaxy import rest_api
+from ansible_galaxy_cli import cli
+from ansible_galaxy_cli import __version__ as galaxy_cli_version
+from ansible_galaxy_cli import exceptions as cli_exceptions
 
 log = logging.getLogger(__name__)
 
@@ -252,17 +257,16 @@ class GalaxyCLI(cli.CLI):
         Install a collection.
         """
 
-        install_content_type = 'all'
-
         self.log.debug('self.options: %s', self.options)
-        galaxy_context = self._get_galaxy_context(self.options, self.config)
-        requested_collection_specs = self.args
 
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
+        requested_spec_strings = self.args
+
+        # TODO: build requirement_specs from requested_collection_specs strings
         try:
             rc = install.install_collection_specs_loop(galaxy_context,
                                                        editable=self.options.editable_install,
-                                                       collection_spec_strings=requested_collection_specs,
-                                                       install_content_type=install_content_type,
+                                                       collection_spec_strings=requested_spec_strings,
                                                        namespace_override=self.options.namespace,
                                                        display_callback=self.display,
                                                        ignore_errors=self.options.ignore_errors,
