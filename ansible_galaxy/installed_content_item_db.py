@@ -66,7 +66,7 @@ def installed_content_item_iterator(galaxy_context,
             gr = ContentItem(namespace=repo_namespace, name=path_file,
                              path=installed_content_full_path,
                              content_item_type=content_item_type,
-                             version=None)
+                             version=installed_collection.content_spec.version)
 
             log.debug('Found %s "%s" at %s', gr, gr.name, installed_content_full_path)
 
