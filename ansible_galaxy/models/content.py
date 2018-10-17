@@ -42,6 +42,7 @@ class Content(object):
     version = attr.ib()
     # content_type = attr.ib()
     requirements = attr.ib(factory=list)
+    dependencies = attr.ib(factory=list)
 
     meta_main = attr.ib(default=None, type=RoleMetadata)
 

@@ -5,6 +5,7 @@ import shutil
 import yaml
 
 from ansible_galaxy import collection_info
+from ansible_galaxy import dependencies
 from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
 from ansible_galaxy import requirements
@@ -24,10 +25,17 @@ def load(data_or_file_object):
     return collection
 
 
-def load_from_name(content_dir, namespace, name, installed=True):
+def load_from_dir(content_dir, namespace, name, installed=True):
     # TODO: or artifact
 
     path_name = os.path.join(content_dir, namespace, name)
+
+    # TODO: add trad role or collection detection rules here
+    #       Or possibly earlier so we could call 'collection' loading
+    #       code/class or trad-role-as-collection loading code/class
+    #       and avoid intermingly the impls.
+    #       Maybe:
+    #       if more than one role in roles/ -> collection
 
     # if not os.path.isdir(path_name):
     #    log.debug('No collection found at %s', path_name)
@@ -59,22 +67,28 @@ def load_from_name(content_dir, namespace, name, installed=True):
     log.debug('requirements_list: %s', requirements_list)
 
     # Now try the collection as a role-as-collection
-    # look for
+    # FIXME: For a collection with one role that matches the collection name and doesn't
+    #        have a galaxy.yml, that's indistinguishable from a role-as-collection
+    # FIXME: But in theory, if there is more than one role in roles/, we should skip this
     role_meta_main_filename = os.path.join(path_name, 'roles', name, 'meta', 'main.yml')
-    role_meta_main_data = None
+    role_meta_main = None
     role_name = '%s.%s' % (namespace, name)
 
     try:
         with open(role_meta_main_filename, 'r') as rmfd:
-            role_meta_main_data = role_metadata.load(rmfd, role_name=role_name)
+            role_meta_main = role_metadata.load(rmfd, role_name=role_name)
     except EnvironmentError as e:
         log.warning('Unable to find or load meta/main.yml for collection %s.%s: %s', namespace, name, e)
 
-    role_deps = []
-    log.debug('role_meta_main_data: %s', role_meta_main_data)
-    if role_meta_main_data:
-        role_deps = role_meta_main_data.dependencies
+    # TODO: if there are other places to load dependencies (ie, runtime deps) we will need
+    #       to load them and combine them with role_depenency_specs
+    role_dependency_specs = []
+    if role_meta_main:
+        log.debug('role_meta_main: %s', role_meta_main)
+        log.debug('role_meta_main_deps: %s', role_meta_main.dependencies)
+        role_dependency_specs = role_meta_main.dependencies
 
+    # Now look for any install_info for the collection
     install_info_data = None
     install_info_filename = os.path.join(path_name, 'meta/.galaxy_install_info')
     try:
@@ -83,6 +97,8 @@ def load_from_name(content_dir, namespace, name, installed=True):
     except EnvironmentError as e:
         log.warning('Unable to find or load meta/.galaxy_install_info for collection %s.%s: %s', namespace, name, e)
 
+    # TODO: figure out what to do if the version from install_info conflicts with version
+    #       from galaxy.yml etc.
     log.debug('install_info: %s', install_info_data)
     install_info_version = getattr(install_info_data, 'version', None)
 
@@ -94,7 +110,7 @@ def load_from_name(content_dir, namespace, name, installed=True):
                             path=path_name,
                             installed=installed,
                             requirements=requirements_list,
-                            dependencies=role_deps)
+                            dependencies=role_dependency_specs)
 
     log.debug('collection: %s', collection)
 

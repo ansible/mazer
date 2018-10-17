@@ -4,7 +4,9 @@ import pprint
 
 import yaml
 
+from ansible_galaxy import dependencies
 from ansible_galaxy.models.role_metadata import RoleMetadata
+
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +21,11 @@ def load(data_or_file_object, role_name=None):
     # log.debug('data_dict: %s', pprint.pformat(data_dict))
 
     galaxy_info = data_dict.get('galaxy_info', {})
-    dependencies = data_dict.get('dependencies', [])
+
+    dependencies_data = data_dict.get('dependencies', [])
+
+    dependency_specs = dependencies.from_dependency_spec_strings(dependencies_data)
+
     allow_duplicates = data_dict.get('allow_duplicates', False)
 
     # we pass in the dir name of the role as role_name by default, but
@@ -38,7 +44,7 @@ def load(data_or_file_object, role_name=None):
                            min_ansible_version=galaxy_info.get('min_ansible_version'),
                            min_ansible_container_version=galaxy_info.get('min_ansible_container_version'),
                            # from outside of galaxy_info dict
-                           dependencies=dependencies,
+                           dependencies=dependency_specs,
                            allow_duplicates=allow_duplicates)
 
     # log.debug('loaded role metadata: %s', role_md)

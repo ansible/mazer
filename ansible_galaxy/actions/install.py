@@ -315,56 +315,43 @@ def install_collection(galaxy_context,
                     fetched_content_spec.label)
 
     # TODO?: update the install receipt for 'installed' if succesull?
+
     # oh dear god, a dep solver...
 
     if no_deps:
         return dep_requirement_content_specs
 
-    # FIXME: should install all of init 'deps', then build a list of new deps, and repeat
+    deps_and_reqs_set = set()
 
     # install dependencies, if we want them
-    # FIXME - Galaxy Content Types handle dependencies in the GalaxyContent type itself because
-    #         a content repo can contain many types and many of any single type and it's just
-    #         easier to have that introspection there. In the future this should be more
-    #         unified and have a clean API
     for installed_content in installed:
         log.debug('installed_content: %s', installed_content)
 
-        # TODO: generalize to collections/repos
-        # if installed_content.content_type == "role":
         if not installed_content.meta_main:
             log.warning("Meta file %s is empty. Skipping meta main dependencies.", installed_content.path)
             # continue
 
-        # TODO: InstalledContent -> InstalledCollection
-        #       GalaxyContent -> GalaxyCollection (and general getting rid of GalaxyContent)
-        #       InstalledCollection.requirements for install time requirements
-        #        so collections and trad roles have same interface
-        collection_dependencies = installed_content.requirements or []
-        # if installed_content.meta_main:
-        #    collection_dependencies = installed_content.meta_main.dependencies or []
-        log.debug('collection_dependencies: %s', pprint.pformat(collection_dependencies))
+        # convert deps/reqs to sets. Losing any ordering, but avoids dupes
+        reqs_set = set(installed_content.requirements)
+        log.debug('reqs_set: %s', reqs_set)
 
-        # TODO: also check for Collections requirements.yml via Collection.requirements?
-        #       and/or requirements in its MANIFEST.json
+        deps_set = set(installed_content.dependencies)
+        log.debug('deps_set: %s', deps_set)
 
-        for dep in collection_dependencies:
+        for dep in sorted(deps_set):
             log.debug('Installing dep %s', dep)
+        for req in sorted(reqs_set):
+            log.debug('Installing req: %s', req)
 
-            # dep_info = yaml_parse.yaml_parse(dep)
-            # log.debug('dep_info: %s', pprint.pformat(dep_info))
+        deps_and_reqs_set = deps_set.union(reqs_set)
+        for dep_req in sorted(deps_and_reqs_set):
+            log.debug('dep_req: %s', dep_req)
 
-            # if '.' not in dep_info['name'] and '.' not in dep_info['src'] and dep_info['scm'] is None:
-            #    log.debug('the dep %s doesnt look like a galaxy dep, skipping for now', dep_info)
-            #    # we know we can skip this, as it's not going to
-            #    # be found on galaxy.ansible.com
-            #    continue
+    dep_req_content_specs = sorted(list(deps_and_reqs_set))
 
-            dep_requirement_content_specs.append(dep)
+    log.debug('dep_and_req_set: %s', pprint.pformat(dep_req_content_specs))
 
-    log.debug('dep_requirement_content_specs: %s', pprint.pformat(dep_requirement_content_specs))
-    return dep_requirement_content_specs
-    # return 0
+    return dep_req_content_specs
 
 # def role_install_post_check():
 #    if False:

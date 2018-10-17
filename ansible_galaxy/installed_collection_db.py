@@ -52,10 +52,10 @@ def installed_collection_iterator(galaxy_context,
             # use the default 'local' style content_spec_parse and name resolver
             # spec_data = content_spec_parse.spec_data_from_string(collection_path)
 
-            collection_ = collection.load_from_name(content_path,
-                                                    namespace=namespace.namespace,
-                                                    name=collection_path,
-                                                    installed=True)
+            collection_ = collection.load_from_dir(content_path,
+                                                   namespace=namespace.namespace,
+                                                   name=collection_path,
+                                                   installed=True)
             # collection_full_path = os.path.join(content_path, namespace.namespace, collection_path)
             # log.debug('repo_fll_path: %s', collection_full_path)
             # content_spec = ContentSpec(namespace=namespace.namespace,
