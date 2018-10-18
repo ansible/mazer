@@ -12,7 +12,6 @@ from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy.fetch import fetch_factory
-from ansible_galaxy.models.content import InstalledContent
 
 log = logging.getLogger(__name__)
 
@@ -156,6 +155,7 @@ def install(galaxy_context,
 
         os.makedirs(galaxy_context.content_path)
 
+    # A list of InstallationResults
     res = content_archive_.install(repository_spec=repository_spec,
                                    extract_to_path=galaxy_context.content_path,
                                    force_overwrite=force_overwrite)
@@ -196,13 +196,7 @@ def install(galaxy_context,
         all_deps = repository_item.requirements or []
         all_deps.extend(repository_item.dependencies or [])
 
-        installed_content = InstalledContent(name=installed_repository_spec.name,
-                                             namespace=installed_repository_spec.namespace,
-                                             version=installed_repository_spec.version,
-                                             dependencies=repository_item.dependencies,
-                                             requirements=repository_item.requirements,
-                                             )
-        installed_repositories.append(installed_content)
+        installed_repositories.append(repository_item)
 
     log.debug('installed_repositories: %s', pprint.pformat(installed_repositories))
 

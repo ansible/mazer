@@ -31,8 +31,8 @@ def _list(galaxy_context,
                              'installed_repository': repository,
                              })
 
-        msg = "repo={installed_repository.repository_spec.label}, type={type}, name={name}, "
-        "version={installed_repository.repository_spec.version}"
+        msg = "repo={installed_repository.repository_spec.label}, type={type}, name={name}, " + \
+            "version={installed_repository.repository_spec.version}"
 
         display_callback(msg.format(**content_dict))
 

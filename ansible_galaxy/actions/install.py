@@ -317,10 +317,6 @@ def install_repository(galaxy_context,
     for installed_content in installed:
         log.debug('installed_content: %s', installed_content)
 
-        if not installed_content.meta_main:
-            log.warning("Meta file %s is empty. Skipping meta main dependencies.", installed_content.path)
-            # continue
-
         # convert deps/reqs to sets. Losing any ordering, but avoids dupes
         reqs_set = set(installed_content.requirements)
         log.debug('reqs_set: %s', reqs_set)

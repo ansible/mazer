@@ -53,28 +53,3 @@ class Content(object):
         inst = cls(**data)
         return inst
 
-    # @property
-    # def meta_main_path(self):
-    #    return os.path.join(self.path, self.namespace, self.name,
-    #                        self.content_dir, self.content_meta.name, self.meta_main_path)
-
-# content_path / primary_galaxy_content_path,
-# ie, '/home/user/.ansible/content' etc ?
-
-
-@attr.s
-class InstalledContent(Content):
-    # Info equilivent to that in .galaxy_install_info
-    install_info = attr.ib(type=InstallInfo,
-                           # editable installs wont have a .galaxy_install_info
-                           default=None)
-
-
-class NotGalaxyContent(object):
-    def __init__(self):
-        # need class for obj for ansible-galaxy.yml metadata file
-        self.galaxy_metadata = {}
-        # or instance of some InstallInfo class
-        self.install_info = {}
-        # or instance of GalaxyContentMeta
-        self.content_meta = {}
