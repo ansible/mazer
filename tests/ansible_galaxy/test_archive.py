@@ -1,6 +1,5 @@
 
 import logging
-import mock
 import os
 import shutil
 import tarfile
@@ -412,45 +411,3 @@ def _tar_members(file_list):
         members.append(tarfile.TarInfo(name=file_name))
 
     return members
-
-
-def test_find_members_by_fnmatch():
-    members = _tar_members(tar_example1)
-
-    len_members = len(members)
-    match_pattern = '*'
-    res = archive.filter_members_by_fnmatch(members, match_pattern)
-
-    assert len(res) == len_members, 'filtering on "*" missed some archive members'
-    assert isinstance(res, list)
-
-    action_match_pattern = '*/action_plugins/*'
-    res = archive.filter_members_by_fnmatch(members, action_match_pattern)
-
-    assert len(res) == 1, 'filtering on "%s" should find one action plugin' % action_match_pattern
-
-
-def test_find_members_by_content_type():
-    members = _tar_members(tar_example1)
-
-    res = archive.filter_members_by_content_type(members, 'multi-content', 'role')
-
-    log.debug('res: %s', pprint.pformat(res))
-
-    filenames = [x.name for x in res]
-    assert 'ansible-testing-content-master/roles/test-role-d/vars/main.yml' in filenames
-    assert 'ansible-testing-content-master/strategy_plugins/free.py' not in filenames
-
-
-def test_find_members_by_content_type_role_archive():
-    members = _tar_members(tar_example1)
-    len_members = len(members)
-
-    res = archive.filter_members_by_content_type(members, 'role', 'role')
-
-    log.debug('res: %s', pprint.pformat(res))
-
-    filenames = [x.name for x in res]
-    assert 'ansible-testing-content-master/roles/test-role-d/vars/main.yml' in filenames
-    # a role archive should not having anything filtered out
-    assert len_members == len(res)
