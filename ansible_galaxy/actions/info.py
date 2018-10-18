@@ -31,15 +31,10 @@ scm: {repository.repository_spec.scm}
 """
 
 
-CONTENT_TEMPLATE = """    content_name: {content_name}
+CONTENT_ITEM_TEMPLATE = """    content_name: {content_name}
     content_type: {content_type}
     description: {content_description}
 """
-
-
-INSTALLED_CONTENT_TEMPLATE = """
-name: {name}
-version: {version}"""
 
 
 # FIXME: format?
@@ -65,7 +60,7 @@ def _repr_remote_repo(remote_data):
         content_data['content_type'] = content_object['content_type']
         content_data['content_description'] = content_object['description']
 
-        content_str = CONTENT_TEMPLATE.format(**content_data)
+        content_str = CONTENT_ITEM_TEMPLATE.format(**content_data)
         # log.debug('content_str: %s', content_str)
         content_info_parts.append(content_str)
 
@@ -84,13 +79,6 @@ def _repr_remote_repo(remote_data):
 
 def _repr_installed_repository(installed_repository):
     return INSTALLED_REPOSITORY_TEMPLATE.format(repository=installed_repository)
-
-
-def _repr_installed_content(installed_content):
-    installed_data = {'name': installed_content['installed_repository'].name,
-                      'version': installed_content['version'],
-                      'path': installed_content['installed_repository'].path}
-    return INSTALLED_CONTENT_TEMPLATE.format(**installed_data)
 
 
 def _repr_unmatched_label(unmatched_label):

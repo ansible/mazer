@@ -315,7 +315,7 @@ def install_repository(galaxy_context,
 
     # install dependencies, if we want them
     for installed_repository in install_repositories:
-        log.debug('installed_content: %s', installed_repository)
+        log.debug('installed_repository: %s', installed_repository)
 
         # convert deps/reqs to sets. Losing any ordering, but avoids dupes
         reqs_set = set(installed_repository.requirements)
