@@ -1,7 +1,7 @@
 import logging
 
 from ansible_galaxy import collection
-from ansible_galaxy import installed_collection_db
+from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy_cli import exceptions as cli_exceptions
 
@@ -34,7 +34,7 @@ def remove(galaxy_context,
 
     collection_match_filter = collection_match_filter or matchers.MatchNone()
 
-    icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
+    icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
     for matched_collection in icdb.select(collection_match_filter=collection_match_filter):
         log.debug('removing %s', matched_collection)

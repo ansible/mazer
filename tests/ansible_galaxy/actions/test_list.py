@@ -18,7 +18,7 @@ def test__list(galaxy_context, mocker):
     # galaxy_context.content_path = os.path.join(galaxy_context.content_path, 'doesntexist')
     mocker.patch('ansible_galaxy.installed_namespaces_db.get_namespace_paths',
                  return_value=iter(['ns_blip', 'ns_foo']))
-    mocker.patch('ansible_galaxy.installed_collection_db.get_collection_paths',
+    mocker.patch('ansible_galaxy.installed_repository_db.get_repository_paths',
                  return_value=iter(['n_bar', 'n_baz']))
 
     # The content type specific content iterator is determined at runtime, so we need to patch the value

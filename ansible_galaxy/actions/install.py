@@ -6,7 +6,7 @@ from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy import content_spec
 from ansible_galaxy import install
-from ansible_galaxy import installed_collection_db
+from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy import requirements
 from ansible_galaxy.utils import yaml_parse
@@ -69,7 +69,7 @@ def install_collections_matching_collection_specs(galaxy_context,
     # ie, see if it is already installed
     collection_match_filter = matchers.MatchContentSpec([x for x in requested_content_specs])
 
-    icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
+    icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
     already_installed_generator = icdb.select(collection_match_filter=collection_match_filter)
 
     log.debug('requested_content_specs before: %s', requested_content_specs)

@@ -9,7 +9,7 @@ import attr
 
 from ansible_galaxy import content_archive
 from ansible_galaxy import exceptions
-from ansible_galaxy import installed_collection_db
+from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy.fetch import fetch_factory
 # from ansible_galaxy import install_info
@@ -207,7 +207,7 @@ def install(galaxy_context,
 
     log.debug('collectio_match_filter: %s', collection_match_filter)
 
-    icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
+    icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
     already_installed_generator = icdb.select(collection_match_filter=collection_match_filter)
 
     log.debug('already_installed_generator: %s', already_installed_generator)

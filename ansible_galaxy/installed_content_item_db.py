@@ -2,7 +2,7 @@ import glob
 import logging
 import os
 
-from ansible_galaxy import installed_collection_db
+from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy.models.content_item import ContentItem
 
@@ -35,7 +35,7 @@ def installed_content_item_iterator(galaxy_context,
 
     content_item_type = content_item_type or 'roles'
 
-    installed_coll_db = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
+    installed_coll_db = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
     # for namespace_full_path in namespace_paths_iterator:
     for installed_collection in installed_coll_db.select(namespace_match_filter=namespace_match_filter,
