@@ -53,14 +53,15 @@ def _repr_remote_repo(remote_data):
     remote_data['repo_format'] = remote_data['format']
 
     content_info_parts = []
-    content_objects = remote_data['summary_fields']['content_objects']
-    for content_object in content_objects:
-        content_data = {}
-        content_data['content_name'] = content_object['name']
-        content_data['content_type'] = content_object['content_type']
-        content_data['content_description'] = content_object['description']
+    content_item_objects = remote_data['summary_fields']['content_objects']
 
-        content_str = CONTENT_ITEM_TEMPLATE.format(**content_data)
+    for content_item_object in content_item_objects:
+        content_item_data = {}
+        content_item_data['content_name'] = content_item_object['name']
+        content_item_data['content_type'] = content_item_object['content_type']
+        content_item_data['content_description'] = content_item_object['description']
+
+        content_str = CONTENT_ITEM_TEMPLATE.format(**content_item_data)
         # log.debug('content_str: %s', content_str)
         content_info_parts.append(content_str)
 
