@@ -276,11 +276,11 @@ def install_repository(galaxy_context,
     #
     # FIXME: exc handling
     try:
-        installed = install.install(galaxy_context,
-                                    fetcher,
-                                    fetch_results,
-                                    repository_spec=fetched_repository_spec,
-                                    force_overwrite=force_overwrite)
+        install_repositories = install.install(galaxy_context,
+                                               fetcher,
+                                               fetch_results,
+                                               repository_spec=fetched_repository_spec,
+                                               force_overwrite=force_overwrite)
     except exceptions.GalaxyError as e:
         log.exception(e)
         log.warning("- %s was NOT installed successfully: %s ", fetched_repository_spec.name, str(e))
@@ -293,13 +293,13 @@ def install_repository(galaxy_context,
         return None
         # continue
 
-    log.debug('installed result: %s', installed)
+    log.debug('installed result: %s', install_repositories)
 
-    if not installed:
+    if not install_repositories:
         log.warning("- %s was NOT installed successfully.", fetched_repository_spec.label)
         raise_without_ignore(ignore_errors)
 
-    log.debug('installed: %s', pprint.pformat(installed))
+    log.debug('installed: %s', pprint.pformat(install_repositories))
     if no_deps:
         log.warning('- %s was installed but any deps will not be installed because of no_deps',
                     fetched_repository_spec.label)
@@ -314,20 +314,12 @@ def install_repository(galaxy_context,
     deps_and_reqs_set = set()
 
     # install dependencies, if we want them
-    for installed_content in installed:
-        log.debug('installed_content: %s', installed_content)
+    for installed_repository in install_repositories:
+        log.debug('installed_content: %s', installed_repository)
 
         # convert deps/reqs to sets. Losing any ordering, but avoids dupes
-        reqs_set = set(installed_content.requirements)
-        log.debug('reqs_set: %s', reqs_set)
-
-        deps_set = set(installed_content.dependencies)
-        log.debug('deps_set: %s', deps_set)
-
-        for dep in sorted(deps_set):
-            log.debug('Installing dep %s', dep)
-        for req in sorted(reqs_set):
-            log.debug('Installing req: %s', req)
+        reqs_set = set(installed_repository.requirements)
+        deps_set = set(installed_repository.dependencies)
 
         deps_and_reqs_set = deps_set.union(reqs_set)
         for dep_req in sorted(deps_and_reqs_set):
@@ -335,7 +327,7 @@ def install_repository(galaxy_context,
 
     dep_req_repository_specs = sorted(list(deps_and_reqs_set))
 
-    log.debug('dep_and_req_set: %s', pprint.pformat(dep_req_repository_specs))
+    log.debug('dep_req_repository_specs: %s', pprint.pformat(dep_req_repository_specs))
 
     return dep_req_repository_specs
 
