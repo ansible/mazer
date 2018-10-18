@@ -5,25 +5,25 @@ import attr
 import pytest
 import six
 
-from ansible_galaxy.models import collection
-from ansible_galaxy.models import content_spec
+from ansible_galaxy.models import repository
+from ansible_galaxy.models import repository_spec
 
 log = logging.getLogger(__name__)
 
 
 @pytest.fixture
 def csf(request):
-    _cs = content_spec.ContentSpec(namespace='somenamespace', name='somename', version='1.2.3')
+    _cs = repository_spec.RepositorySpec(namespace='somenamespace', name='somename', version='1.2.3')
     yield _cs
 
 
 def test_frozen(csf):
-    cr = collection.Collection(content_spec=csf)
+    cr = repository.Repository(repository_spec=csf)
 
-    new_cr = content_spec.ContentSpec(namespace='somenamespace', name='somename', version='1.2.3')
+    new_cr = repository_spec.RepositorySpec(namespace='somenamespace', name='somename', version='1.2.3')
 
     with pytest.raises(attr.exceptions.FrozenInstanceError):
-        cr.content_spec = new_cr
+        cr.repository_spec = new_cr
 
     with pytest.raises(attr.exceptions.FrozenInstanceError):
         cr.path = '/dev/null/somepath'
@@ -34,13 +34,13 @@ def test_frozen(csf):
 
 def test_cr_init_no_args():
     with pytest.raises(TypeError) as exc_info:
-        collection.Collection()
+        repository.Repository()
 
     log.debug('exc_info.getrepr(): %s', exc_info.getrepr(showlocals=True, style='native'))
 
     # different TypeError strings for py2 vs py3
     if six.PY3:
-        assert exc_info.match("__init__.*missing.*1.*'content_spec'")
+        assert exc_info.match("__init__.*missing.*1.*'repository_spec'")
 
     if six.PY2:
         # __init__() takes at least 2 arguments (1 given)
@@ -48,33 +48,33 @@ def test_cr_init_no_args():
 
 
 def test_cr_init(csf):
-    cr = collection.Collection(content_spec=csf)
+    cr = repository.Repository(repository_spec=csf)
 
-    assert isinstance(cr, collection.Collection)
-    assert 'Collection' in repr(cr)
+    assert isinstance(cr, repository.Repository)
+    assert 'Repository' in repr(cr)
 
 
 def test_cr_init_path(csf):
     path = '/dev/null/wherever'
-    cr = collection.Collection(content_spec=csf,
+    cr = repository.Repository(repository_spec=csf,
                                path=path)
 
-    assert isinstance(cr, collection.Collection)
+    assert isinstance(cr, repository.Repository)
     assert path in repr(cr)
     assert cr.path == path
 
 
-def CR(content_spec=None, path=None):
+def CR(repository_spec=None, path=None):
     if path:
-        return collection.Collection(content_spec=content_spec, path=path)
-    return collection.Collection(content_spec=content_spec)
+        return repository.Repository(repository_spec=repository_spec, path=path)
+    return repository.Repository(repository_spec=repository_spec)
 
 
-ns_n = content_spec.ContentSpec(namespace='ns', name='n', version='1.0.0')
-diffns_n = content_spec.ContentSpec(namespace='diffns', name='n', version='1.0.0')
+ns_n = repository_spec.RepositorySpec(namespace='ns', name='n', version='1.0.0')
+diffns_n = repository_spec.RepositorySpec(namespace='diffns', name='n', version='1.0.0')
 ns_n_1_0_0 = ns_n
 diffns_n_1_0_0 = diffns_n
-ns_n_1_0_1 = content_spec.ContentSpec(namespace='ns', name='n', version='1.0.1')
+ns_n_1_0_1 = repository_spec.RepositorySpec(namespace='ns', name='n', version='1.0.1')
 
 
 path1 = '/dev/null/1'

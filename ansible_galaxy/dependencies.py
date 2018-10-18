@@ -1,7 +1,7 @@
 import logging
 
 from ansible_galaxy.models.dependency import DependencySpec
-from ansible_galaxy.content_spec import spec_data_from_string
+from ansible_galaxy.repository_spec import spec_data_from_string
 
 log = logging.getLogger(__name__)
 

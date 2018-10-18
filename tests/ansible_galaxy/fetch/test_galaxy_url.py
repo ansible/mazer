@@ -83,7 +83,7 @@ def test_select_collection_version(repoversions, version, expected):
     log.debug('repoversions: %s', repoversions)
     log.debug('version: %s', version)
     log.debug('expected: %s', expected)
-    res = galaxy_url.select_collection_version(repoversions, version)
+    res = galaxy_url.select_repository_version(repoversions, version)
 
     assert isinstance(res, dict)
 
@@ -98,7 +98,7 @@ def test_select_collection_version_empty_repoversions():
     repoversions = []
     version = '1.2.3'
 
-    res = galaxy_url.select_collection_version(repoversions, version)
+    res = galaxy_url.select_repository_version(repoversions, version)
 
     assert isinstance(res, dict)
     assert res == {}

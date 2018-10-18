@@ -4,7 +4,7 @@ import pprint
 import yaml
 
 from ansible_galaxy.models.requirement import RequirementSpec
-from ansible_galaxy.content_spec import spec_data_from_string
+from ansible_galaxy.repository_spec import spec_data_from_string
 from ansible_galaxy.utils import yaml_parse
 
 log = logging.getLogger(__name__)

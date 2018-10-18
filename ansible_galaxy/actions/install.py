@@ -4,12 +4,11 @@ import pprint
 
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
-from ansible_galaxy import content_spec
+from ansible_galaxy import repository_spec
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy import requirements
-from ansible_galaxy.utils import yaml_parse
 
 log = logging.getLogger(__name__)
 
@@ -28,80 +27,76 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
         raise exceptions.GalaxyError(message)
 
 
-def _verify_content_specs_have_namespace(collection_specs):
-    content_spec_list = []
+def _verify_repository_specs_have_namespaces(repository_specs):
+    repository_spec_list = []
 
-    for collection_spec in collection_specs:
-        # FIXME: be consistent about collection/content
-        content_spec_ = collection_spec
+    for repo_spec in repository_specs:
+        log.info('repo install repository_spec: %s', repo_spec)
 
-        log.info('content install content_spec: %s', content_spec_)
+        if not repo_spec.namespace:
+            raise exceptions.GalaxyRepositorySpecError(
+                'The repository spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % repo_spec.spec_string,
+                repository_spec=repo_spec)
 
-        if not content_spec_.namespace:
-            raise exceptions.GalaxyContentSpecError(
-                'The content spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % content_spec_.spec_string,
-                content_spec=content_spec_)
+        repository_spec_list.append(repo_spec)
 
-        content_spec_list.append(content_spec_)
-
-    return content_spec_list
+    return repository_spec_list
 
 
-# pass a list of content_spec objects
-def install_collections_matching_collection_specs(galaxy_context,
-                                                  collection_specs,
-                                                  editable=False,
-                                                  namespace_override=None,
-                                                  display_callback=None,
-                                                  # TODO: error handling callback ?
-                                                  ignore_errors=False,
-                                                  no_deps=False,
-                                                  force_overwrite=False):
-    '''Install a set of packages specified by collection_spec_strings if they are not already installed'''
+# pass a list of repository_spec objects
+def install_repositories_matching_repository_specs(galaxy_context,
+                                                   repository_specs,
+                                                   editable=False,
+                                                   namespace_override=None,
+                                                   display_callback=None,
+                                                   # TODO: error handling callback ?
+                                                   ignore_errors=False,
+                                                   no_deps=False,
+                                                   force_overwrite=False):
+    '''Install a set of repositories specified by repository_specs if they are not already installed'''
 
     log.debug('editable: %s', editable)
-    log.debug('collection_specs: %s', collection_specs)
+    log.debug('repository_specs: %s', repository_specs)
 
-    requested_content_specs = _verify_content_specs_have_namespace(collection_specs=collection_specs)
+    requested_repository_specs = _verify_repository_specs_have_namespaces(repository_specs=repository_specs)
 
     # FIXME: mv mv this filtering to it's own method
     # match any of the content specs for stuff we want to install
     # ie, see if it is already installed
-    collection_match_filter = matchers.MatchContentSpec([x for x in requested_content_specs])
+    repository_match_filter = matchers.MatchContentSpec([x for x in requested_repository_specs])
 
-    icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    already_installed_generator = icdb.select(collection_match_filter=collection_match_filter)
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    already_installed_generator = irdb.select(repository_match_filter=repository_match_filter)
 
-    log.debug('requested_content_specs before: %s', requested_content_specs)
+    log.debug('requested_repository_specs before: %s', requested_repository_specs)
 
     # FIXME: if/when GalaxyContent and InstalledGalaxyContent are attr.ib based and frozen and hashable
     #        we can simplify this filter with set ops
 
-    already_installed_content_spec_set = set([installed.content_spec for installed in already_installed_generator])
-    log.debug('already_installed_content_spec_set: %s', already_installed_content_spec_set)
+    already_installed_repository_spec_set = set([installed.repository_spec for installed in already_installed_generator])
+    log.debug('already_installed_repository_spec_set: %s', already_installed_repository_spec_set)
 
-    if already_installed_content_spec_set and not force_overwrite:
-        msg = 'The following packages are already installed. Use --force to overwrite:\n%s' % \
-            '\n'.join([x.label for x in already_installed_content_spec_set])
+    if already_installed_repository_spec_set and not force_overwrite:
+        msg = 'The following repositories are already installed. Use --force to overwrite:\n%s' % \
+            '\n'.join([x.label for x in already_installed_repository_spec_set])
 
         raise exceptions.GalaxyError(msg)
 
-    content_specs_to_install = [y for y in requested_content_specs if y not in already_installed_content_spec_set or force_overwrite]
-    log.debug('content_specs_to_install: %s', pprint.pformat(content_specs_to_install))
+    repository_specs_to_install = [y for y in requested_repository_specs if y not in already_installed_repository_spec_set or force_overwrite]
 
-    log.debug('content_specs_to_install after: %s', content_specs_to_install)
+    log.debug('repository_specs_to_install: %s', pprint.pformat(repository_specs_to_install))
 
-    return install_collections(galaxy_context, content_specs_to_install,
-                               display_callback=display_callback,
-                               ignore_errors=ignore_errors,
-                               no_deps=no_deps,
-                               force_overwrite=force_overwrite)
+    return install_repositories(galaxy_context, repository_specs_to_install,
+                                display_callback=display_callback,
+                                ignore_errors=ignore_errors,
+                                no_deps=no_deps,
+                                force_overwrite=force_overwrite)
 
 
 # FIXME: probably pass the point where passing around all the data to methods makes sense
 #        so probably needs a stateful class here
-def install_collection_specs_loop(galaxy_context,
-                                  collection_spec_strings=None,
+def install_repository_specs_loop(galaxy_context,
+                                  repository_spec_strings=None,
                                   requirement_specs=None,
                                   editable=False,
                                   namespace_override=None,
@@ -113,9 +108,9 @@ def install_collection_specs_loop(galaxy_context,
 
     requirement_specs = requirement_specs or []
 
-    # Turn the collection / requirement names from the cli into a list of RequirementSpec objects
-    if collection_spec_strings:
-        more_req_specs = requirements.from_requirement_spec_strings(collection_spec_strings,
+    # Turn the repository / requirement names from the cli into a list of RequirementSpec objects
+    if repository_spec_strings:
+        more_req_specs = requirements.from_requirement_spec_strings(repository_spec_strings,
                                                                     editable=editable)
         log.debug('more_req_specs: %s', more_req_specs)
 
@@ -128,40 +123,40 @@ def install_collection_specs_loop(galaxy_context,
         if not requirement_specs:
             break
 
-        new_requested_collection_specs = \
-            install_collections_matching_collection_specs(galaxy_context,
-                                                          requirement_specs,
-                                                          editable=editable,
-                                                          namespace_override=namespace_override,
-                                                          display_callback=display_callback,
-                                                          ignore_errors=ignore_errors,
-                                                          no_deps=no_deps,
-                                                          force_overwrite=force_overwrite)
+        new_requested_repository_specs = \
+            install_repositories_matching_repository_specs(galaxy_context,
+                                                           requirement_specs,
+                                                           editable=editable,
+                                                           namespace_override=namespace_override,
+                                                           display_callback=display_callback,
+                                                           ignore_errors=ignore_errors,
+                                                           no_deps=no_deps,
+                                                           force_overwrite=force_overwrite)
 
-        log.debug('new_requested_collection_specs: %s', pprint.pformat(new_requested_collection_specs))
+        log.debug('new_requested_repository_specs: %s', pprint.pformat(new_requested_repository_specs))
 
-        # set the content_specs to search for to whatever the install reported as being needed yet
-        requirement_specs = new_requested_collection_specs
+        # set the repository_specs to search for to whatever the install reported as being needed yet
+        requirement_specs = new_requested_repository_specs
 
     # FIXME: what results to return?
     return 0
 
 
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
-def install_collections(galaxy_context,
-                        content_specs_to_install,
-                        display_callback=None,
-                        # TODO: error handling callback ?
-                        ignore_errors=False,
-                        no_deps=False,
-                        force_overwrite=False):
+def install_repositories(galaxy_context,
+                         repository_specs_to_install,
+                         display_callback=None,
+                         # TODO: error handling callback ?
+                         ignore_errors=False,
+                         no_deps=False,
+                         force_overwrite=False):
 
     display_callback = display_callback or display.display_callback
-    log.debug('content_specs_to_install: %s', content_specs_to_install)
+    log.debug('repositpry_specs_to_install: %s', repository_specs_to_install)
     log.debug('no_deps: %s', no_deps)
     log.debug('force_overwrite: %s', force_overwrite)
 
-    dep_requirement_content_specs = []
+    dep_requirement_repository_specs = []
 
     # FIXME - Need to handle role files here for backwards compat
 
@@ -170,33 +165,29 @@ def install_collections(galaxy_context,
 
     # FIXME: should be while? or some more func style processing
     #        iterating until there is nothing left
-    for content_spec_to_install in content_specs_to_install:
-        log.debug('content_spec_to_install: %s', content_spec_to_install)
-        new_dep_requirement_content_specs = install_collection(galaxy_context,
-                                                               content_spec_to_install,
-                                                               display_callback=display_callback,
-                                                               ignore_errors=ignore_errors,
-                                                               no_deps=no_deps,
-                                                               force_overwrite=force_overwrite)
+    for repository_spec_to_install in repository_specs_to_install:
+        log.debug('repository_spec_to_install: %s', repository_spec_to_install)
+        new_dep_requirement_repository_specs = install_repository(galaxy_context,
+                                                                  repository_spec_to_install,
+                                                                  display_callback=display_callback,
+                                                                  ignore_errors=ignore_errors,
+                                                                  no_deps=no_deps,
+                                                                  force_overwrite=force_overwrite)
 
-        log.debug('new_dep_requirement_content_specs: %s', pprint.pformat(new_dep_requirement_content_specs))
-        log.debug('dep_requirement_content_specs1: %s', pprint.pformat(dep_requirement_content_specs))
+        log.debug('new_dep_requirement_repository_specs: %s', pprint.pformat(new_dep_requirement_repository_specs))
+        log.debug('dep_requirement_repository_specs1: %s', pprint.pformat(dep_requirement_repository_specs))
 
-        if not new_dep_requirement_content_specs:
-            log.debug('install_collection return None for content_spec_to_install: %s', content_spec_to_install)
+        if not new_dep_requirement_repository_specs:
+            log.debug('install_repository return None for repository_spec_to_install: %s', repository_spec_to_install)
             continue
 
-        dep_requirement_content_specs.extend(new_dep_requirement_content_specs)
+        dep_requirement_repository_specs.extend(new_dep_requirement_repository_specs)
 
-        log.debug('dep_requirement_content_specs2: %s', pprint.pformat(dep_requirement_content_specs))
-        # dep_requirement_content_specs.extend(new_dep_requirement_content_specs)
-        # only process roles in roles files when names matches if given
-
-    return dep_requirement_content_specs
+    return dep_requirement_repository_specs
 
 
-def install_collection(galaxy_context,
-                       content_spec_to_install,
+def install_repository(galaxy_context,
+                       repository_specs_to_install,
                        display_callback=None,
                        # TODO: error handling callback ?
                        ignore_errors=False,
@@ -205,26 +196,26 @@ def install_collection(galaxy_context,
     '''This installs a single package by finding it, fetching it, verifying it and installing it.'''
 
     # INITIAL state
-    dep_requirement_content_specs = []
+    dep_requirement_repository_specs = []
 
     # TODO: we could do all the downloads first, then install them. Likely
     #       less error prone mid 'transaction'
-    log.debug('Processing %s', content_spec_to_install.name)
+    log.debug('Processing %s', repository_specs_to_install.name)
 
-    if content_spec_to_install.fetch_method == content_spec.FetchMethods.EDITABLE:
+    if repository_specs_to_install.fetch_method == repository_spec.FetchMethods.EDITABLE:
         # trans to INSTALL_EDITABLE state
-        install_editable_content(content_spec_to_install)
+        install_editable_repository(repository_specs_to_install)
         # check results, then transition to either DONE or INSTALL_EDIBLE_FAILED
-        log.debug('not installing/extractings because of install_collection')
+        log.debug('not installing/extractings because of install_repository')
         return
     # else trans to ... FIND_FETCHER?
 
-    log.debug('About to find() requested content_spec_to_install: %s', content_spec_to_install)
+    log.debug('About to find() requested repository_spec_to_install: %s', repository_specs_to_install)
 
-    fetcher = install.fetcher(galaxy_context, content_spec=content_spec_to_install)
+    fetcher = install.fetcher(galaxy_context, repository_spec=repository_specs_to_install)
     # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
     # could also move some of the logic in fetcher_factory to be driven from here
-    # and make the steps of mapping collection spec -> fetcher method part of the
+    # and make the steps of mapping repository spec -> fetcher method part of the
     # state machine. That might be a good place to support multiple galaxy servers
     # or preferring local content to remote content, etc.
 
@@ -232,26 +223,26 @@ def install_collection(galaxy_context,
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
     try:
-        find_results = install.find(fetcher, content_spec=content_spec_to_install)
+        find_results = install.find(fetcher)
         # log.debug('standalone find_results: %s', pprint.pformat(find_results))
     except exceptions.GalaxyError as e:
-        log.warning('Unable to find metadata for %s: %s', content_spec_to_install.name, e)
+        log.warning('Unable to find metadata for %s: %s', repository_specs_to_install.name, e)
         # FIXME: raise dep error exception?
         raise_without_ignore(ignore_errors, e)
         # continue
         return None
 
-    # TODO: make sure content_spec version is correct and set
+    # TODO: make sure repository_spec version is correct and set
 
     # TODO: state transition, if find_results -> INSTALL
     #       if not, then FIND_FAILED
 
-    log.debug('About to download requested content_spec_to_install: %s', content_spec_to_install)
+    log.debug('About to download requested repository_spec_to_install: %s', repository_specs_to_install)
 
     # FETCH state
     try:
         fetch_results = install.fetch(fetcher,
-                                      content_spec=content_spec_to_install,
+                                      repository_spec=repository_specs_to_install,
                                       find_results=find_results)
         log.debug('fetch_results: %s', fetch_results)
         # fetch_results will include a 'archive_path' pointing to where the artifact
@@ -259,7 +250,7 @@ def install_collection(galaxy_context,
     except exceptions.GalaxyError as e:
         # fetch error probably should just go to a FAILED state, at least until
         # we have to implement retries
-        log.warning('Unable to fetch %s: %s', content_spec_to_install.name, e)
+        log.warning('Unable to fetch %s: %s', repository_specs_to_install.name, e)
         raise_without_ignore(ignore_errors, e)
         # continue
         # FIXME: raise ?
@@ -269,13 +260,13 @@ def install_collection(galaxy_context,
     #       or rules to only update within some semver range (ie, only 'patch' level),
     #       we could hook rule validation stuff here.
 
-    # TODO: build a new content_spec based on what we actually fetched to feed to
+    # TODO: build a new repository_spec based on what we actually fetched to feed to
     #       install etc. The fetcher.fetch() could return a datastructure needed to build
     #       the new one instead of doing it in verify()
-    fetched_content_spec = install.update_content_spec(fetch_results,
-                                                       content_spec_to_install)
+    fetched_repository_spec = install.update_repository_spec(fetch_results,
+                                                             repository_specs_to_install)
 
-    log.debug('fetched_content_spec: %s', fetched_content_spec)
+    log.debug('fetched_repository_spec: %s', fetched_repository_spec)
 
     # FIXME: seems like we want to resolve deps before trying install
     #        We need the role (or other content) deps from meta before installing
@@ -288,12 +279,11 @@ def install_collection(galaxy_context,
         installed = install.install(galaxy_context,
                                     fetcher,
                                     fetch_results,
-                                    # content.content_meta,
-                                    content_spec=fetched_content_spec,
+                                    repository_spec=fetched_repository_spec,
                                     force_overwrite=force_overwrite)
     except exceptions.GalaxyError as e:
         log.exception(e)
-        log.warning("- %s was NOT installed successfully: %s ", fetched_content_spec.name, str(e))
+        log.warning("- %s was NOT installed successfully: %s ", fetched_repository_spec.name, str(e))
         raise
 
 
@@ -306,20 +296,20 @@ def install_collection(galaxy_context,
     log.debug('installed result: %s', installed)
 
     if not installed:
-        log.warning("- %s was NOT installed successfully.", fetched_content_spec.label)
+        log.warning("- %s was NOT installed successfully.", fetched_repository_spec.label)
         raise_without_ignore(ignore_errors)
 
     log.debug('installed: %s', pprint.pformat(installed))
     if no_deps:
         log.warning('- %s was installed but any deps will not be installed because of no_deps',
-                    fetched_content_spec.label)
+                    fetched_repository_spec.label)
 
     # TODO?: update the install receipt for 'installed' if succesull?
 
     # oh dear god, a dep solver...
 
     if no_deps:
-        return dep_requirement_content_specs
+        return dep_requirement_repository_specs
 
     deps_and_reqs_set = set()
 
@@ -347,11 +337,11 @@ def install_collection(galaxy_context,
         for dep_req in sorted(deps_and_reqs_set):
             log.debug('dep_req: %s', dep_req)
 
-    dep_req_content_specs = sorted(list(deps_and_reqs_set))
+    dep_req_repository_specs = sorted(list(deps_and_reqs_set))
 
-    log.debug('dep_and_req_set: %s', pprint.pformat(dep_req_content_specs))
+    log.debug('dep_and_req_set: %s', pprint.pformat(dep_req_repository_specs))
 
-    return dep_req_content_specs
+    return dep_req_repository_specs
 
 # def role_install_post_check():
 #    if False:
@@ -410,21 +400,21 @@ def stuff_for_updating(content, display_callback, force_overwrite=False):
                     return None
 
 
-def install_editable_content(content):
-    '''Link the content path to the local checkout, similar to pip install -e'''
+def install_editable_repository(repository):
+    '''Link the repository path to the local checkout, similar to pip install -e'''
 
     # is it a directory or is it a tarball?
-    if not os.path.isdir(os.path.abspath(content.src)):
-        log.warning("%s needs to be a local directory for an editable install" % content.src)
+    if not os.path.isdir(os.path.abspath(repository.src)):
+        log.warning("%s needs to be a local directory for an editable install" % repository.src)
         raise_without_ignore(None, None)
 
-    namespace = content.content_spec.namespace
-    repository = content.content_spec.name
-    dst_ns_root = os.path.join(content.path, namespace)
-    dst_repo_root = os.path.join(content.path, namespace, repository)
+    namespace = repository.repository_spec.namespace
+    repository = repository.repository_spec.name
+    dst_ns_root = os.path.join(repository.path, namespace)
+    dst_repo_root = os.path.join(repository.path, namespace, repository)
 
     if not os.path.exists(dst_ns_root):
         os.makedirs(dst_ns_root)
 
     if not os.path.exists(dst_repo_root):
-        os.symlink(os.path.abspath(content.src), dst_repo_root)
+        os.symlink(os.path.abspath(repository.src), dst_repo_root)

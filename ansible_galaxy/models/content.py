@@ -16,12 +16,6 @@ VALID_ROLE_SPEC_KEYS = [
     'scm',
 ]
 
-# FIXME - need some stuff here
-VALID_CONTENT_SPEC_KEYS = [
-
-]
-
-
 # Galaxy Content Constants
 CONTENT_PLUGIN_TYPES = (
     'module',

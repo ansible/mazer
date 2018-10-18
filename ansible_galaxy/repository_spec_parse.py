@@ -2,7 +2,7 @@ import logging
 import os
 
 from ansible_galaxy import exceptions
-from ansible_galaxy import galaxy_content_spec
+from ansible_galaxy import galaxy_repository_spec
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def split_kwarg(spec_string, valid_keywords):
     if parts[0] in valid_keywords:
         return (parts[0], parts[1])
 
-    raise exceptions.GalaxyClientError('The content spec uses an unsuppoted keyword: %s' % spec_string)
+    raise exceptions.GalaxyClientError('The repository spec uses an unsuppoted keyword: %s' % spec_string)
 
 
 def split_comma(spec_string, valid_keywords):
@@ -44,7 +44,7 @@ def split_comma(spec_string, valid_keywords):
         yield kw_parts
 
 
-def split_content_spec(spec_string, valid_keywords):
+def split_repository_spec(spec_string, valid_keywords):
     comma_splitter = split_comma(spec_string, valid_keywords)
     info = {}
     for kw in valid_keywords:
@@ -61,8 +61,8 @@ def split_content_spec(spec_string, valid_keywords):
     return info
 
 
-def parse_string(content_spec_text, valid_keywords=None):
-    '''Given a text/str object describing a galaxy content, parse it.
+def parse_string(repository_spec_text, valid_keywords=None):
+    '''Given a text/str object describing a galaxy repository, parse it.
 
     And return a dict with keys: 'name', 'src', 'scm', 'version'
     '''
@@ -76,9 +76,9 @@ def parse_string(content_spec_text, valid_keywords=None):
             'scm': None,
             'spec_string': None}
 
-    data['spec_string'] = content_spec_text
+    data['spec_string'] = repository_spec_text
 
-    split_data = split_content_spec(content_spec_text, valid_keywords)
+    split_data = split_repository_spec(repository_spec_text, valid_keywords)
 
     # src = split_data.pop('src')
     data.update(split_data)
@@ -87,8 +87,8 @@ def parse_string(content_spec_text, valid_keywords=None):
     return data
 
 
-def is_scm(content_spec_string):
-    if '://' in content_spec_string or '@' in content_spec_string:
+def is_scm(repository_spec_string):
+    if '://' in repository_spec_string or '@' in repository_spec_string:
         return True
 
     return False
@@ -102,20 +102,20 @@ class FetchMethods(object):
     GALAXY_URL = 'GALAXY_URL'
 
 
-def choose_content_fetch_method(content_spec_string):
-    log.debug('content_spec_string: %s', content_spec_string)
+def chose_repository_fetch_method(repository_spec_string):
+    log.debug('repository_spec_string: %s', repository_spec_string)
 
-    if is_scm(content_spec_string):
+    if is_scm(repository_spec_string):
         # create tar file from scm url
         return FetchMethods.SCM_URL
 
-    comma_parts = content_spec_string.split(',', 1)
+    comma_parts = repository_spec_string.split(',', 1)
     potential_filename = comma_parts[0]
     if os.path.isfile(potential_filename):
         # installing a local tar.gz
         return FetchMethods.LOCAL_FILE
 
-    if '://' in content_spec_string:
+    if '://' in repository_spec_string:
         return FetchMethods.REMOTE_URL
 
     # if it doesnt look like anything else, assume it's galaxy
@@ -149,12 +149,12 @@ def resolve(data):
     return data
 
 
-def spec_data_from_string(content_spec_string, resolver=None):
-    fetch_method = choose_content_fetch_method(content_spec_string)
+def spec_data_from_string(repository_spec_string, resolver=None):
+    fetch_method = chose_repository_fetch_method(repository_spec_string)
 
 #    log.debug('fetch_method: %s', fetch_method)
 
-    spec_data = parse_string(content_spec_string)
+    spec_data = parse_string(repository_spec_string)
     spec_data['fetch_method'] = fetch_method
 
 #    log.debug('spec_data: %s', spec_data)
@@ -164,7 +164,7 @@ def spec_data_from_string(content_spec_string, resolver=None):
     if resolver is None:
         resolver = resolve
         if fetch_method == FetchMethods.GALAXY_URL:
-            resolver = galaxy_content_spec.resolve
+            resolver = galaxy_repository_spec.resolve
 
     log.debug('resolver: %s', resolver)
     resolved_name = resolver(spec_data)

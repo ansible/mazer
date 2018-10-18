@@ -3,23 +3,23 @@ import logging
 import attr
 import pytest
 
-from ansible_galaxy.models import content_spec
+from ansible_galaxy.models import repository_spec
 
 log = logging.getLogger(__name__)
 
 
 def test_init():
-    cs = content_spec.ContentSpec(namespace='ns',
+    cs = repository_spec.RepositorySpec(namespace='ns',
                                   name='n',
                                   version='3.4.5')
 
-    assert isinstance(cs, content_spec.ContentSpec)
+    assert isinstance(cs, repository_spec.RepositorySpec)
 
     log.debug('cs: %s', cs)
 
 
 def test_frozen():
-    cs = content_spec.ContentSpec(namespace='ns',
+    cs = repository_spec.RepositorySpec(namespace='ns',
                                   name='n',
                                   version='3.4.5')
 
@@ -48,15 +48,15 @@ def test_frozen():
 
 
 def test_hash():
-    cs1 = content_spec.ContentSpec(namespace='cs1',
+    cs1 = repository_spec.RepositorySpec(namespace='cs1',
                                    name='cs1',
                                    version='3.4.5')
 
-    cs1a = content_spec.ContentSpec(namespace='cs1',
+    cs1a = repository_spec.RepositorySpec(namespace='cs1',
                                     name='cs1',
                                     version='3.4.5')
 
-    cs2 = content_spec.ContentSpec(namespace='cs2',
+    cs2 = repository_spec.RepositorySpec(namespace='cs2',
                                    name='c2',
                                    version='3.4.2')
 
@@ -91,15 +91,15 @@ def test_hash():
 
 
 def test_equal():
-    cs1 = content_spec.ContentSpec(namespace='ns',
+    cs1 = repository_spec.RepositorySpec(namespace='ns',
                                    name='n',
                                    version='3.4.5')
 
-    cs1a = content_spec.ContentSpec(namespace='ns',
+    cs1a = repository_spec.RepositorySpec(namespace='ns',
                                     name='n',
                                     version='3.4.5')
 
-    cs2 = content_spec.ContentSpec(namespace='ns2',
+    cs2 = repository_spec.RepositorySpec(namespace='ns2',
                                    name='n2',
                                    version='3.4.2')
 

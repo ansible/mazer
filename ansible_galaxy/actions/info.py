@@ -3,7 +3,7 @@ import logging
 
 from ansible_galaxy import display
 from ansible_galaxy import matchers
-from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy.utils.content_name import parse_content_name
 from ansible_galaxy.utils.text import to_text
@@ -23,11 +23,11 @@ scm: {repo_clone_url}
 
 {repo_contents}"""
 
-INSTALLED_COLLECTION_TEMPLATE = """namespace: {collection.content_spec.namespace}
-name: {collection.content_spec.name}
-version: {collection.content_spec.version}
-path: {collection.path}
-scm: {collection.content_spec.scm}
+INSTALLED_REPOSITORY_TEMPLATE = """namespace: {repository.repository_spec.namespace}
+name: {repository.repository_spec.name}
+version: {repository.repository_spec.version}
+path: {repository.path}
+scm: {repository.repository_spec.scm}
 """
 
 
@@ -82,14 +82,14 @@ def _repr_remote_repo(remote_data):
     return GALAXY_REPOSITORY_TEMPLATE.format(**remote_data)
 
 
-def _repr_installed_collection(installed_collection):
-    return INSTALLED_COLLECTION_TEMPLATE.format(collection=installed_collection)
+def _repr_installed_repository(installed_repository):
+    return INSTALLED_REPOSITORY_TEMPLATE.format(repository=installed_repository)
 
 
 def _repr_installed_content(installed_content):
-    installed_data = {'name': installed_content['installed_collection'].name,
+    installed_data = {'name': installed_content['installed_repository'].name,
                       'version': installed_content['version'],
-                      'path': installed_content['installed_collection'].path}
+                      'path': installed_content['installed_repository'].path}
     return INSTALLED_CONTENT_TEMPLATE.format(**installed_data)
 
 
@@ -120,80 +120,58 @@ def _repr_role_info(role_info):
     return u'\n'.join(text)
 
 
-def info_content_specs(galaxy_context,
-                       api,
-                       content_spec_strings,
-                       display_callback=None,
-                       offline=None):
+def info_repository_specs(galaxy_context,
+                          api,
+                          repository_spec_strings,
+                          display_callback=None,
+                          offline=None):
 
     online = not offline
 
     display_callback = display_callback or display.display_callback
 
-    # log.debug('base_content_path: %s', base_content_path)
-    # content_path = galaxy_context.content_path
-
     offline = offline or False
 
-    icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
     labels_to_match = []
 
     all_labels_to_match = []
-    for content_spec_string in content_spec_strings:
-        galaxy_namespace, collection_name, content_name = parse_content_name(content_spec_string)
+    for repository_spec_string in repository_spec_strings:
+        galaxy_namespace, repository_name, content_name = parse_content_name(repository_spec_string)
 
-        log.debug('showing info for content spec: %s', content_spec_string)
+        log.debug('showing info for repository spec: %s', repository_spec_string)
 
-        collection_name = collection_name or content_name
+        repository_name = repository_name or content_name
 
-        # Note: What this client calls 'collection' galaxy server api calls a repository
-        #       so 'collection_name' could also be considered a 'repo_name'
         if online:
-            # remote_data = api.lookup_content_by_name(galaxy_namespace, collection_name, content_name)
-            remote_data = api.lookup_repo_by_name(galaxy_namespace, collection_name)
+            remote_data = api.lookup_repo_by_name(galaxy_namespace, repository_name)
             if remote_data:
                 display_callback(_repr_remote_repo(remote_data))
 
-        label_to_match = '%s.%s' % (galaxy_namespace, collection_name)
+        label_to_match = '%s.%s' % (galaxy_namespace, repository_name)
         all_labels_to_match.append(label_to_match)
 
-        labels_to_match.append((label_to_match, ContentSpec(namespace=galaxy_namespace,
-                                                            name=collection_name)))
+        labels_to_match.append((label_to_match, RepositorySpec(namespace=galaxy_namespace,
+                                                               name=repository_name)))
 
-    # matcher = matchers.MatchNamespacesOrLabels([label_and_spec[0] for label_and_spec in labels_to_match])
     matcher = matchers.MatchContentSpec([label_and_spec[1] for label_and_spec in labels_to_match])
 
-    matched_collections = icdb.select(collection_match_filter=matcher)
-
-    # matched_contents = icdb.select(collection_match_filter=matcher)
-    # log.debug('matched_contents: %s', list(matched_contents))
-
-    # content_path = os.path.join(content_path, '%s.%s' % (galaxy_namespace, collection_name))
+    matched_repositories = irdb.select(repository_match_filter=matcher)
 
     remote_data = False
 
     matched_labels = []
-    for matched_collection in matched_collections:
-        display_callback(_repr_installed_collection(matched_collection))
-        matched_labels.append(matched_collection.content_spec.label)
+    for matched_repository in matched_repositories:
+        display_callback(_repr_installed_repository(matched_repository))
+        matched_labels.append(matched_repository.repository_spec.label)
 
     unmatched_labels = set(all_labels_to_match).difference(set(matched_labels))
 
     if unmatched_labels:
-        display_callback('These collections were not found:')
+        display_callback('These repositories were not found:')
 
         for unmatched_label in sorted(unmatched_labels):
             display_callback(_repr_unmatched_label(unmatched_label))
 
     return
-
-    # role_spec = yaml_parse({'role': role})
-    # if role_spec:
-    #     role_info.update(role_spec)
-
-    # not_installed =
-
-#    if not_installed:
-
-#    return 0

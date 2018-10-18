@@ -33,9 +33,9 @@ def get_download_url(repo_data=None, external_url=None, repoversion=None):
         return archive_url
 
 
-def select_collection_version(repoversions, version):
-    # collection_version's 'version' is 'not null' so should always exist
-    # however, the list of collection_versions can be empty
+def select_repository_version(repoversions, version):
+    # repoversion's 'version' is 'not null' so should always exist
+    # however, the list of repoversions can be empty
 
     # If the rest api returns a empty list for repo versions, return an
     # empty dict for 'no version'
@@ -52,7 +52,7 @@ def select_collection_version(repoversions, version):
     if not results:
         return {}
 
-    # collection_versions is uniq on (version, repo.id) so for any given repo,
+    # repoversions is uniq on (version, repo.id) so for any given repo,
     # there should only be one result here
     repoversion = results.pop()
     return repoversion
@@ -61,12 +61,12 @@ def select_collection_version(repoversions, version):
 class GalaxyUrlFetch(base.BaseFetch):
     fetch_method = 'galaxy_url'
 
-    def __init__(self, content_spec, content_version,
+    def __init__(self, repository_spec, content_version,
                  galaxy_context):
         super(GalaxyUrlFetch, self).__init__()
 
         # self.galaxy_url = galaxy_url
-        self.content_spec = content_spec
+        self.repository_spec = repository_spec
         self.content_version = content_version
         self.galaxy_context = galaxy_context
 
@@ -78,25 +78,19 @@ class GalaxyUrlFetch(base.BaseFetch):
         api = GalaxyAPI(self.galaxy_context)
 
         # FIXME - Need to update our API calls once Galaxy has them implemented
-        content_username, repo_name, content_name = parse_content_name(self.content_spec)
+        namespace, repo_name, content_name = parse_content_name(self.repository_spec)
 
-        log.debug('Querying %s for namespace=%s, name=%s', self.galaxy_context.server['url'], content_username, repo_name)
+        log.debug('Querying %s for namespace=%s, name=%s', self.galaxy_context.server['url'], namespace, repo_name)
 
         # TODO: extract parsing of cli content sorta-url thing and add better tests
         repo_name = repo_name or content_name
 
         # FIXME: exception handling
-        repo_data = api.lookup_repo_by_name(content_username, repo_name)
+        repo_data = api.lookup_repo_by_name(namespace, repo_name)
 
         if not repo_data:
-            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.content_spec,
+            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.repository_spec,
                                                                                      api.api_server))
-
-        # FIXME: ?
-        # if repo_data.get('role_type') == 'APP#':
-            # Container Role
-        #    self.display_callback("%s is a Container App role, and should only be installed using Ansible "
-        #                          "Container" % content_name, level='warning')
 
         # FIXME - Need to update our API calls once Galaxy has them implemented
         related = repo_data.get('related', {})
@@ -127,7 +121,7 @@ class GalaxyUrlFetch(base.BaseFetch):
                                                                 content_content_name=content_name)
 
         # get the RepositoryVersion obj (or its data anyway)
-        _repoversion = select_collection_version(repoversions, repo_version_best)
+        _repoversion = select_repository_version(repoversions, repo_version_best)
         # FIXME: stop munging state
         # self.content_meta.version = _content_version
 
@@ -135,11 +129,11 @@ class GalaxyUrlFetch(base.BaseFetch):
         if not external_url:
             raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % repo_name)
 
-        results = {'content': {'galaxy_namespace': content_username,
+        results = {'content': {'galaxy_namespace': namespace,
                                'repo_name': repo_name,
                                'content_name': content_name},
                    'specified_content_version': self.content_version,
-                   'specified_content_spec': self.content_spec,
+                   'specified_repository_spec': self.repository_spec,
                    'custom': {'content_repo_versions': content_repo_versions,
                               'external_url': external_url,
                               'galaxy_context': self.galaxy_context,
@@ -164,7 +158,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         # download_url = _build_download_url(external_url=external_url, version=_content_version)
         # TODO: error handling if there is no download_url
 
-        log.debug('content_spec=%s', self.content_spec)
+        log.debug('repository_spec=%s', self.repository_spec)
         log.debug('download_url=%s', download_url)
 
         # for including in any error messages or logging for this fetch

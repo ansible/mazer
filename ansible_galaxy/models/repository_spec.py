@@ -2,11 +2,11 @@ import attr
 
 
 @attr.s(frozen=True)
-class ContentSpec(object):
+class RepositorySpec(object):
     '''The info used to identify and reference a galaxy content.
 
     For ex, 'testing.ansible-testing-content' will result in
-    a ContentSpec(name=ansible-testing-content, repo=ansible-testing-content,
+    a RepositorySpec(name=ansible-testing-content, repo=ansible-testing-content,
                   namespace=testing, raw=testing.ansible-testing-content)'''
     namespace = attr.ib()
     name = attr.ib()

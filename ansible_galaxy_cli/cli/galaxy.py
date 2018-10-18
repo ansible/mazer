@@ -38,7 +38,6 @@ from ansible_galaxy.actions import version
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
 
-from ansible_galaxy import content_spec
 from ansible_galaxy import matchers
 from ansible_galaxy import rest_api
 
@@ -245,12 +244,12 @@ class GalaxyCLI(cli.CLI):
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
-        content_specs = self.args
+        repository_spec_strings = self.args
 
         # FIXME: rc?
-        return info.info_content_specs(galaxy_context, self.api, content_specs,
-                                       display_callback=self.display,
-                                       offline=self.options.offline)
+        return info.info_repository_specs(galaxy_context, self.api, repository_spec_strings,
+                                          display_callback=self.display,
+                                          offline=self.options.offline)
 
     def execute_install(self):
         """
@@ -264,9 +263,9 @@ class GalaxyCLI(cli.CLI):
 
         # TODO: build requirement_specs from requested_collection_specs strings
         try:
-            rc = install.install_collection_specs_loop(galaxy_context,
+            rc = install.install_repository_specs_loop(galaxy_context,
                                                        editable=self.options.editable_install,
-                                                       collection_spec_strings=requested_spec_strings,
+                                                       repository_spec_strings=requested_spec_strings,
                                                        namespace_override=self.options.namespace,
                                                        display_callback=self.display,
                                                        ignore_errors=self.options.ignore_errors,
@@ -280,7 +279,7 @@ class GalaxyCLI(cli.CLI):
 
     def execute_remove(self):
         """
-        Remove a list of collections from the local system.
+        Remove a list of repository from the local system.
         """
 
         if len(self.args) == 0:
@@ -292,12 +291,12 @@ class GalaxyCLI(cli.CLI):
             match_filter = matchers.MatchLabels(self.args)
 
         return remove.remove(galaxy_context,
-                             collection_match_filter=match_filter,
+                             repository_match_filter=match_filter,
                              display_callback=self.display)
 
     def execute_list(self):
         """
-        List roles installed on the local file system.
+        List repositories, roles, and collections installed on the local file system.
         """
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
@@ -308,7 +307,7 @@ class GalaxyCLI(cli.CLI):
             match_filter = matchers.MatchNamespacesOrLabels(self.args)
 
         return list_action.list(galaxy_context,
-                                collection_match_filter=match_filter,
+                                repository_match_filter=match_filter,
                                 display_callback=self.display)
 
     def execute_version(self):

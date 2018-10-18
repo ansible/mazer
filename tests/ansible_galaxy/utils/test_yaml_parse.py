@@ -3,39 +3,39 @@ import logging
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
 from ansible_galaxy.utils import yaml_parse
-from ansible_galaxy import content_spec_parse
-from ansible_galaxy import galaxy_content_spec
+from ansible_galaxy import repository_spec_parse
+from ansible_galaxy import galaxy_repository_spec
 
 
 log = logging.getLogger(__name__)
 
 
-def parse_spec(content_spec, resolver=None):
-    result = yaml_parse.yaml_parse(content_spec, resolver=resolver)
+def parse_spec(repository_spec, resolver=None):
+    result = yaml_parse.yaml_parse(repository_spec, resolver=resolver)
     log.debug('result=%s', result)
     return result
 
 
-def assert_keys(content_spec, name=None, version=None,
+def assert_keys(repository_spec, name=None, version=None,
                 scm=None, src=None, namespace=None):
     # name = name or ''
     # src = src or ''
-    assert isinstance(content_spec, dict)
+    assert isinstance(repository_spec, dict)
 
-    log.debug('content_spec: %s', content_spec)
+    log.debug('repository_spec: %s', repository_spec)
     # TODO: should it default to empty string?
-    assert content_spec['name'] == name, \
-        'content_spec name=%s does not match expected name=%s' % (content_spec['name'], name)
-    assert content_spec.get('namespace') == namespace
-    assert content_spec['version'] == version
-    assert content_spec['scm'] == scm
-    assert content_spec['src'] == src, \
-        'content_spec src=%s does not match expected src=%s' % (content_spec['src'], src)
+    assert repository_spec['name'] == name, \
+        'repository_spec name=%s does not match expected name=%s' % (repository_spec['name'], name)
+    assert repository_spec.get('namespace') == namespace
+    assert repository_spec['version'] == version
+    assert repository_spec['scm'] == scm
+    assert repository_spec['src'] == src, \
+        'repository_spec src=%s does not match expected src=%s' % (repository_spec['src'], src)
 
 
 def test_yaml_parse_empty_string_no_namespace_required():
     spec = ''
-    result = parse_spec(spec, resolver=content_spec_parse.resolve)
+    result = parse_spec(spec, resolver=repository_spec_parse.resolve)
 
     assert_keys(result, name='', version=None, scm=None, src='')
 
@@ -61,7 +61,7 @@ def test_yaml_parse_just_name():
 
 def test_yaml_parse_just_name_no_namespace_required():
     spec = 'some_content'
-    result = parse_spec(spec, resolver=content_spec_parse.resolve)
+    result = parse_spec(spec, resolver=repository_spec_parse.resolve)
 
     assert_keys(result, name='some_content', version=None, scm=None, src='some_content')
 
@@ -125,7 +125,7 @@ def test_yaml_parse_name_and_version_leading_v():
 
 def test_yaml_parse_name_and_version_leading_v_no_namespace_required():
     spec = 'some_content,v1.0.0'
-    result = parse_spec(spec, resolver=content_spec_parse.resolve)
+    result = parse_spec(spec, resolver=repository_spec_parse.resolve)
 
     assert_keys(result, name='some_content',
                 version='v1.0.0', scm=None, src='some_content')
@@ -134,7 +134,7 @@ def test_yaml_parse_name_and_version_leading_v_no_namespace_required():
 # proving a name and a version as comma separated key values
 def test_yaml_parse_name_with_name_key_value():
     spec = 'some_content,name=other_name'
-    result = parse_spec(spec, resolver=content_spec_parse.resolve)
+    result = parse_spec(spec, resolver=repository_spec_parse.resolve)
 
     # TODO: what should 'src' be for this cases?
     assert_keys(result, name='other_name', version=None, scm=None, src='some_content')
@@ -212,17 +212,17 @@ def test_yaml_parse_a_old_style_role_dict():
     src = 'galaxy.role'
     assert isinstance(result, dict)
     assert result['name'] == name, \
-        'content_spec name=%s does not match expected name=%s' % (result['name'], name)
+        'repository_spec name=%s does not match expected name=%s' % (result['name'], name)
     assert result['version'] == '1.2.3'
     assert result['src'] == src, \
-        'content_spec src=%s does not match expected src=%s' % (result['src'], src)
+        'repository_spec src=%s does not match expected src=%s' % (result['src'], src)
 
 
 # FIXME: I'm not real sure what the result of this is supposed to be
 def test_yaml_parse_a_comma_sep_style_role_dict_with_version():
     src = 'galaxy.role,1.2.3'
     spec = {'src': src}
-    result = parse_spec(spec, resolver=galaxy_content_spec.resolve)
+    result = parse_spec(spec, resolver=galaxy_repository_spec.resolve)
 
     # FIXME: wtf is 'src' expected to look like here?
     assert_keys(result, namespace='galaxy', name='role', version='1.2.3',
@@ -233,7 +233,7 @@ def test_yaml_parse_a_comma_sep_style_role_dict_with_version():
 def test_yaml_parse_a_comma_sep_style_role_dict_with_name_version():
     src = 'galaxy.role,1.2.3,some_role'
     spec = {'src': src}
-    result = parse_spec(spec, resolver=galaxy_content_spec.resolve)
+    result = parse_spec(spec, resolver=galaxy_repository_spec.resolve)
 
     # FIXME: wtf is 'src' expected to look like here?
     assert_keys(result, namespace='galaxy', name='some_role', version='1.2.3', scm=None, src=src)

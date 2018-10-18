@@ -11,7 +11,7 @@ def resolve(spec_data):
     src = spec_data['src']
     name_parts = src.split('.')
 
-    # enforce the galaxy content_spec specific rule about requiring a dot in namespace.name
+    # enforce the galaxy content spec specific rule about requiring a dot in namespace.name
 
     # if we have namespace.name, pop off namespace and use rest for name
     if len(name_parts) < 2:

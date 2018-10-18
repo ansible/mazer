@@ -126,37 +126,37 @@ class BaseContentArchive(object):
 
         return content_install_info
 
-    def install(self, content_spec, extract_to_path, force_overwrite=False):
+    def install(self, repository_spec, extract_to_path, force_overwrite=False):
 
         all_installed_files, install_datetime = \
-            self.extract(content_spec.namespace, content_spec.name,
+            self.extract(repository_spec.namespace, repository_spec.name,
 
                          extract_to_path, force_overwrite=force_overwrite)
 
-        namespaced_content_path = '%s/%s' % (content_spec.namespace,
-                                             content_spec.name)
+        namespaced_repository_path = '%s/%s' % (repository_spec.namespace,
+                                                repository_spec.name)
 
         info_path = os.path.join(extract_to_path,
-                                 namespaced_content_path,
+                                 namespaced_repository_path,
                                  self.META_INSTALL)
 
         meta_main_path = os.path.join(extract_to_path,
-                                      namespaced_content_path,
+                                      namespaced_repository_path,
                                       'roles',
-                                      content_spec.name,
+                                      repository_spec.name,
                                       'meta',
                                       'main.yml')
 
         log.debug('meta_main_path: %s', meta_main_path)
         meta_main = role_metadata.load_from_filename(meta_main_path,
-                                                     role_name=namespaced_content_path)
+                                                     role_name=namespaced_repository_path)
 
         log.debug('meta_main: %s', meta_main)
 
         installed_to_path = os.path.join(extract_to_path,
-                                         namespaced_content_path)
+                                         namespaced_repository_path)
 
-        install_info_ = self.install_info(content_spec.version,
+        install_info_ = self.install_info(repository_spec.version,
                                           install_datetime=install_datetime)
 
         # TODO: this save will need to be moved to a step later. after validating install?

@@ -10,11 +10,11 @@ log = logging.getLogger(__name__)
 class RemoteUrlFetch(base.BaseFetch):
     fetch_method = 'remote_url'
 
-    def __init__(self, content_spec, validate_certs=True):
+    def __init__(self, repository_spec, validate_certs=True):
         super(RemoteUrlFetch, self).__init__()
 
-        self.content_spec = content_spec
-        self.remote_url = content_spec.src
+        self.repository_spec = repository_spec
+        self.remote_url = repository_spec.src
 
         self.validate_certs = validate_certs
         log.debug('Validate TLS certificates: %s', self.validate_certs)
@@ -22,10 +22,10 @@ class RemoteUrlFetch(base.BaseFetch):
         self.remote_resource = self.remote_url
 
     def find(self):
-        results = {'content': {'galaxy_namespace': self.content_spec.namespace,
-                               'repo_name': self.content_spec.name},
-                   'specified_content_version': self.content_spec.version,
-                   'specified_content_spec': self.content_spec.scm}
+        results = {'content': {'galaxy_namespace': self.repository_spec.namespace,
+                               'repo_name': self.repository_spec.name},
+                   'specified_content_version': self.repository_spec.version,
+                   'specified_repository_spec': self.repository_spec.scm}
 
         return results
 

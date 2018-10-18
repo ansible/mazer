@@ -5,24 +5,23 @@ import shutil
 import yaml
 
 from ansible_galaxy import collection_info
-from ansible_galaxy import dependencies
 from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
 from ansible_galaxy import requirements
 
-from ansible_galaxy.models.content_spec import ContentSpec
-from ansible_galaxy.models.collection import Collection
+from ansible_galaxy.models.repository_spec import RepositorySpec
+from ansible_galaxy.models.repository import Repository
 
 
 log = logging.getLogger(__name__)
 
 log.setLevel(logging.INFO)
-# aka, persistence of ansible_galaxy.models.collection
+# aka, persistence of ansible_galaxy.models.repository
 
 
 def load(data_or_file_object):
-    collection = yaml.safe_load(data_or_file_object)
-    return collection
+    repository_data = yaml.safe_load(data_or_file_object)
+    return repository_data
 
 
 def load_from_dir(content_dir, namespace, name, installed=True):
@@ -66,8 +65,8 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     log.debug('requirements_list: %s', requirements_list)
 
-    # Now try the collection as a role-as-collection
-    # FIXME: For a collection with one role that matches the collection name and doesn't
+    # Now try the repository as a role-as-collection
+    # FIXME: For a repository with one role that matches the collection name and doesn't
     #        have a galaxy.yml, that's indistinguishable from a role-as-collection
     # FIXME: But in theory, if there is more than one role in roles/, we should skip this
     role_meta_main_filename = os.path.join(path_name, 'roles', name, 'meta', 'main.yml')
@@ -78,7 +77,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
         with open(role_meta_main_filename, 'r') as rmfd:
             role_meta_main = role_metadata.load(rmfd, role_name=role_name)
     except EnvironmentError as e:
-        log.warning('Unable to find or load meta/main.yml for collection %s.%s: %s', namespace, name, e)
+        log.warning('Unable to find or load meta/main.yml for repository %s.%s: %s', namespace, name, e)
 
     # TODO: if there are other places to load dependencies (ie, runtime deps) we will need
     #       to load them and combine them with role_depenency_specs
@@ -88,44 +87,44 @@ def load_from_dir(content_dir, namespace, name, installed=True):
         log.debug('role_meta_main_deps: %s', role_meta_main.dependencies)
         role_dependency_specs = role_meta_main.dependencies
 
-    # Now look for any install_info for the collection
+    # Now look for any install_info for the repository
     install_info_data = None
     install_info_filename = os.path.join(path_name, 'meta/.galaxy_install_info')
     try:
         with open(install_info_filename, 'r') as ifd:
             install_info_data = install_info.load(ifd)
     except EnvironmentError as e:
-        log.warning('Unable to find or load meta/.galaxy_install_info for collection %s.%s: %s', namespace, name, e)
+        log.warning('Unable to find or load meta/.galaxy_install_info for repository %s.%s: %s', namespace, name, e)
 
     # TODO: figure out what to do if the version from install_info conflicts with version
     #       from galaxy.yml etc.
     log.debug('install_info: %s', install_info_data)
     install_info_version = getattr(install_info_data, 'version', None)
 
-    content_spec = ContentSpec(namespace=namespace,
-                               name=name,
-                               version=install_info_version)
+    repository_spec = RepositorySpec(namespace=namespace,
+                                     name=name,
+                                     version=install_info_version)
 
-    collection = Collection(content_spec=content_spec,
+    repository = Repository(repository_spec=repository_spec,
                             path=path_name,
                             installed=installed,
                             requirements=requirements_list,
                             dependencies=role_dependency_specs)
 
-    log.debug('collection: %s', collection)
+    log.debug('repository: %s', repository)
 
-    return collection
+    return repository
 
 
-def remove(installed_collection):
-    log.info("Removing installed collection: %s", installed_collection)
+def remove(installed_repository):
+    log.info("Removing installed repository: %s", installed_repository)
     try:
-        shutil.rmtree(installed_collection.path)
+        shutil.rmtree(installed_repository.path)
         return True
     except EnvironmentError as e:
         log.warn('Unable to rm the directory "%s" while removing installed repo "%s": %s',
-                 installed_collection.path,
-                 installed_collection.label,
+                 installed_repository.path,
+                 installed_repository.label,
                  e)
         log.exception(e)
         raise

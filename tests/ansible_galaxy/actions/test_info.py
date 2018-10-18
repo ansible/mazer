@@ -12,7 +12,7 @@ def display_callback(msg, **kwargs):
 
 
 def test_info_empty(galaxy_context):
-    ret = info.info_content_specs(galaxy_context,
+    ret = info.info_repository_specs(galaxy_context,
                                   # mock api
                                   mock.Mock(),
                                   [],
@@ -23,7 +23,7 @@ def test_info_empty(galaxy_context):
 
 
 def test_info(galaxy_context):
-    ret = info.info_content_specs(galaxy_context,
+    ret = info.info_repository_specs(galaxy_context,
                                   # mock api
                                   mock.Mock(),
                                   ['namespace.repo.content'],

@@ -4,7 +4,7 @@ import fnmatch
 
 from ansible_galaxy import installed_content_item_db
 from ansible_galaxy import matchers
-from ansible_galaxy.models.collection import Collection
+from ansible_galaxy.models.repository import Repository
 
 log = logging.getLogger(__name__)
 
@@ -50,12 +50,10 @@ def test_installed_content_iterator_empty(galaxy_context, mocker):
                  return_value=iter(['foo', 'blip']))
     mocker.patch('ansible_galaxy.installed_repository_db.get_repository_paths',
                  return_value=iter(['bar', 'baz']))
-    # mocker.patch('ansible_galaxy.collection.load_from_name',
-    #            return_value=Collection())
 
     # The content type specific content iterator is determined at runtime, so we need to patch the value
-    # of the 'roles' item in installed_collection_content_iterator_map to patch the right method used
-    mocker.patch.dict('ansible_galaxy.installed_content_item_db.installed_collection_content_iterator_map',
+    # of the 'roles' item in installed_repository_content_iterator_map to patch the right method used
+    mocker.patch.dict('ansible_galaxy.installed_content_item_db.installed_repository_content_iterator_map',
                       {'roles': mocker.Mock(return_value=iter(['/dev/null/content/foo/bar/roles/role-1', '/dev/null/content/blip/baz/roles/role-2']))})
 
     ici = installed_content_item_db.installed_content_item_iterator(galaxy_context,

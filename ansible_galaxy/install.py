@@ -12,46 +12,29 @@ from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy.fetch import fetch_factory
-# from ansible_galaxy import install_info
-# from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.content import InstalledContent
-
-# FIXME: remove
-# from ansible_galaxy.flat_rest_api.content import InstalledContent
 
 log = logging.getLogger(__name__)
 
 # This should probably be a state machine for stepping through the install states
 # See actions.install.install_collection for a sketch of the states
-#
-# But... we are going to start with just extracting the related bits of
-# flat_rest_api.content.GalaxyContent here as methods
-
-# def find
-# def fetch
-# def install
-# def update_dbs
 
 
-def fetcher(galaxy_context, content_spec):
-    log.debug('Attempting to get fetcher for content_spec=%s', content_spec)
+def fetcher(galaxy_context, repository_spec):
+    log.debug('Attempting to get fetcher for repository_spec=%s', repository_spec)
 
     fetcher = fetch_factory.get(galaxy_context=galaxy_context,
-                                content_spec=content_spec)
+                                repository_spec=repository_spec)
 
-    log.debug('Using fetcher: %s for content_spec: %s', fetcher, content_spec)
+    log.debug('Using fetcher: %s for repository_spec: %s', fetcher, repository_spec)
 
     return fetcher
 
 
-def find(fetcher, content_spec):
+def find(fetcher):
     """find/discover info about the content"""
 
-    log.debug('Attempting to find() content_spec=%s', content_spec)
-
     find_results = fetcher.find()
-
-    # log.debug('find() found info for %s: %s', content_spec.label, find_results)
 
     return find_results
 
@@ -59,12 +42,12 @@ def find(fetcher, content_spec):
 # def fetch(fetcher, collection):
 #    pass
 
-def fetch(fetcher, content_spec, find_results):
+def fetch(fetcher, repository_spec, find_results):
     """download the archive and side effect set self._archive_path to where it was downloaded to.
 
     MUST be called after self.find()."""
 
-    log.debug('Fetching content_spec=%s', content_spec)
+    log.debug('Fetching repository_spec=%s', repository_spec)
 
     try:
         # FIXME: note that ignore_certs for the galaxy
@@ -101,54 +84,48 @@ def fetch(fetcher, content_spec, find_results):
     # return install_time? an InstallInfo? list of InstalledCollection?
 
 
-def update_content_spec(fetch_results,
-                        content_spec=None,
-                        # content_meta=None,
-                        ):
+def update_repository_spec(fetch_results,
+                           repository_spec=None):
     '''Verify we got the archive we asked for, checksums, check sigs, etc
 
-    At the moment, also side effect and evols content_spec to match fetch results
+    At the moment, also side effect and evols repository_spec to match fetch results
     so that needs to be extracted'''
     # TODO: do we still need to check the fetched version against the spec version?
     #       We do, since the unspecific version is None, so fetched versions wont match
-    #       so we need a new content_spec for install.
+    #       so we need a new repository_spec for install.
     # TODO: this is more or less a verify/validate step or state transition
     content_data = fetch_results.get('content', {})
 
     # If the requested namespace/version is different than the one we got via find()/fetch()...
-    if content_data.get('fetched_version', content_spec.version) != content_spec.version:
+    if content_data.get('fetched_version', repository_spec.version) != repository_spec.version:
         log.info('Version "%s" for %s was requested but fetch found version "%s"',
-                 content_spec.version, '%s.%s' % (content_spec.namespace, content_spec.name),
-                 content_data.get('fetched_version', content_spec.version))
+                 repository_spec.version, '%s.%s' % (repository_spec.namespace, repository_spec.name),
+                 content_data.get('fetched_version', repository_spec.version))
 
-        content_spec = attr.evolve(content_spec, version=content_data['fetched_version'])
+        repository_spec = attr.evolve(repository_spec, version=content_data['fetched_version'])
 
-    if content_data.get('content_namespace', content_spec.namespace) != content_spec.namespace:
+    if content_data.get('content_namespace', repository_spec.namespace) != repository_spec.namespace:
         log.info('Namespace "%s" for %s was requested but fetch found namespace "%s"',
-                 content_spec.namespace, '%s.%s' % (content_spec.namespace, content_spec.name),
-                 content_data.get('content_namespace', content_spec.namespace))
+                 repository_spec.namespace, '%s.%s' % (repository_spec.namespace, repository_spec.name),
+                 content_data.get('content_namespace', repository_spec.namespace))
 
-        content_spec = attr.evolve(content_spec, namespace=content_data['content_namespace'])
+        repository_spec = attr.evolve(repository_spec, namespace=content_data['content_namespace'])
 
-    return content_spec
+    return repository_spec
 
 
 def install(galaxy_context,
             fetcher,
             fetch_results,
-            content_spec,
-            # content_meta=None,
+            repository_spec,
             force_overwrite=False):
     """extract the archive to the filesystem and write out install metadata.
 
     MUST be called after self.fetch()."""
 
-    log.debug('install: content_spec=%s, force_overwrite=%s',
-              content_spec, force_overwrite)
+    log.debug('install: repository_spec=%s, force_overwrite=%s',
+              repository_spec, force_overwrite)
     installed = []
-
-    # FIXME: enum/constant/etc demagic
-    # content_archive_type = 'multi'
 
     # FIXME: really need to move the fetch step elsewhere and do it before,
     #        install should get pass a content_archive (or something more abstract)
@@ -164,13 +141,9 @@ def install(galaxy_context,
 
     # TODO: this is figuring out the archive type (multi-content collection or a trad role)
     #       could potentially pull this up a layer
-    # TODO: content_tar_file and archive_meta probably should be attributes of of
-    #       InstallableArchive (somewhere between GalaxyContent, GalaxyContentMeta,
-    #       ContentArchiveMeta...)
-    # content_tar_file, archive_meta = content_archive.load_archive(archive_path)
     content_archive_ = content_archive.load_archive(archive_path)
-    log.debug('content_archive_: %s', content_archive_)
 
+    log.debug('content_archive_: %s', content_archive_)
     log.debug('content_archive_.info: %s', content_archive_.info)
 
     # we strip off any higher-level directories for all of the files contained within
@@ -183,15 +156,10 @@ def install(galaxy_context,
 
         os.makedirs(galaxy_context.content_path)
 
-    # FIXME: guess might as well pass in content_spec
-    res = content_archive_.install(content_spec=content_spec,
-                                   # content_namespace=content_spec.namespace,
-                                   # content_name=content_spec.name,
-                                   # content_version=content_spec.version,
-                                   # surely wrong...
+    res = content_archive_.install(repository_spec=repository_spec,
                                    extract_to_path=galaxy_context.content_path,
                                    force_overwrite=force_overwrite)
-    installed.append((content_spec, res))
+    installed.append((repository_spec, res))
 
     # self.display_callback("- all content was succssfully installed to %s" % self.path)
 
@@ -200,54 +168,42 @@ def install(galaxy_context,
     fetcher.cleanup()
 
     # TODO: load installed collections back from disk now?
-    installed_content_specs = [x[0] for x in installed]
-    log.debug('installed_content_specs: %s', installed_content_specs)
+    installed_repository_specs = [x[0] for x in installed]
+    log.debug('installed_repository_specs: %s', installed_repository_specs)
 
-    collection_match_filter = matchers.MatchContentSpecsNamespaceNameVersion(installed_content_specs)
+    repository_match_filter = matchers.MatchContentSpecsNamespaceNameVersion(installed_repository_specs)
 
-    log.debug('collectio_match_filter: %s', collection_match_filter)
+    log.debug('repository_match_filter: %s', repository_match_filter)
 
     icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    already_installed_generator = icdb.select(collection_match_filter=collection_match_filter)
+    already_installed_generator = icdb.select(repository_match_filter=repository_match_filter)
 
     log.debug('already_installed_generator: %s', already_installed_generator)
 
-    installed_contents = []
+    installed_repositories = []
 
-    # log.debug('FOOO: %s', [x for x in already_installed_generator])
-    for collection_item in already_installed_generator:
-        log.debug('installed collection item: %s', pprint.pformat(collection_item))
+    for repository_item in already_installed_generator:
+        log.debug('installed repository item: %s', pprint.pformat(repository_item))
 
         # TODO: InstallationResults object
-        installed_content_spec = collection_item.content_spec
+        installed_repository_spec = repository_item.repository_spec
         # installation_results = item[1]
-        path = collection_item.path
+        path = repository_item.path
 
-        log.info('Installed collection content_spec: %s', installed_content_spec)
-        log.info('installed collection path: %s', path)
-        # log.info('Installation results: %s', pprint.pformat(attr.asdict(installation_results)))
-        #  name=test-role-c, namespace=alikins, path=/home/adrian/.ansible/content/alikins/ansible_testing_content/roles/test-role-c
+        log.info('Installed repository repository_spec: %s', installed_repository_spec)
+        log.info('installed repository path: %s', path)
 
-        # TODO: Replace with InstalledCollection ?
-        # FIXME:
+        all_deps = repository_item.requirements or []
+        all_deps.extend(repository_item.dependencies or [])
 
-        all_deps = collection_item.requirements or []
-        all_deps.extend(collection_item.dependencies or [])
-
-        installed_content = InstalledContent(name=installed_content_spec.name,
-                                             namespace=installed_content_spec.namespace,
-                                             version=installed_content_spec.version,
-                                             dependencies=collection_item.dependencies,
-                                             requirements=collection_item.requirements,
-                                             # install_info=installation_results.install_info,
-                                             # meta_main=installation_results.meta_main,
-                                             # content_type=installed_content_spec.content_type,
-                                             # TESTME:
-                                             # path=content_meta.path,
-                                             # path=repo_install_path,
+        installed_content = InstalledContent(name=installed_repository_spec.name,
+                                             namespace=installed_repository_spec.namespace,
+                                             version=installed_repository_spec.version,
+                                             dependencies=repository_item.dependencies,
+                                             requirements=repository_item.requirements,
                                              )
-        installed_contents.append(installed_content)
-        # log.debug('Installed files: %s', pprint.pformat(item[1]))
+        installed_repositories.append(installed_content)
 
-    log.debug('installed_contents: %s', pprint.pformat(installed_contents))
-    return installed_contents
+    log.debug('installed_repositories: %s', pprint.pformat(installed_repositories))
+
+    return installed_repositories

@@ -2,7 +2,7 @@ import copy
 import logging
 import six
 
-from ansible_galaxy import content_spec_parse
+from ansible_galaxy import repository_spec_parse
 from ansible_galaxy.utils.role_spec import role_spec_parse
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
 
@@ -32,7 +32,7 @@ def yaml_parse(content, resolver=None):
         log.debug('parsing content="%s" as a string', content)
 
         orig_content = copy.deepcopy(content)
-        res = content_spec_parse.spec_data_from_string(content, resolver=resolver)
+        res = repository_spec_parse.spec_data_from_string(content, resolver=resolver)
 
         log.debug('parsed spec="%s" -> %s', content, res)
 
@@ -76,8 +76,7 @@ def yaml_parse(content, resolver=None):
 
         if data.get('src', None):
             # valid_kw = ('src', 'version', 'name', 'scm')
-            # new_data = content_spec_parse.parse_string(data['src'], VALID_ROLE_SPEC_KEYS)
-            new_data = content_spec_parse.spec_data_from_string(data['src'])
+            new_data = repository_spec_parse.spec_data_from_string(data['src'])
 
             log.debug('new_data: %s', new_data)
 
