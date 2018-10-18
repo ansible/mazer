@@ -63,7 +63,7 @@ def install_repositories_matching_repository_specs(galaxy_context,
     # FIXME: mv mv this filtering to it's own method
     # match any of the content specs for stuff we want to install
     # ie, see if it is already installed
-    repository_match_filter = matchers.MatchContentSpec([x for x in requested_repository_specs])
+    repository_match_filter = matchers.MatchRepositorySpec([x for x in requested_repository_specs])
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
     already_installed_generator = irdb.select(repository_match_filter=repository_match_filter)

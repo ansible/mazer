@@ -171,7 +171,7 @@ def install(galaxy_context,
     installed_repository_specs = [x[0] for x in installed]
     log.debug('installed_repository_specs: %s', installed_repository_specs)
 
-    repository_match_filter = matchers.MatchContentSpecsNamespaceNameVersion(installed_repository_specs)
+    repository_match_filter = matchers.MatchRepositorySpecsNamespaceNameVersion(installed_repository_specs)
 
     log.debug('repository_match_filter: %s', repository_match_filter)
 

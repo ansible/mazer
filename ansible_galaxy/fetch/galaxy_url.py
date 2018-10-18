@@ -176,7 +176,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         #       can resolve a name/spec, find metadata about the content including avail versions,
         #       compare/sort versions, select matching versions, find a download uri, and finally
         #       actually fetch it.
-        #       Ie, more of a 'ContentRepository' (ContentSource? ContentChannel? ContentProvider?)
+        #       Ie, more of a RepositoryRepository (aiee) (RepositorySource? RepositoryChannel? RepositoryProvider?)
         #       that is a remote 'channel' with info and content itself.
         results = {'archive_path': content_archive_path,
                    'download_url': download_url,

@@ -9,7 +9,7 @@ from ansible_galaxy import exceptions
 # TODO: split hg and git impls into sep methods, kind of a strategy pattern
 def scm_archive_content(src, scm='git', name=None, version='HEAD'):
     """
-    Archive a Galaxy Content SCM repo locally
+    Archive a Galaxy Repository SCM repo locally
 
     Implementation originally adopted from the Ansible RoleRequirement
     """

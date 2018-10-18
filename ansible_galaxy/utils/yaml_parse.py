@@ -12,7 +12,6 @@ log = logging.getLogger(__name__)
 
 # FIXME: not really yaml,
 # FIXME: whats the diff between this and role_spec_parse?
-# TODO: return a new GalaxyContentMeta
 # TODO: dont munge the passed in content
 # TODO: split into smaller methods
 # FIXME: does this actually use yaml?

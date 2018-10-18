@@ -40,7 +40,7 @@ class MatchLabels(Match):
         return other.repository_spec.label in self.labels
 
 
-class MatchContentSpec(Match):
+class MatchRepositorySpec(Match):
     def __init__(self, repository_specs):
         self.repository_specs = repository_specs or []
 
@@ -49,7 +49,7 @@ class MatchContentSpec(Match):
         return other.repository_spec in self.repository_specs
 
 
-class MatchContentSpecsNamespaceNameVersion(Match):
+class MatchRepositorySpecsNamespaceNameVersion(Match):
     def __init__(self, repository_specs):
         self.namespaces_names_versions = [(x.namespace, x.name, x.version) for x in repository_specs] or []
 

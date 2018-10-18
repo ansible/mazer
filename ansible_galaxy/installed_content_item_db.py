@@ -23,13 +23,13 @@ installed_repository_content_iterator_map = {'roles': installed_repository_role_
 def installed_content_item_iterator(galaxy_context,
                                     namespace_match_filter=None,
                                     repository_match_filter=None,
-                                    content_match_filter=None,
+                                    content_item_match_filter=None,
                                     content_item_type=None):
 
     # match_all works for all types
     namespace_match_filter = namespace_match_filter or matchers.MatchAll()
     repository_match_filter = repository_match_filter or matchers.MatchAll()
-    content_match_filter = content_match_filter or matchers.MatchAll()
+    content_item_match_filter = content_item_match_filter or matchers.MatchAll()
 
     content_item_type = content_item_type or 'roles'
 
@@ -70,8 +70,8 @@ def installed_content_item_iterator(galaxy_context,
 
             version = None
 
-            if not content_match_filter(gr):
-                log.debug('%s was not matched by content_match_filter: %s', gr, content_match_filter)
+            if not content_item_match_filter(gr):
+                log.debug('%s was not matched by content_match_filter: %s', gr, content_item_match_filter)
                 continue
 
             # this is sort of the 'join' of installed_repository and installed_content
@@ -95,11 +95,11 @@ class InstalledContentItemDatabase(object):
         repository_match_filter = repository_match_filter or matchers.MatchAll()
         content_match_filter = content_match_filter or matchers.MatchAll()
 
-        roles_content_iterator = \
+        roles_content_item_iterator = \
             installed_content_item_iterator(self.installed_context,
                                             content_item_type='roles',
                                             repository_match_filter=repository_match_filter,
-                                            content_match_filter=content_match_filter)
+                                            content_item_match_filter=content_match_filter)
 
-        for matched_content in roles_content_iterator:
-            yield matched_content
+        for matched_content_item in roles_content_item_iterator:
+            yield matched_content_item
