@@ -41,7 +41,7 @@ def installed_namespace_iterator(galaxy_context,
         namespace_full_path = os.path.join(content_path, namespace_path)
 
         collection_namespace = GalaxyNamespace(namespace=namespace_path,
-                                                   path=namespace_full_path)
+                                               path=namespace_full_path)
 
         if namespace_match_filter(collection_namespace):
             log.debug('Found namespace "%s"', collection_namespace.namespace)

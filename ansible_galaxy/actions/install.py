@@ -20,6 +20,8 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
     """
     ignore_error_blurb = '- you can use --ignore-errors to skip failed roles and finish processing the list.'
     if not ignore_errors:
+        # Note: msg may actually be an exception instance or a text string
+
         message = ignore_error_blurb
         if msg:
             message = '%s:\n%s' % (msg, ignore_error_blurb)
@@ -195,6 +197,8 @@ def install_repository(galaxy_context,
                        force_overwrite=False):
     '''This installs a single package by finding it, fetching it, verifying it and installing it.'''
 
+    display_callback = display_callback or display.display_callback
+
     # INITIAL state
     dep_requirement_repository_specs = []
 
@@ -226,7 +230,7 @@ def install_repository(galaxy_context,
         find_results = install.find(fetcher)
         # log.debug('standalone find_results: %s', pprint.pformat(find_results))
     except exceptions.GalaxyError as e:
-        log.warning('Unable to find metadata for %s: %s', repository_specs_to_install.name, e)
+        log.warning('Unable to find metadata for %s: %s', repository_specs_to_install.label, e)
         # FIXME: raise dep error exception?
         raise_without_ignore(ignore_errors, e)
         # continue
@@ -282,16 +286,10 @@ def install_repository(galaxy_context,
                                                repository_spec=fetched_repository_spec,
                                                force_overwrite=force_overwrite)
     except exceptions.GalaxyError as e:
-        log.exception(e)
-        log.warning("- %s was NOT installed successfully: %s ", fetched_repository_spec.name, str(e))
-        raise
-
-
-        # raise_without_ignore(ignore_errors, e)
-
-
-        return None
-        # continue
+        msg = "- %s was NOT installed successfully: %s "
+        display_callback(msg % (fetched_repository_spec.label, e), level='warning')
+        log.warning(msg, fetched_repository_spec.label, str(e))
+        raise_without_ignore(ignore_errors, e)
 
     log.debug('installed result: %s', install_repositories)
 

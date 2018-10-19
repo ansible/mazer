@@ -38,6 +38,7 @@ from ansible_galaxy.actions import version
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
 
+from ansible_galaxy import exceptions
 from ansible_galaxy import matchers
 from ansible_galaxy import rest_api
 
@@ -262,18 +263,14 @@ class GalaxyCLI(cli.CLI):
         requested_spec_strings = self.args
 
         # TODO: build requirement_specs from requested_collection_specs strings
-        try:
-            rc = install.install_repository_specs_loop(galaxy_context,
-                                                       editable=self.options.editable_install,
-                                                       repository_spec_strings=requested_spec_strings,
-                                                       namespace_override=self.options.namespace,
-                                                       display_callback=self.display,
-                                                       ignore_errors=self.options.ignore_errors,
-                                                       no_deps=self.options.no_deps,
-                                                       force_overwrite=self.options.force)
-        except Exception as e:
-            log.exception(e)
-            raise
+        rc = install.install_repository_specs_loop(galaxy_context,
+                                                   editable=self.options.editable_install,
+                                                   repository_spec_strings=requested_spec_strings,
+                                                   namespace_override=self.options.namespace,
+                                                   display_callback=self.display,
+                                                   ignore_errors=self.options.ignore_errors,
+                                                   no_deps=self.options.no_deps,
+                                                   force_overwrite=self.options.force)
 
         return rc
 

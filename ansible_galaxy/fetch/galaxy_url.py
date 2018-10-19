@@ -7,7 +7,6 @@ from ansible_galaxy import download
 from ansible_galaxy.fetch import base
 from ansible_galaxy.rest_api import GalaxyAPI
 from ansible_galaxy import repository_version
-from ansible_galaxy.utils.content_name import parse_content_name
 
 log = logging.getLogger(__name__)
 
@@ -86,7 +85,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         repo_data = api.lookup_repo_by_name(namespace, repo_name)
 
         if not repo_data:
-            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.repository_spec,
+            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.repository_spec.label,
                                                                                      api.api_server))
 
         # FIXME - Need to update our API calls once Galaxy has them implemented
@@ -118,7 +117,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         external_url = repo_data.get('external_url', None)
 
         if not external_url:
-            raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % repo_name)
+            raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % self.repository_spec.label)
 
         results = {'content': {'galaxy_namespace': namespace,
                                'repo_name': repo_name},
