@@ -321,9 +321,10 @@ def install_repository(galaxy_context,
         reqs_set = set(installed_repository.requirements)
         deps_set = set(installed_repository.dependencies)
 
-        deps_and_reqs_set = deps_set.union(reqs_set)
+        # deps_and_reqs_set = deps_set.union(reqs_set)
+        deps_and_reqs_set.update(deps_set, reqs_set)
         for dep_req in sorted(deps_and_reqs_set):
-            log.debug('dep_req: %s', dep_req)
+            log.debug('deps_and_reqs_set_item: %s', dep_req)
 
     dep_req_repository_specs = sorted(list(deps_and_reqs_set))
 

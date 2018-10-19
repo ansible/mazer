@@ -117,14 +117,15 @@ def install(galaxy_context,
             fetcher,
             fetch_results,
             repository_spec,
-            force_overwrite=False):
+            force_overwrite=False,
+            display_callback=None):
     """extract the archive to the filesystem and write out install metadata.
 
     MUST be called after self.fetch()."""
 
     log.debug('install: repository_spec=%s, force_overwrite=%s',
               repository_spec, force_overwrite)
-    installed = []
+    just_installed_spec_and_results = []
 
     # FIXME: really need to move the fetch step elsewhere and do it before,
     #        install should get pass a content_archive (or something more abstract)
@@ -159,45 +160,45 @@ def install(galaxy_context,
     res = content_archive_.install(repository_spec=repository_spec,
                                    extract_to_path=galaxy_context.content_path,
                                    force_overwrite=force_overwrite)
-    installed.append((repository_spec, res))
+    just_installed_spec_and_results.append((repository_spec, res))
 
-    # self.display_callback("- all content was succssfully installed to %s" % self.path)
+    if display_callback:
+        display_callback("- The repository %s was succssfully installed to %s" % (repository_spec.label,
+                                                                                  galaxy_context.content_path))
 
     # rm any temp files created when getting the content archive
     # TODO: use some sort of callback?
     fetcher.cleanup()
 
     # TODO: load installed collections back from disk now?
-    installed_repository_specs = [x[0] for x in installed]
-    log.debug('installed_repository_specs: %s', installed_repository_specs)
+    just_installed_repository_specs = [x[0] for x in just_installed_spec_and_results]
+    log.debug('just_installed_repository_specs: %s', just_installed_repository_specs)
 
-    repository_match_filter = matchers.MatchRepositorySpecsNamespaceNameVersion(installed_repository_specs)
+    just_installed_repository_match_filter = matchers.MatchRepositorySpecsNamespaceNameVersion(just_installed_repository_specs)
 
-    log.debug('repository_match_filter: %s', repository_match_filter)
+    # log.debug('repository_match_filter: %s', repository_match_filter)
 
-    icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    already_installed_generator = icdb.select(repository_match_filter=repository_match_filter)
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    just_installed_repository_generator = irdb.select(repository_match_filter=just_installed_repository_match_filter)
 
-    log.debug('already_installed_generator: %s', already_installed_generator)
+    # log.debug('already_installed_generator: %s', already_installed_generator)
 
-    installed_repositories = []
+    just_installed_repositories = []
 
-    for repository_item in already_installed_generator:
-        log.debug('installed repository item: %s', pprint.pformat(repository_item))
+    for just_installed_repository in just_installed_repository_generator:
+        log.debug('just_installed_repository is installed: %s', pprint.pformat(just_installed_repository))
 
-        # TODO: InstallationResults object
-        installed_repository_spec = repository_item.repository_spec
-        # installation_results = item[1]
-        path = repository_item.path
+        installed_repository_spec = just_installed_repository.repository_spec
+        path = just_installed_repository.path
 
         log.info('Installed repository repository_spec: %s', installed_repository_spec)
         log.info('installed repository path: %s', path)
 
-        all_deps = repository_item.requirements or []
-        all_deps.extend(repository_item.dependencies or [])
+        # all_deps = repository_item.requirements or []
+        # all_deps.extend(repository_item.dependencies or [])
 
-        installed_repositories.append(repository_item)
+        just_installed_repositories.append(just_installed_repository)
 
-    log.debug('installed_repositories: %s', pprint.pformat(installed_repositories))
+    log.debug('just_installed_repositories: %s', pprint.pformat(just_installed_repositories))
 
-    return installed_repositories
+    return just_installed_repositories
