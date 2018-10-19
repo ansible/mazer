@@ -14,12 +14,15 @@ def get(galaxy_context, repository_spec):
     """determine how to download a repo, builds a fetch instance, and returns the instance"""
 
     fetcher = None
+
     # FIXME: note that ignore_certs for the galaxy
     # server(galaxy_context.server['ignore_certs'])
     # does not really imply that the repo archive download should ignore certs as well
     # (galaxy api server vs cdn) but for now, we use the value for both
+
     log.debug('repository_spec: %s', repository_spec)
-    log.debug('repository_spec.fetch_method %s dir(fetchMethods): %s', repository_spec.fetch_method, dir(FetchMethods))
+    log.debug('repository_spec.fetch_method %s dir(fetchMethods): %s',
+              repository_spec.fetch_method, dir(FetchMethods))
 
     if repository_spec.fetch_method == FetchMethods.SCM_URL:
         fetcher = scm_url.ScmUrlFetch(repository_spec=repository_spec)
@@ -31,8 +34,7 @@ def get(galaxy_context, repository_spec):
         fetcher = remote_url.RemoteUrlFetch(repository_spec=repository_spec,
                                             validate_certs=not galaxy_context.server['ignore_certs'])
     elif repository_spec.fetch_method == FetchMethods.GALAXY_URL:
-        fetcher = galaxy_url.GalaxyUrlFetch(repository_spec=repository_spec.src,
-                                            content_version=repository_spec.version,
+        fetcher = galaxy_url.GalaxyUrlFetch(repository_spec=repository_spec,
                                             galaxy_context=galaxy_context)
     else:
         raise exceptions.GalaxyError('No approriate content fetcher found for %s %s',

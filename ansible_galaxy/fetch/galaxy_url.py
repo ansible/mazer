@@ -61,29 +61,26 @@ def select_repository_version(repoversions, version):
 class GalaxyUrlFetch(base.BaseFetch):
     fetch_method = 'galaxy_url'
 
-    def __init__(self, repository_spec, content_version,
-                 galaxy_context):
+    def __init__(self, repository_spec, galaxy_context):
         super(GalaxyUrlFetch, self).__init__()
 
-        # self.galaxy_url = galaxy_url
         self.repository_spec = repository_spec
-        self.content_version = content_version
         self.galaxy_context = galaxy_context
 
         self.validate_certs = not self.galaxy_context.server['ignore_certs']
 
+        log.debug('repository_spec: %s', repository_spec)
         # log.debug('Validate TLS certificates: %s', self.validate_certs)
 
     def find(self):
         api = GalaxyAPI(self.galaxy_context)
 
-        # FIXME - Need to update our API calls once Galaxy has them implemented
-        namespace, repo_name, content_name = parse_content_name(self.repository_spec)
+        namespace = self.repository_spec.namespace
+        repo_name = self.repository_spec.name
 
         log.debug('Querying %s for namespace=%s, name=%s', self.galaxy_context.server['url'], namespace, repo_name)
 
         # TODO: extract parsing of cli content sorta-url thing and add better tests
-        repo_name = repo_name or content_name
 
         # FIXME: exception handling
         repo_data = api.lookup_repo_by_name(namespace, repo_name)
@@ -102,37 +99,30 @@ class GalaxyUrlFetch(base.BaseFetch):
         # FIXME: exception handling
         repoversions = api.fetch_content_related(repo_versions_url)
 
-        # related_repo_url = related.get('repository', None)
-        # log.debug('related_repo_url: %s', related_repo_url)
-        # related_content_url = related.get('content', None)
-        # log.debug('related_content_url: %s', related_content_url)
-
-        # content_repo = None
-        # if related_content_url:
-        #     content_repo = api.fetch_content_related(related_content_url)
         content_repo_versions = [a.get('version') for a in repoversions if a.get('version', None)]
 
-        # log.debug('content_repo: %s', content_repo)
         # FIXME: mv to it's own method
         # FIXME: pass these to fetch() if it really needs it
         repo_version_best = repository_version.get_repository_version(repo_data,
-                                                                      version=self.content_version,
+                                                                      version=self.repository_spec.version,
                                                                       repository_versions=content_repo_versions,
-                                                                      content_content_name=content_name)
+                                                                      content_content_name=self.repository_spec.name)
 
         # get the RepositoryVersion obj (or its data anyway)
         _repoversion = select_repository_version(repoversions, repo_version_best)
-        # FIXME: stop munging state
-        # self.content_meta.version = _content_version
 
+        # external_url isnt specific, it could be something like github.com/alikins/some_collection
+        # external_url is the third option after a 'download_url' provided by the galaxy rest API
+        # (repo version specific download_url first if applicable, then the general download_url)
+        # Note: download_url can point anywhere...
         external_url = repo_data.get('external_url', None)
+
         if not external_url:
             raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % repo_name)
 
         results = {'content': {'galaxy_namespace': namespace,
-                               'repo_name': repo_name,
-                               'content_name': content_name},
-                   'specified_content_version': self.content_version,
+                               'repo_name': repo_name},
+                   'specified_content_version': self.repository_spec.version,
                    'specified_repository_spec': self.repository_spec,
                    'custom': {'content_repo_versions': content_repo_versions,
                               'external_url': external_url,
