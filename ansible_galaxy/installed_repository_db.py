@@ -79,6 +79,7 @@ class InstalledRepositoryDatabase(object):
 
         installed_collections = installed_repository_iterator(self.installed_context,
                                                               namespace_match_filter=namespace_match_filter,
+                                                              repository_match_filter=repository_match_filter,
                                                               collection_match_filter=collection_match_filter)
 
         for matched_collection in installed_collections:
