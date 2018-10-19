@@ -113,6 +113,7 @@ def install_repository_specs_loop(galaxy_context,
     # Turn the repository / requirement names from the cli into a list of RequirementSpec objects
     if repository_spec_strings:
         more_req_specs = requirements.from_requirement_spec_strings(repository_spec_strings,
+                                                                    namespace_override=namespace_override,
                                                                     editable=editable)
         log.debug('more_req_specs: %s', more_req_specs)
 
