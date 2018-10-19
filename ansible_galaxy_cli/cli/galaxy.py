@@ -38,7 +38,6 @@ from ansible_galaxy.actions import version
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
 
-from ansible_galaxy import exceptions
 from ansible_galaxy import matchers
 from ansible_galaxy import rest_api
 

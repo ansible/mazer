@@ -13,21 +13,21 @@ def display_callback(msg, **kwargs):
 
 def test_info_empty(galaxy_context):
     ret = info.info_repository_specs(galaxy_context,
-                                  # mock api
-                                  mock.Mock(),
-                                  [],
-                                  display_callback=display_callback,
-                                  offline=True)
+                                     # mock api
+                                     mock.Mock(),
+                                     [],
+                                     display_callback=display_callback,
+                                     offline=True)
 
     log.debug('ret: %s', ret)
 
 
 def test_info(galaxy_context):
     ret = info.info_repository_specs(galaxy_context,
-                                  # mock api
-                                  mock.Mock(),
-                                  ['namespace.repo.content'],
-                                  display_callback=display_callback,
-                                  offline=True)
+                                     # mock api
+                                     mock.Mock(),
+                                     ['namespace.repo.content'],
+                                     display_callback=display_callback,
+                                     offline=True)
 
     log.debug('ret: %s', ret)

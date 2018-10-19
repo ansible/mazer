@@ -10,8 +10,8 @@ log = logging.getLogger(__name__)
 
 def test_init():
     cs = repository_spec.RepositorySpec(namespace='ns',
-                                  name='n',
-                                  version='3.4.5')
+                                        name='n',
+                                        version='3.4.5')
 
     assert isinstance(cs, repository_spec.RepositorySpec)
 
@@ -20,8 +20,8 @@ def test_init():
 
 def test_frozen():
     cs = repository_spec.RepositorySpec(namespace='ns',
-                                  name='n',
-                                  version='3.4.5')
+                                        name='n',
+                                        version='3.4.5')
 
     log.debug('cs: %s', cs)
 
@@ -49,16 +49,16 @@ def test_frozen():
 
 def test_hash():
     cs1 = repository_spec.RepositorySpec(namespace='cs1',
-                                   name='cs1',
-                                   version='3.4.5')
+                                         name='cs1',
+                                         version='3.4.5')
 
     cs1a = repository_spec.RepositorySpec(namespace='cs1',
-                                    name='cs1',
-                                    version='3.4.5')
+                                          name='cs1',
+                                          version='3.4.5')
 
     cs2 = repository_spec.RepositorySpec(namespace='cs2',
-                                   name='c2',
-                                   version='3.4.2')
+                                         name='c2',
+                                         version='3.4.2')
 
     hash1 = hash(cs1)
     hash1a = hash(cs1a)
@@ -92,16 +92,16 @@ def test_hash():
 
 def test_equal():
     cs1 = repository_spec.RepositorySpec(namespace='ns',
-                                   name='n',
-                                   version='3.4.5')
+                                         name='n',
+                                         version='3.4.5')
 
     cs1a = repository_spec.RepositorySpec(namespace='ns',
-                                    name='n',
-                                    version='3.4.5')
+                                          name='n',
+                                          version='3.4.5')
 
     cs2 = repository_spec.RepositorySpec(namespace='ns2',
-                                   name='n2',
-                                   version='3.4.2')
+                                         name='n2',
+                                         version='3.4.2')
 
     assert cs1 == cs1a
     assert cs1a == cs1
