@@ -170,32 +170,26 @@ def install(galaxy_context,
     # TODO: use some sort of callback?
     fetcher.cleanup()
 
-    # TODO: load installed collections back from disk now?
+    # We know the repo specs for the repos we asked to install, and the installation results,
+    # so now use that info to find the just installed repos on disk and load them and return them.
     just_installed_repository_specs = [x[0] for x in just_installed_spec_and_results]
+
     log.debug('just_installed_repository_specs: %s', just_installed_repository_specs)
 
     just_installed_repository_match_filter = matchers.MatchRepositorySpecsNamespaceNameVersion(just_installed_repository_specs)
 
-    # log.debug('repository_match_filter: %s', repository_match_filter)
-
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
     just_installed_repository_generator = irdb.select(repository_match_filter=just_installed_repository_match_filter)
 
-    # log.debug('already_installed_generator: %s', already_installed_generator)
-
     just_installed_repositories = []
 
+    # TODO: Eventually, we could make install.install return a generator and yield these results straigt
+    #       from just_installed_repository_generator. The loop here is mostly for logging/feedback.
     for just_installed_repository in just_installed_repository_generator:
-        log.debug('just_installed_repository is installed: %s', pprint.pformat(just_installed_repository))
+        log.debug('just_installed_repository is installed: %s', pprint.pformat(attr.asdict(just_installed_repository)))
 
-        installed_repository_spec = just_installed_repository.repository_spec
-        path = just_installed_repository.path
-
-        log.info('Installed repository repository_spec: %s', installed_repository_spec)
-        log.info('installed repository path: %s', path)
-
-        # all_deps = repository_item.requirements or []
-        # all_deps.extend(repository_item.dependencies or [])
+        # log.info('Installed repository repository_spec: %s', just_installed_repository.repository_spec)
+        # log.info('installed repository path: %s', just_installed_repository.path)
 
         just_installed_repositories.append(just_installed_repository)
 
