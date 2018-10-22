@@ -58,6 +58,16 @@ class MatchRepositorySpecsNamespaceNameVersion(Match):
         return (other.repository_spec.namespace, other.repository_spec.name, other.repository_spec.version) in self.namespaces_names_versions
 
 
+class MatchNamespace(Match):
+    def __init__(self, namespaces_to_match):
+        self.namespaces_to_match = namespaces_to_match or []
+        self.log = logging.getLogger('%s.%s' % (__name__, self.__class__.__name__))
+
+    def match(self, other):
+        self.log.debug('is %s in %s', other.namespace, self.namespaces_to_match)
+        return other.namespace in self.namespaces_to_match
+
+
 class MatchNamespacesOrLabels(Match):
     def __init__(self, namespaces_or_labels):
         self.namespaces_or_labels = namespaces_or_labels or []
