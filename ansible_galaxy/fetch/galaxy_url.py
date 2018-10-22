@@ -154,12 +154,12 @@ class GalaxyUrlFetch(base.BaseFetch):
         self.remote_resource = download_url
 
         # can raise GalaxyDownloadError
-        content_archive_path = download.fetch_url(download_url,
-                                                  validate_certs=self.validate_certs)
+        repository_archive_path = download.fetch_url(download_url,
+                                                     validate_certs=self.validate_certs)
 
-        self.local_path = content_archive_path
+        self.local_path = repository_archive_path
 
-        log.debug('content_archive_path=%s', content_archive_path)
+        log.debug('repository_archive_path=%s', repository_archive_path)
 
         # TODO: This is indication that a fetcher is wrong abstraction. A fetch
         #       can resolve a name/spec, find metadata about the content including avail versions,
@@ -167,7 +167,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         #       actually fetch it.
         #       Ie, more of a RepositoryRepository (aiee) (RepositorySource? RepositoryChannel? RepositoryProvider?)
         #       that is a remote 'channel' with info and content itself.
-        results = {'archive_path': content_archive_path,
+        results = {'archive_path': repository_archive_path,
                    'download_url': download_url,
                    'fetch_method': self.fetch_method}
 

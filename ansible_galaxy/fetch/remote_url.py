@@ -37,12 +37,12 @@ class RemoteUrlFetch(base.BaseFetch):
         find_results = find_results or {}
 
         # NOTE: could move download.fetch_url here instead of splitting it
-        content_archive_path = download.fetch_url(self.remote_url, validate_certs=self.validate_certs)
-        self.local_path = content_archive_path
+        repository_archive_path = download.fetch_url(self.remote_url, validate_certs=self.validate_certs)
+        self.local_path = repository_archive_path
 
-        log.debug('content_archive_path=%s', content_archive_path)
+        log.debug('repository_archive_path=%s', repository_archive_path)
 
-        results = {'archive_path': content_archive_path,
+        results = {'archive_path': repository_archive_path,
                    'fetch_method': self.fetch_method}
         results['content'] = find_results['content']
         results['custom'] = {'remote_url': self.remote_url,

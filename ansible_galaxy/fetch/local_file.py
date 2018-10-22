@@ -21,11 +21,11 @@ class LocalFileFetch(object):
     def fetch(self, find_results=None):
         find_results = find_results or {}
 
-        content_archive_path = self.local_path
+        repository_archive_path = self.local_path
 
-        log.debug('content_archive_path=%s (inplace)', content_archive_path)
+        log.debug('repository_archive_path=%s (inplace)', repository_archive_path)
 
-        results = {'archive_path': content_archive_path,
+        results = {'archive_path': repository_archive_path,
                    'fetch_method': self.fetch_method}
 
         results['custom'] = {'local_path': self.local_path}

@@ -30,15 +30,15 @@ class ScmUrlFetch(base.BaseFetch):
 
     def fetch(self, find_results=None):
         find_results = find_results or {}
-        content_archive_path = scm_archive.scm_archive_content(src=self.repository_spec.src,
-                                                               scm=self.repository_spec.scm,
-                                                               name=self.repository_spec.name,
-                                                               version=self.repository_spec.version)
-        self.local_path = content_archive_path
+        repository_archive_path = scm_archive.scm_archive_content(src=self.repository_spec.src,
+                                                                  scm=self.repository_spec.scm,
+                                                                  name=self.repository_spec.name,
+                                                                  version=self.repository_spec.version)
+        self.local_path = repository_archive_path
 
-        log.debug('content_archive_path=%s', content_archive_path)
+        log.debug('repository_archive_path=%s', repository_archive_path)
 
-        results = {'archive_path': content_archive_path,
+        results = {'archive_path': repository_archive_path,
                    'download_url': self.repository_spec.src,
                    'fetch_method': self.fetch_method}
         results['content'] = find_results['content']
