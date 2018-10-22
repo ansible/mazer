@@ -15,7 +15,9 @@ from ansible_galaxy.models.repository import Repository
 
 log = logging.getLogger(__name__)
 
-log.setLevel(logging.INFO)
+# TODO: This loads a full repository object from disk. But that can
+#       can be slow. Will likely need some sort of 'Summary' (to use cargo's term)
+#       object that is just the important stuff (possibly cached somewhere?)
 # aka, persistence of ansible_galaxy.models.repository
 
 

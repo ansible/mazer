@@ -3,7 +3,8 @@ import pprint
 
 import yaml
 
-from ansible_galaxy.models.requirement import RequirementSpec
+from ansible_galaxy.models.repository_spec import RepositorySpec
+from ansible_galaxy.models.requirement import Requirement, RequirementOps
 from ansible_galaxy.repository_spec import spec_data_from_string
 from ansible_galaxy.utils import yaml_parse
 
@@ -28,18 +29,22 @@ def load(data_or_file_object):
         # log.debug('data_name (after): %s', data_name)
         # log.debug('name_info: %s', name_info)
 
-        req_spec = RequirementSpec.from_dict(req_spec_data)
+        req_spec = RepositorySpec.from_dict(req_spec_data)
 
         log.debug('req_spec: %s', req_spec)
 
-        requirements_list.append(req_spec)
+        req = Requirement(repository_spec=None, op=RequirementOps.EQ, requirement_spec=req_spec)
+
+        log.debug('req: %s', req)
+
+        requirements_list.append(req)
 
     log.debug('requirements_list: %s', requirements_list)
     return requirements_list
 
 
 def from_requirement_spec_strings(requirement_spec_strings, namespace_override=None, editable=False):
-    req_specs = []
+    reqs = []
     for requirement_spec_string in requirement_spec_strings:
         req_spec_data = spec_data_from_string(requirement_spec_string,
                                               namespace_override=namespace_override,
@@ -47,10 +52,13 @@ def from_requirement_spec_strings(requirement_spec_strings, namespace_override=N
 
         log.debug('req_spec_data: %s', req_spec_data)
 
-        req_spec = RequirementSpec.from_dict(req_spec_data)
-
+        req_spec = RepositorySpec.from_dict(req_spec_data)
         log.debug('req_spec: %s', req_spec)
 
-        req_specs.append(req_spec)
+        req = Requirement(repository_spec=None, op=RequirementOps.EQ, requirement_spec=req_spec)
 
-    return req_specs
+        log.debug('req: %s', req)
+
+        reqs.append(req)
+
+    return reqs

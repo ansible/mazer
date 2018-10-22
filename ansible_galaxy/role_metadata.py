@@ -23,7 +23,7 @@ def load(data_or_file_object, role_name=None):
 
     dependencies_data = data_dict.get('dependencies', [])
 
-    dependency_specs = dependencies.from_dependency_spec_strings(dependencies_data)
+    deps = dependencies.from_dependency_spec_strings(dependencies_data)
 
     allow_duplicates = data_dict.get('allow_duplicates', False)
 
@@ -43,7 +43,7 @@ def load(data_or_file_object, role_name=None):
                            min_ansible_version=galaxy_info.get('min_ansible_version'),
                            min_ansible_container_version=galaxy_info.get('min_ansible_container_version'),
                            # from outside of galaxy_info dict
-                           dependencies=dependency_specs,
+                           dependencies=deps,
                            allow_duplicates=allow_duplicates)
 
     # log.debug('loaded role metadata: %s', role_md)

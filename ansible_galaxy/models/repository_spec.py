@@ -10,9 +10,17 @@ class RepositorySpec(object):
                   namespace=testing, raw=testing.ansible-testing-content)'''
     namespace = attr.ib()
     name = attr.ib()
+    # TODO: would it be worthwhile to make this a Semver type?
     version = attr.ib(default=None)
 
-    # only namespace/name/version are used for eq checks
+    # only namespace/name/version are used for eq checks currently
+
+    # TODO: add explicit attribute for repository 'source' (universe? provider?)
+    #       ie, 'galaxy' or 'internal-dev' or 'local' etc. Maybe the combo of
+    #       'fetch_method' and 'src' are close enough. Goal being to allow a
+    #       repository to spec a requirement on another repository (namespace, name, version)
+    #       as well as where it came from (galaxy, some github url, a specific server, etc)
+
     fetch_method = attr.ib(default=None, cmp=False)
     scm = attr.ib(default=None, cmp=False)
     spec_string = attr.ib(default=None, cmp=False)
