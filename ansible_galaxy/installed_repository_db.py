@@ -76,3 +76,11 @@ class InstalledRepositoryDatabase(object):
 
         for matched_installed_repository in installed_repositories:
             yield matched_installed_repository
+
+    def by_repository_spec(self, repository_spec):
+        namespace_match_filter = matchers.MatchNamespace([repository_spec.namespace])
+
+        repository_match_filter = matchers.MatchRepositorySpecsNamespaceNameVersion([repository_spec])
+
+        return self.select(namespace_match_filter=namespace_match_filter,
+                           repository_match_filter=repository_match_filter)

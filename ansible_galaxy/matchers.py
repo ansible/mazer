@@ -45,8 +45,9 @@ class MatchRepositorySpec(Match):
         self.repository_specs = repository_specs or []
 
     def match(self, other):
-        log.debug('is %s in %s', other.repository_spec, self.repository_specs)
-        return other.repository_spec in self.repository_specs
+        res = other.repository_spec in self.repository_specs
+        log.debug('%s: is %s in %s', res, other.repository_spec, self.repository_specs)
+        return res
 
 
 class MatchRepositorySpecsNamespaceNameVersion(Match):
@@ -54,8 +55,12 @@ class MatchRepositorySpecsNamespaceNameVersion(Match):
         self.namespaces_names_versions = [(x.namespace, x.name, x.version) for x in repository_specs] or []
 
     def match(self, other):
-        log.debug('is %s in %s', (other.repository_spec.namespace, other.repository_spec.name, other.repository_spec.version), self.namespaces_names_versions)
-        return (other.repository_spec.namespace, other.repository_spec.name, other.repository_spec.version) in self.namespaces_names_versions
+        res = (other.repository_spec.namespace, other.repository_spec.name, other.repository_spec.version) in self.namespaces_names_versions
+        log.debug('%s: is %s in %s',
+                  res,
+                  (other.repository_spec.namespace, other.repository_spec.name, other.repository_spec.version),
+                  self.namespaces_names_versions)
+        return res
 
 
 class MatchNamespace(Match):
