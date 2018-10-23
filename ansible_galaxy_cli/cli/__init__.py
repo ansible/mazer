@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 class SortedOptParser(optparse.OptionParser):
     '''Optparser which sorts the options by opt before outputting --help'''
 
-    def format_help(self, formatter=None, epilog=None):
+    def format_help(self, formatter=Nones):
         self.option_list.sort(key=operator.methodcaller('get_opt_string'))
         return optparse.OptionParser.format_help(self, formatter=None)
 
@@ -51,6 +51,7 @@ class InvalidOptsParser(SortedOptParser):
     Meant for the special case where we need to take care of help and version
     but may not know the full range of options yet.  (See it in use in set_action)
     '''
+
     def __init__(self, parser):
         # Since this is special purposed to just handle help and version, we
         # take a pre-existing option parser here and set our options from
@@ -134,7 +135,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
             # without knowing action, we only know of a subset of the options
             # that could be legal for this command
             tmp_parser = InvalidOptsParser(self.parser)
-            tmp_options, tmp_args = tmp_parser.parse_args(self.args)
+            tmp_options, _ = tmp_parser.parse_args(self.args)
             if not(hasattr(tmp_options, 'help') and tmp_options.help) or (hasattr(tmp_options, 'version') and tmp_options.version):
                 raise cli_exceptions.CliOptionsError("Missing required action")
 

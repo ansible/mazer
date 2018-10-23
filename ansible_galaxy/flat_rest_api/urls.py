@@ -72,13 +72,13 @@ urllib_request.HTTPRedirectHandler.http_error_308 = urllib_request.HTTPRedirectH
 try:
     from six.moves.urllib.parse import urlparse, urlunparse
     HAS_URLPARSE = True
-except:
+except ImportError:
     HAS_URLPARSE = False
 
 try:
     import ssl
     HAS_SSL = True
-except:
+except ImportError:
     HAS_SSL = False
 
 try:
@@ -126,14 +126,11 @@ if not HAS_SSLCONTEXT and HAS_SSL:
         libssl_name = ctypes.util.find_library('ssl')
         libssl = ctypes.CDLL(libssl_name)
         for method in ('TLSv1_1_method', 'TLSv1_2_method'):
-            try:
-                libssl[method]
+            if libssl.get(method):
                 # Found something - we'll let openssl autonegotiate and hope
                 # the server has disabled sslv2 and 3.  best we can do.
                 PROTOCOL = ssl.PROTOCOL_SSLv23
                 break
-            except AttributeError:
-                pass
         del libssl
 
 
@@ -151,8 +148,6 @@ except ImportError:
 if not HAS_MATCH_HOSTNAME:
     # The following block of code is under the terms and conditions of the
     # Python Software Foundation License
-
-    """The match_hostname() function from Python 3.4, essential when using SSL."""
 
     class CertificateError(ValueError):
         pass
