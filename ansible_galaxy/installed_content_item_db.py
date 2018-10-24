@@ -14,15 +14,48 @@ def role_content_path_iterator(repository):
     return glob.iglob('%s/%s/*' % (repository.path, 'roles'))
 
 
-def module_content_path_iterator(repository):
-    return glob.iglob('%s/%s/*' % (repository.path, 'modules'))
+def python_content_path_iterator(repository, content_item_sub_dir):
+    '''For paths where python plugins live, filters out __init__.py'''
+
+    return (x for x in glob.iglob('%s/%s/*' % (repository.path, content_item_sub_dir)) if not x.endswith('__init__.py'))
+
+
+def glob_content_path_iterator(repository, content_item_sub_dir):
+    '''For paths content_item_sub_dir/*, like modules'''
+    return glob.iglob('%s/%s/*' % (repository.path, content_item_sub_dir))
+
+
+def is_plugin_dir(plugin_dir_path):
+    '''Check plugins/ items to see if a dir with a __init__.py in it'''
+    log.debug('plugin_dir_path: %s', plugin_dir_path)
+
+    if os.path.isdir(plugin_dir_path):
+        if os.path.isfile(os.path.join(plugin_dir_path, '__init__.py')):
+            return True
+
+        log.warning('There is a directory in "%s" that has no __init__.py and does not appear to be a plugin dir',
+                    plugin_dir_path)
+    return False
+
+
+def plugin_content_item_types(repository):
+    '''Return all the subdirs in plugins/ assuming only plugin type dirs exist
+
+    ie, this doesn't have preconceived notions of the possible plugin types'''
+    plugins_dir = os.path.join(repository.path, 'plugins')
+    try:
+        res = [x for x in os.listdir(plugins_dir) if is_plugin_dir(os.path.join(plugins_dir, x))]
+        log.debug('plugin_content_item_types: %s', res)
+        return res
+    except (OSError, IOError) as e:
+        log.warning(e)
+        return []
 
 
 # need a content_type matcher?
-def repository_content_iterator(repository, content_item_type, content_item_path_iterator_method):
-    content_item_paths = content_item_path_iterator_method(repository)
+def repository_content_iterator(repository, content_item_type, content_item_paths_iterator):
 
-    for content_item_path in content_item_paths:
+    for content_item_path in content_item_paths_iterator:
         repo_namespace = repository.repository_spec.namespace
         path_file = os.path.basename(content_item_path)
 
@@ -34,6 +67,30 @@ def repository_content_iterator(repository, content_item_type, content_item_path
 
         log.debug('Found %s "%s" at %s', content_item, content_item.name, path_file)
         yield content_item
+
+
+def all_content_item_types_iterator(repository):
+    all_content_iterators = [
+        repository_content_iterator(repository,
+                                    'roles',
+                                    glob_content_path_iterator(repository, 'roles')),
+        repository_content_iterator(repository,
+                                    'modules',
+                                    glob_content_path_iterator(repository, 'modules')),
+        repository_content_iterator(repository,
+                                    'module_utils',
+                                    python_content_path_iterator(repository, 'module_utils')),
+    ]
+
+    for plugin_content_item_type in plugin_content_item_types(repository):
+        plugin_iterator = repository_content_iterator(repository,
+                                                      plugin_content_item_type,
+                                                      python_content_path_iterator(repository,
+                                                                                   os.path.join('plugins', plugin_content_item_type)))
+        all_content_iterators.append(plugin_iterator)
+
+    # chain all the iterables that generator ContentItems together
+    return itertools.chain.from_iterable(all_content_iterators)
 
 
 def installed_content_item_iterator(galaxy_context,
@@ -61,14 +118,10 @@ def installed_content_item_iterator(galaxy_context,
             log.debug('The repository_match_filter %s failed to match for %s', repository_match_filter, installed_repository)
             continue
 
-        all_content_iterator = itertools.chain(repository_content_iterator(installed_repository,
-                                                                           'roles',
-                                                                           role_content_path_iterator),
-                                               repository_content_iterator(installed_repository,
-                                                                           'modules',
-                                                                           module_content_path_iterator))
+        all_content_iterator = all_content_item_types_iterator(installed_repository)
 
         log.debug('Looking for %s in repository at %s', content_item_type, installed_repository_full_path)
+
         for installed_content_item in all_content_iterator:
             log.debug('installed_content_item: %s', installed_content_item)
 
