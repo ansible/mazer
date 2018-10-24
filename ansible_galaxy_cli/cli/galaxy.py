@@ -115,6 +115,7 @@ class GalaxyCLI(cli.CLI):
             self.parser.set_usage("usage: %prog remove repo1 repo2 ...")
         elif self.action == "list":
             self.parser.set_usage("usage: %prog list [repo_name]")
+            self.parser.add_option('--content', dest='list_content', default=False, action='store_true', help="List each content item type in a repo")
         elif self.action == "version":
             self.parser.set_usage("usage: %prog version")
 
@@ -299,11 +300,13 @@ class GalaxyCLI(cli.CLI):
 
         match_filter = matchers.MatchAll()
 
+        list_content = self.options.list_content
         if self.args:
             match_filter = matchers.MatchNamespacesOrLabels(self.args)
 
         return list_action.list(galaxy_context,
                                 repository_match_filter=match_filter,
+                                list_content=list_content,
                                 display_callback=self.display)
 
     def execute_version(self):
