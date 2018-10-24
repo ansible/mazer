@@ -57,15 +57,20 @@ def repository_content_iterator(repository, content_item_type, content_item_path
 
     for content_item_path in content_item_paths_iterator:
         repo_namespace = repository.repository_spec.namespace
-        path_file = os.path.basename(content_item_path)
+        file_name = os.path.basename(content_item_path)
+
+        # This assumes module and plugins with filenames with an extension will always
+        # use the content item name as the pre-ext part of filename. That could change
+        # in the future.
+        content_item_name = os.path.splitext(file_name)[0]
 
         content_item = ContentItem(namespace=repo_namespace,
-                                   name=path_file,
-                                   path=path_file,
+                                   name=content_item_name,
+                                   path=file_name,
                                    content_item_type=content_item_type,
                                    version=repository.repository_spec.version)
 
-        log.debug('Found %s "%s" at %s', content_item, content_item.name, path_file)
+        log.debug('Found %s "%s" at %s', content_item, content_item.name, file_name)
         yield content_item
 
 
