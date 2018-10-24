@@ -1,4 +1,5 @@
 import glob
+import itertools
 import logging
 import os
 
@@ -9,15 +10,30 @@ from ansible_galaxy.models.content_item import ContentItem
 log = logging.getLogger(__name__)
 
 
+def role_content_path_iterator(repository):
+    return glob.iglob('%s/%s/*' % (repository.path, 'roles'))
+
+
+def module_content_path_iterator(repository):
+    return glob.iglob('%s/%s/*' % (repository.path, 'modules'))
+
+
 # need a content_type matcher?
-def installed_repository_role_iterator(repository_path):
+def repository_content_iterator(repository, content_item_type, content_item_path_iterator_method):
+    content_item_paths = content_item_path_iterator_method(repository)
 
-    repository_roles_dirs = glob.glob('%s/%s/*' % (repository_path, 'roles'))
-    for repository_roles_path in repository_roles_dirs:
-        yield repository_roles_path
+    for content_item_path in content_item_paths:
+        repo_namespace = repository.repository_spec.namespace
+        path_file = os.path.basename(content_item_path)
 
+        content_item = ContentItem(namespace=repo_namespace,
+                                   name=path_file,
+                                   path=path_file,
+                                   content_item_type=content_item_type,
+                                   version=repository.repository_spec.version)
 
-installed_repository_content_iterator_map = {'roles': installed_repository_role_iterator}
+        log.debug('Found %s "%s" at %s', content_item, content_item.name, path_file)
+        yield content_item
 
 
 def installed_content_item_iterator(galaxy_context,
@@ -45,40 +61,26 @@ def installed_content_item_iterator(galaxy_context,
             log.debug('The repository_match_filter %s failed to match for %s', repository_match_filter, installed_repository)
             continue
 
-        # since we will need a different iterator for each specific type of content, consult
-        # a map of content_type->iterator_method however there is only a 'roles' iterator for now
-        installed_repository_content_iterator_method = \
-            installed_repository_content_iterator_map.get(content_item_type)
-
-        if installed_repository_content_iterator_method is None:
-            continue
-
-        installed_repository_content_iterator = installed_repository_content_iterator_method(installed_repository_full_path)
+        all_content_iterator = itertools.chain(repository_content_iterator(installed_repository,
+                                                                           'roles',
+                                                                           role_content_path_iterator),
+                                               repository_content_iterator(installed_repository,
+                                                                           'modules',
+                                                                           module_content_path_iterator))
 
         log.debug('Looking for %s in repository at %s', content_item_type, installed_repository_full_path)
-        for installed_content_full_path in installed_repository_content_iterator:
+        for installed_content_item in all_content_iterator:
+            log.debug('installed_content_item: %s', installed_content_item)
 
-            repo_namespace = installed_repository.repository_spec.namespace
-            path_file = os.path.basename(installed_content_full_path)
-
-            gr = ContentItem(namespace=repo_namespace, name=path_file,
-                             path=installed_content_full_path,
-                             content_item_type=content_item_type,
-                             version=installed_repository.repository_spec.version)
-
-            log.debug('Found %s "%s" at %s', gr, gr.name, installed_content_full_path)
-
-            version = None
-
-            if not content_item_match_filter(gr):
-                log.debug('%s was not matched by content_match_filter: %s', gr, content_item_match_filter)
+            if not content_item_match_filter(installed_content_item):
+                log.debug('%s was not matched by content_match_filter: %s', installed_content_item, content_item_match_filter)
                 continue
 
             # this is sort of the 'join' of installed_repository and installed_content
-            content_info = {'path': path_file,
-                            'content_data': gr,
+            content_info = {'path': installed_content_item.path,
+                            'content_data': installed_content_item,
                             'installed_repository': installed_repository,
-                            'version': version,
+                            'version': installed_content_item.version,
                             }
 
             yield content_info
