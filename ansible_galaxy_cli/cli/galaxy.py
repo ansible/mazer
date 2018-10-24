@@ -304,10 +304,10 @@ class GalaxyCLI(cli.CLI):
         if self.args:
             match_filter = matchers.MatchNamespacesOrLabels(self.args)
 
-        return list_action.list(galaxy_context,
-                                repository_match_filter=match_filter,
-                                list_content=list_content,
-                                display_callback=self.display)
+        return list_action.list_action(galaxy_context,
+                                       repository_match_filter=match_filter,
+                                       list_content=list_content,
+                                       display_callback=self.display)
 
     def execute_version(self):
         return version.version(config_file_path=self.config_file_path,
