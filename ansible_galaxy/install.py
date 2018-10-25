@@ -10,7 +10,6 @@ import attr
 from ansible_galaxy import repository_archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
-from ansible_galaxy import matchers
 from ansible_galaxy.fetch import fetch_factory
 
 log = logging.getLogger(__name__)

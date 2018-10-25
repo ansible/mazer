@@ -1,8 +1,5 @@
 import logging
 
-import attr
-# import pytest
-
 from ansible_galaxy.models import repository_spec
 from ansible_galaxy.models import requirement
 
@@ -50,4 +47,3 @@ def test_repository_spec_requirement_spec_cmp():
 
     assert req.repository_spec == repo_spec1
     assert req.requirement_spec == repo_spec2
-

@@ -244,8 +244,8 @@ def load_archive(archive_path):
         log.debug('Found role metadata in the archive, so installing it as role content_type')
 
     archive_info = RepositoryArchiveInfo(top_dir=archive_parent_dir,
-                                      archive_type=archive_type,
-                                      archive_path=archive_path)
+                                         archive_type=archive_type,
+                                         archive_path=archive_path)
 
     log.debug('role archive_info: %s', archive_info)
 
