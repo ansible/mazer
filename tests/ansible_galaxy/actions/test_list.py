@@ -21,12 +21,10 @@ def test__list(galaxy_context, mocker):
     mocker.patch('ansible_galaxy.installed_repository_db.get_repository_paths',
                  return_value=iter(['n_bar', 'n_baz']))
 
-    # The content type specific content iterator is determined at runtime, so we need to patch the value
-    # of the 'roles' item in installed_repository_content_iterator_map to patch the right method used
-    mocker.patch.dict('ansible_galaxy.installed_content_item_db.installed_repository_content_iterator_map',
-                      {'roles': mocker.Mock(return_value=iter(['/dev/null/content/ns_foo/n_bar/roles/role-1',
-                                                               '/dev/null/content/ns_blip/n_bar/roles/role-3',
-                                                               '/dev/null/content/ns_blip/n_baz/roles/role-2']))})
+    mocker.patch('ansible_galaxy.installed_content_item_db.glob_content_path_iterator',
+                 return_value=iter(['/dev/null/content/ns_foo/n_bar/roles/role-1',
+                                    '/dev/null/content/ns_blip/n_bar/roles/role-3',
+                                    '/dev/null/content/ns_blip/n_baz/roles/role-2']))
 
     res = list_action._list(galaxy_context,
                             display_callback=display_callback)
@@ -39,11 +37,9 @@ def test__list(galaxy_context, mocker):
 
 def test_list_empty_roles_paths(galaxy_context):
 
-    # galaxy_context = _galaxy_context(tmpdir)
-
     try:
-        list_action.list(galaxy_context,
-                         display_callback=display_callback)
+        list_action.list_action(galaxy_context,
+                                display_callback=display_callback)
     except exceptions.GalaxyError as e:
         log.debug(e, exc_info=True)
         raise
@@ -51,8 +47,8 @@ def test_list_empty_roles_paths(galaxy_context):
 
 def test_list_no_content_dir(galaxy_context):
     galaxy_context.content_path = os.path.join(galaxy_context.content_path, 'doesntexist')
-    res = list_action.list(galaxy_context,
-                           display_callback=display_callback)
+    res = list_action.list_action(galaxy_context,
+                                  display_callback=display_callback)
 
     # TODO: list should probably return non-zero if galaxy_context.content_path doesnt exist,
     #       but should probaly initially check that when creating galaxy_context

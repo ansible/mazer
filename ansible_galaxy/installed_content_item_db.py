@@ -10,10 +10,6 @@ from ansible_galaxy.models.content_item import ContentItem
 log = logging.getLogger(__name__)
 
 
-def role_content_path_iterator(repository):
-    return glob.iglob('%s/%s/*' % (repository.path, 'roles'))
-
-
 def python_content_path_iterator(repository, content_item_sub_dir):
     '''For paths where python plugins live, filters out __init__.py'''
 
