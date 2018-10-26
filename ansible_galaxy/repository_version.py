@@ -74,11 +74,10 @@ def validate_versions(content_versions):
     return (valid_versions, invalid_versions)
 
 
-# FIXME: rename, really get_repo_version
-def get_content_version(content_data, version, content_versions, content_content_name):
-    '''find and compare content version found in content_data dict
+def get_repository_version(repository_data, version, repository_versions, content_content_name):
+    '''find and compare repository version found in content_data dict
 
-    content_data is a dict based on /api/v1/content/13 for ex
+    repository_data is a dict based on /api/v1/content/13 for ex
     content_content_data is the name of the content specified by user?
     version is the version string asked for by user
     content_versions is a list of version strings in order
@@ -89,7 +88,7 @@ def get_content_version(content_data, version, content_versions, content_content
 #              content_content_name, json.dumps(content_versions, indent=2))
 
     # normalize versions, but also build a map of the normalized version string to the orig string
-    available_normalized_versions, norm_to_orig_map = normalize_versions(content_versions)
+    available_normalized_versions, norm_to_orig_map = normalize_versions(repository_versions)
 
     # verify that the normalized versions are valid semver now so that we dont worry about it
     # in the sort
@@ -126,7 +125,7 @@ def get_content_version(content_data, version, content_versions, content_content
     # At this point, we have a list of the available versions. The available versions have
     # been normalized (leading 'v' or 'V' stripped off).
     # No specific version was requested, so we return the latest one.
-    content_version = get_latest_version(available_versions, content_data)
+    content_version = get_latest_version(available_versions, repository_data)
 
     log.debug('%s using latest ver: %s', content_content_name, content_version)
     return content_version

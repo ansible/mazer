@@ -3,14 +3,14 @@ import logging
 
 import pytest
 
-from ansible_galaxy import content_version
+from ansible_galaxy import repository_version
 from ansible_galaxy import exceptions
 
 log = logging.getLogger(__name__)
 
 
 def test_get_content_version_none():
-    ret = content_version.get_content_version({}, None, [], None)
+    ret = repository_version.get_repository_version({}, None, [], None)
     log.debug('ret=%s', ret)
 
     assert ret == 'master'
@@ -18,7 +18,7 @@ def test_get_content_version_none():
 
 def test_get_content_version_devel_version_no_content_versions():
     try:
-        content_version.get_content_version({}, 'devel', [], None)
+        repository_version.get_repository_version({}, 'devel', [], None)
     except exceptions.GalaxyError:
         return
 
@@ -27,7 +27,7 @@ def test_get_content_version_devel_version_no_content_versions():
 
 @pytest.mark.xfail
 def test_get_content_version_prod_version_in_content_versions():
-    ret = content_version.get_content_version({}, 'prod', content_versions_147, None)
+    ret = repository_version.get_repository_version({}, 'prod', content_versions_147, None)
     log.debug('ret=%s', ret)
 
     assert ret == 'prod'
@@ -124,7 +124,7 @@ def test_sort_versions(ver_sort_data):
     log.debug('latest: %s', ver_sort_data['latest'])
     versions = ver_sort_data['vlist']
 
-    res = content_version.sort_versions(versions)
+    res = repository_version.sort_versions(versions)
     log.debug('sorted versions: %s', res)
 
     # FIXME: the cases where get_content_version expects master on empty ver list are skipped
@@ -136,7 +136,7 @@ def test_sort_versions(ver_sort_data):
 
 def test_normalize_versions():
     vers = ['v1.0.0', '1.0.1', 'V1.2.3', '3.4.5']
-    norm_vers, norm_to_orig_map = content_version.normalize_versions(vers)
+    norm_vers, norm_to_orig_map = repository_version.normalize_versions(vers)
 
     log.debug('     vers: %s', vers)
     log.debug('norm_vers: %s', norm_vers)
@@ -170,7 +170,7 @@ def test_normalize_versions():
      content_versions_v),
 ])
 def test_validate_versions(versions, exp_valid, exp_invalid):
-    valid, invalid = content_version.validate_versions(versions)
+    valid, invalid = repository_version.validate_versions(versions)
 
     log.debug('valid: %s', valid)
     log.debug('invalid: %s', invalid)
@@ -181,7 +181,7 @@ def test_validate_versions(versions, exp_valid, exp_invalid):
 
 def test_get_content_version(ver_data):
     log.debug('ver_data: %s', ver_data)
-    res = content_version.get_content_version({}, ver_data['ask'], ver_data['vlist'], 'some_content_name')
+    res = repository_version.get_repository_version({}, ver_data['ask'], ver_data['vlist'], 'some_content_name')
     log.debug('res: %s', res)
     assert res == ver_data['exp']
 
@@ -205,15 +205,15 @@ def latest_ver_data(request):
 
 def test_get_content_version_latest(latest_ver_data):
     log.debug('latest_ver_data: %s', latest_ver_data)
-    res = content_version.get_content_version({}, None, latest_ver_data['vlist'], 'some_content_name')
+    res = repository_version.get_repository_version({}, None, latest_ver_data['vlist'], 'some_content_name')
     log.debug('res: %s', res)
     assert res == latest_ver_data['exp']
 
 
 def test_get_latest_version():
     vers = ['1.0.0', '2.0.0', '2.0.1', '2.2.0', '3.1.4']
-    res = content_version.get_latest_version(vers,
-                                             content_data={})
+    res = repository_version.get_latest_version(vers,
+                                                content_data={})
 
     assert res == '3.1.4'
 
@@ -221,8 +221,8 @@ def test_get_latest_version():
 def test_get_latest_version_invalid_semver():
     vers = ['1.0.0', '2.0.0', '2.0.1', '2.2.0', '3.1.4', '4.2']
     try:
-        content_version.get_latest_version(vers,
-                                           content_data={})
+        repository_version.get_latest_version(vers,
+                                              content_data={})
     except exceptions.GalaxyClientError as e:
         assert 'Unable to compare' in '%s' % e
         assert '4.2 is not valid SemVer' in '%s' % e
@@ -232,11 +232,11 @@ def test_get_latest_version_invalid_semver():
 
 
 def test_get_latest_in_content_versions_1_0_0_v_and_no_v():
-    ret1 = content_version.get_content_version({}, None, content_versions_1_0_v_and_no_v, 'some_content_name')
+    ret1 = repository_version.get_repository_version({}, None, content_versions_1_0_v_and_no_v, 'some_content_name')
     log.debug('ret1: %s', ret1)
     # assert ret1 == '3.0.0'
     content_versions_1_0_v_and_no_v.reverse()
-    ret2 = content_version.get_content_version({}, None, content_versions_1_0_v_and_no_v, 'some_content_name')
+    ret2 = repository_version.get_repository_version({}, None, content_versions_1_0_v_and_no_v, 'some_content_name')
     log.debug('ret2: %s', ret2)
     assert ret1 == ret2
 
@@ -244,7 +244,7 @@ def test_get_latest_in_content_versions_1_0_0_v_and_no_v():
 def test_get_content_version_devel_version_not_in_content_versions():
     # FIXME: use pytest expect_exception stuff
     try:
-        ret = content_version.get_content_version({}, 'devel', content_versions_147, 'some_content_name')
+        ret = repository_version.get_repository_version({}, 'devel', content_versions_147, 'some_content_name')
         log.debug('ret=%s', ret)
     except exceptions.GalaxyError as e:
         log.exception(e)
