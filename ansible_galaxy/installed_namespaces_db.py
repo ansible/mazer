@@ -3,7 +3,7 @@ import logging
 import os
 
 from ansible_galaxy import matchers
-from ansible_galaxy.models.collection_namespace import CollectionNamespace
+from ansible_galaxy.models.galaxy_namespace import GalaxyNamespace
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def installed_namespace_iterator(galaxy_context,
     for namespace_path in namespace_paths:
         namespace_full_path = os.path.join(content_path, namespace_path)
 
-        collection_namespace = CollectionNamespace(namespace=namespace_path,
+        collection_namespace = GalaxyNamespace(namespace=namespace_path,
                                                    path=namespace_full_path)
 
         if namespace_match_filter(collection_namespace):
