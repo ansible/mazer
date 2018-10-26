@@ -10,7 +10,7 @@ from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
 from ansible_galaxy.models import content
-from ansible_galaxy.models.content_archive import ContentArchiveInfo
+from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo
 from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.installation_results import InstallationResults
 
@@ -28,7 +28,7 @@ def null_display_callback(*args, **kwargs):
 
 @attr.s()
 class BaseRepositoryArchive(object):
-    info = attr.ib(type=ContentArchiveInfo)
+    info = attr.ib(type=RepositoryArchiveInfo)
     tar_file = attr.ib(type=tarfile.TarFile, default=None)
     install_datetime = attr.ib(type=datetime.datetime,
                                default=None)
@@ -243,7 +243,7 @@ def load_archive(archive_path):
     if archive_type == 'role':
         log.debug('Found role metadata in the archive, so installing it as role content_type')
 
-    archive_info = ContentArchiveInfo(top_dir=archive_parent_dir,
+    archive_info = RepositoryArchiveInfo(top_dir=archive_parent_dir,
                                       archive_type=archive_type,
                                       archive_path=archive_path)
 

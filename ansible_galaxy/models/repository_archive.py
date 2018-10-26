@@ -2,7 +2,7 @@ import attr
 
 
 @attr.s(frozen=True)
-class ContentArchiveInfo(object):
+class RepositoryArchiveInfo(object):
     requires_meta_main = False
 
     archive_type = attr.ib()
@@ -16,7 +16,7 @@ class ContentArchiveInfo(object):
 
 
 @attr.s(frozen=True)
-class ContentArchive(object):
+class RepositoryArchive(object):
     # Can be created from a collection archive, a collection artifact archive,
     # or a trad role archive, or a trad role archive artifact.
-    info = attr.ib(type=ContentArchiveInfo)
+    info = attr.ib(type=RepositoryArchiveInfo)
