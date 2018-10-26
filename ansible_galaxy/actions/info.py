@@ -5,7 +5,7 @@ from ansible_galaxy import display
 from ansible_galaxy import matchers
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy import installed_repository_db
-from ansible_galaxy.utils.content_name import parse_content_name
+from ansible_galaxy.utils.repository_name import parse_repository_name
 from ansible_galaxy.utils.text import to_text
 
 log = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ def info_repository_specs(galaxy_context,
 
     all_labels_to_match = []
     for repository_spec_string in repository_spec_strings:
-        galaxy_namespace, repository_name, content_name = parse_content_name(repository_spec_string)
+        galaxy_namespace, repository_name, content_name = parse_repository_name(repository_spec_string)
 
         log.debug('showing info for repository spec: %s', repository_spec_string)
 

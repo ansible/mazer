@@ -1,5 +1,5 @@
 
-from ansible_galaxy.utils import content_name
+from ansible_galaxy.utils import repository_name
 
 import logging
 log = logging.getLogger(__name__)
@@ -8,14 +8,14 @@ log = logging.getLogger(__name__)
 def test_parse_content_name():
     _content_name = 'alikins.testing-content'
 
-    user_name, repo_name, _content_name = content_name.parse_content_name(_content_name)
+    user_name, repo_name, _content_name = repository_name.parse_repository_name(_content_name)
 
     assert user_name == 'alikins'
     assert _content_name == 'testing-content'
     assert repo_name is None
 
     _content_name = 'alikins.testing-content.elasticsearch_plugin.py'
-    user_name, repo_name, _content_name = content_name.parse_content_name(_content_name)
+    user_name, repo_name, _content_name = repository_name.parse_repository_name(_content_name)
 
     assert user_name == 'alikins'
     assert _content_name == 'elasticsearch_plugin.py'

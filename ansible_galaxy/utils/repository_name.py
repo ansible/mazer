@@ -21,35 +21,21 @@ def repo_url_to_repo_name(repo_url):
     return trailing_path
 
 
-def repo_name_to_content_name(repo_name):
-    '''For a repo name like 'ansible-role-mystuff', return "mystuff"
-
-    For a repo name like 'mystuff', return 'mystuff'.
-
-    aka, strip the 'ansible-role-' prefix.'''
-
-    if repo_name.startswith('ansible-role-'):
-        return repo_name[len('ansible-role-'):]
-
-    return repo_name
-
-
 # TODO: test cases
-# TODO: class/type for a content spec
-def parse_content_name(content_name):
-    "split a full content_name into username, repo_name, content_name"
+def parse_repository_name(name):
+    "split a full repository_name into namespace, repo_name, content_name"
 
     repo_name = None
     try:
-        parts = content_name.split(".")
+        parts = name.split(".")
         user_name = parts[0]
         if len(parts) > 2:
             repo_name = parts[1]
-            content_name = '.'.join(parts[2:])
+            name = '.'.join(parts[2:])
         else:
-            content_name = '.'.join(parts[1:])
+            name = '.'.join(parts[1:])
     except Exception as e:
         log.exception(e)
-        raise exceptions.GalaxyClientError("Invalid content name (%s). Specify content as format: username.contentname" % content_name)
+        raise exceptions.GalaxyClientError("Invalid content name (%s). Specify content as format: username.contentname" % name)
 
-    return (user_name, repo_name, content_name)
+    return (user_name, repo_name, name)

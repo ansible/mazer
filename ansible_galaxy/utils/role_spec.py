@@ -1,7 +1,7 @@
 
 import logging
 
-from ansible_galaxy.utils.content_name import repo_url_to_repo_name
+from ansible_galaxy.utils.repository_name import repo_url_to_repo_name
 
 log = logging.getLogger(__name__)
 
