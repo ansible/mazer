@@ -27,7 +27,7 @@ def null_display_callback(*args, **kwargs):
 
 
 @attr.s()
-class BaseContentArchive(object):
+class BaseRepositoryArchive(object):
     info = attr.ib(type=ContentArchiveInfo)
     tar_file = attr.ib(type=tarfile.TarFile, default=None)
     install_datetime = attr.ib(type=datetime.datetime,
@@ -39,7 +39,7 @@ class BaseContentArchive(object):
     def __attrs_post_init__(self):
         self.log = logging.getLogger('%s.%s' % (__name__, self.__class__.__name__))
 
-    def content_dest_root_subpath(self, content_namespace, content_name):
+    def repository_dest_root_subpath(self, content_namespace, content_name):
         '''The relative path inside the installed content where extract should consider the root
 
         A collection archive for 'my_namespace.my_content' will typically be extracted to
@@ -53,21 +53,21 @@ class BaseContentArchive(object):
         '''
         return ''
 
-    def extract(self, content_namespace, content_name, extract_to_path,
+    def extract(self, repository_namespace, repository_name, extract_to_path,
                 display_callback=None, force_overwrite=False):
 
         all_installed_paths = []
 
         # TODO: move to content info validate step in install states?
-        if not content_namespace:
+        if not repository_namespace:
             # TODO: better error
             raise exceptions.GalaxyError('While installing a role , no namespace was found. Try providing one with --namespace')
 
-        label = "%s.%s" % (content_namespace, content_name)
+        label = "%s.%s" % (repository_namespace, repository_name)
 
         # 'extract_to_path' is for ex, ~/.ansible/content
         self.log.info('About to extract %s "%s" to %s', self.info.archive_type, label, extract_to_path)
-        self.display_callback('- extracting %s content from "%s"' % (self.info.archive_type, label))
+        self.display_callback('- extracting %s repository from "%s"' % (self.info.archive_type, label))
 
         tar_members = self.tar_file.members
 
@@ -76,12 +76,12 @@ class BaseContentArchive(object):
         # or 'ansible-role-my_content-1.2.3' for a traditional role.
         parent_dir = tar_members[0].name
 
-        content_dest_root_subpath = self.content_dest_root_subpath(content_namespace, content_name)
+        repository_dest_root_subpath = self.repository_dest_root_subpath(repository_namespace, repository_name)
         # self.log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
 
-        content_dest_root_path = os.path.join(content_namespace,
-                                              content_name,
-                                              content_dest_root_subpath)
+        repository_dest_root_path = os.path.join(repository_namespace,
+                                                 repository_name,
+                                                 repository_dest_root_subpath)
 
         # self.log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
 
@@ -95,7 +95,7 @@ class BaseContentArchive(object):
             # rel_path ~  roles/some-role/meta/main.yml for ex
             rel_path = member.name[len(parent_dir) + 1:]
 
-            content_dest_root_rel_path = os.path.join(content_dest_root_path, rel_path)
+            repository_dest_root_rel_path = os.path.join(repository_dest_root_path, rel_path)
 
             # self.log.debug('content_dest_root_path: %s', content_dest_root_path)
             # self.log.debug('content_dest_root_rel_path: %s', content_dest_root_rel_path)
@@ -103,7 +103,7 @@ class BaseContentArchive(object):
             files_to_extract.append({
                 'archive_member': member,
                 'dest_dir': extract_to_path,
-                'dest_filename': content_dest_root_rel_path,
+                'dest_filename': repository_dest_root_rel_path,
                 'force_overwrite': force_overwrite})
 
         file_extractor = archive.extract_files(self.tar_file, files_to_extract)
@@ -114,17 +114,17 @@ class BaseContentArchive(object):
         all_installed_paths.extend(installed_paths)
 
         self.log.info('Extracted %s files from %s %s to %s',
-                      len(all_installed_paths), self.info.archive_type, label, content_dest_root_path)
+                      len(all_installed_paths), self.info.archive_type, label, repository_dest_root_path)
 
         # TODO: InstallResults object? installedPaths, InstallInfo, etc?
         return all_installed_paths, install_datetime
 
-    def install_info(self, content_version, install_datetime):
+    def install_info(self, repository_version, install_datetime):
 
-        content_install_info = InstallInfo.from_version_date(version=content_version,
-                                                             install_datetime=install_datetime)
+        repository_install_info = InstallInfo.from_version_date(version=repository_version,
+                                                                install_datetime=install_datetime)
 
-        return content_install_info
+        return repository_install_info
 
     def install(self, repository_spec, extract_to_path, force_overwrite=False):
 
@@ -172,21 +172,21 @@ class BaseContentArchive(object):
 
 
 @attr.s()
-class TraditionalRoleContentArchive(BaseContentArchive):
+class TraditionalRoleRepositoryArchive(BaseRepositoryArchive):
     ROLES_SUBPATH = 'roles'
 
-    def content_dest_root_subpath(self, content_namespace, content_name):
-        '''Traditional role archive content goes into subpath of 'roles/CONTENT_NAME/'''
+    def repository_dest_root_subpath(self, content_namespace, content_name):
+        '''Traditional role archive repository gets installed into subpath of 'roles/CONTENT_NAME/'''
         return os.path.join(self.ROLES_SUBPATH, content_name)
 
 
 @attr.s()
-class CollectionContentArchive(BaseContentArchive):
+class CollectionRepositoryArchive(BaseRepositoryArchive):
     # TODO: should we create a meta/ for a collection just for .galaxy_install_info?
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
 
 
-def detect_content_archive_type(archive_path, archive_members):
+def detect_repository_archive_type(archive_path, archive_members):
     '''Try to determine if we are a role, multi-content, apb etc.
 
     if there is a meta/main.yml ->  role
@@ -226,15 +226,15 @@ def load_archive(archive_path):
         raise exceptions.GalaxyClientError("the file downloaded was not a tar.gz")
 
     if archive_path.endswith('.gz'):
-        content_tar_file = tarfile.open(archive_path, "r:gz")
+        repository_tar_file = tarfile.open(archive_path, "r:gz")
     else:
-        content_tar_file = tarfile.open(archive_path, "r")
+        repository_tar_file = tarfile.open(archive_path, "r")
 
-    members = content_tar_file.getmembers()
+    members = repository_tar_file.getmembers()
 
     archive_parent_dir = members[0].name
 
-    archive_type = detect_content_archive_type(archive_path, members)
+    archive_type = detect_repository_archive_type(archive_path, members)
 
     log.debug('archive_type: %s', archive_type)
     log.debug("archive_parent_dir: %s", archive_parent_dir)
@@ -250,17 +250,13 @@ def load_archive(archive_path):
     log.debug('role archive_info: %s', archive_info)
 
     # factory-ish
-    if archive_type in ['multi-content']:
-        content_archive_ = CollectionContentArchive(info=archive_info,
-                                                    tar_file=content_tar_file)
-    elif archive_type in ['role']:
-        content_archive_ = TraditionalRoleContentArchive(info=archive_info,
-                                                         tar_file=content_tar_file)
+    if archive_type in ['role']:
+        repository_archive_ = TraditionalRoleRepositoryArchive(info=archive_info,
+                                                               tar_file=repository_tar_file)
     else:
-        content_archive_ = ContentArchive(info=archive_info,
-                                          tar_file=content_tar_file)
+        repository_archive_ = CollectionRepositoryArchive(info=archive_info,
+                                                          tar_file=repository_tar_file)
 
-    log.debug('content archive_: %s', content_archive_)
+    log.debug('repository archive_: %s', repository_archive_)
 
-    return content_archive_
-    # return content_tar_file, archive_info
+    return repository_archive_

@@ -7,7 +7,7 @@ import pprint
 
 import attr
 
-from ansible_galaxy import content_archive
+from ansible_galaxy import repository_archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
@@ -140,7 +140,7 @@ def install(galaxy_context,
 
     # TODO: this is figuring out the archive type (multi-content collection or a trad role)
     #       could potentially pull this up a layer
-    content_archive_ = content_archive.load_archive(archive_path)
+    content_archive_ = repository_archive.load_archive(archive_path)
 
     log.debug('content_archive_: %s', content_archive_)
     log.debug('content_archive_.info: %s', content_archive_.info)
