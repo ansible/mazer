@@ -12,6 +12,8 @@ log = logging.getLogger(__name__)
 
 
 def load(data_or_file_object):
+    log.debug('START of load of requirements %s', data_or_file_object)
+
     requirements_data = yaml.safe_load(data_or_file_object)
 
     log.debug('requirements_data: %s', pprint.pformat(requirements_data))
@@ -19,11 +21,11 @@ def load(data_or_file_object):
     requirements_list = []
 
     for req_data_item in requirements_data:
-        log.debug('req_data_item: %s', req_data_item)
-        log.debug('type(req_data_item): %s', type(req_data_item))
+        # log.debug('req_data_item: %s', req_data_item)
+        # log.debug('type(req_data_item): %s', type(req_data_item))
 
         req_spec_data = yaml_parse.yaml_parse(req_data_item)
-        log.debug('req_spec_data: %s', req_spec_data)
+        # log.debug('req_spec_data: %s', req_spec_data)
 
         # name_info = content_name.parse_content_name(data_name)
         # log.debug('data_name (after): %s', data_name)
@@ -31,7 +33,7 @@ def load(data_or_file_object):
 
         req_spec = RepositorySpec.from_dict(req_spec_data)
 
-        log.debug('req_spec: %s', req_spec)
+        # log.debug('req_spec: %s', req_spec)
 
         req = Requirement(repository_spec=None, op=RequirementOps.EQ, requirement_spec=req_spec)
 
@@ -39,7 +41,7 @@ def load(data_or_file_object):
 
         requirements_list.append(req)
 
-    log.debug('requirements_list: %s', requirements_list)
+    log.debug('FINISH of load of requirements: %s: %s', data_or_file_object, requirements_list)
     return requirements_list
 
 

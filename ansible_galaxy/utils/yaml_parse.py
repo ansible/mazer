@@ -1,4 +1,3 @@
-import copy
 import logging
 import six
 
@@ -30,17 +29,17 @@ def yaml_parse(content, resolver=None):
     if isinstance(content, six.string_types):
         log.debug('parsing content="%s" as a string', content)
 
-        orig_content = copy.deepcopy(content)
+        # orig_content = copy.deepcopy(content)
         res = repository_spec_parse.spec_data_from_string(content, resolver=resolver)
 
         log.debug('parsed spec="%s" -> %s', content, res)
 
         return res
 
-    log.debug('content="%s" is not a string (it is a %s) so we are assuming it is a dict',
-              content, type(content))
+    # log.debug('content="%s" is not a string (it is a %s) so we are assuming it is a dict',
+    #          content, type(content))
 
-    orig_content = copy.deepcopy(content)
+    # orig_content = copy.deepcopy(content)
 
     # Not sure what will/should happen if content is not a Mapping or a string
     # FIXME: if content is not a string or a dict/map, throw a reasonable error.
@@ -61,13 +60,13 @@ def yaml_parse(content, resolver=None):
             del content['role']
             content['name'] = name
     else:
-        log.debug('content="%s" does not appear to be a role', content)
+        # log.debug('content="%s" does not appear to be a role', content)
 
         # FIXME: just use a new name already
         # FIXME: this fails for objects with no dict attribute, like a list
         content_copy = content.copy()
 
-        log.debug('content_copy: %s', content_copy)
+        # log.debug('content_copy: %s', content_copy)
 
         data = {'src': None, 'version': None, 'name': None, 'scm': None}
         data.update(content_copy)
@@ -77,7 +76,7 @@ def yaml_parse(content, resolver=None):
             # valid_kw = ('src', 'version', 'name', 'scm')
             new_data = repository_spec_parse.spec_data_from_string(data['src'])
 
-            log.debug('new_data: %s', new_data)
+            # log.debug('new_data: %s', new_data)
 
             for key in new_data:
                 if not data.get(key, None):
@@ -96,10 +95,10 @@ def yaml_parse(content, resolver=None):
     for key in list(content.keys()):
         # sub_name doesnt mean anything to role spec
         if key not in VALID_ROLE_SPEC_KEYS and key not in ('sub_name', 'namespace', 'fetch_method'):
-            log.debug('removing invalid key: %s', key)
+            # log.debug('removing invalid key: %s', key)
 
             content.pop(key)
 
-    log.debug('"parsed" content="%s" into: %s', orig_content, content)
+    # log.debug('"parsed" content="%s" into: %s', orig_content, content)
 
     return content

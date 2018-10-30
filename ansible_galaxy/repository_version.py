@@ -75,15 +75,15 @@ def validate_versions(content_versions):
 
 
 def get_repository_version(repository_data, version, repository_versions, content_content_name):
-    '''find and compare repository version found in content_data dict
+    '''find and compare repository version found in repository_data dict
 
-    repository_data is a dict based on /api/v1/content/13 for ex
+    repository_data is a dict based on /api/v1/repositories/13 for ex
     content_content_data is the name of the content specified by user?
     version is the version string asked for by user
     content_versions is a list of version strings in order
     '''
 
-    log.debug('%s want ver: %s', content_content_name, version)
+    log.debug('%s wants ver: %s type: %s', content_content_name, version, type(version))
 #    log.debug('%s vers avail: %s',
 #              content_content_name, json.dumps(content_versions, indent=2))
 
@@ -94,6 +94,11 @@ def get_repository_version(repository_data, version, repository_versions, conten
     # in the sort
     available_versions, dummy = \
         validate_versions(available_normalized_versions)
+
+    # FIXME: support direct semver usage all the way through
+    # str or semver to string, but leave None alone
+    if version:
+        version = str(version)
 
     normalized_version = normalize_version_string(version)
 

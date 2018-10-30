@@ -235,7 +235,9 @@ def install_repository(galaxy_context,
     # repositories_matching_spec_that_are_already_installed = already_installed_generator
     already_installed_iter = irdb.by_repository_spec(repository_spec_to_install)
     already_installed = sorted(list(already_installed_iter))
+
     log.debug('already_installed: %s', already_installed)
+
     if already_installed:
         for already_installed_repository in already_installed:
             display_callback('%s is already installed at %s' % (already_installed_repository.repository_spec.label,

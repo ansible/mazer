@@ -53,14 +53,33 @@ class MatchRepositorySpec(Match):
 class MatchRepositorySpecsNamespaceNameVersion(Match):
     def __init__(self, repository_specs):
         self.namespaces_names_versions = [(x.namespace, x.name, x.version) for x in repository_specs] or []
+        self.namespaces_names = [(x.namespace, x.name) for x in repository_specs] or []
 
     def match(self, other):
-        res = (other.repository_spec.namespace, other.repository_spec.name, other.repository_spec.version) in self.namespaces_names_versions
+        ns_n_match_res = False
+        ns_n_v_match_res = False
+
+        other_ns_n_v = (other.repository_spec.namespace, other.repository_spec.name, other.repository_spec.version)
+
+        ns_n_v_match_res = other_ns_n_v in self.namespaces_names_versions
+
         log.debug('%s: is %s in %s',
-                  res,
-                  (other.repository_spec.namespace, other.repository_spec.name, other.repository_spec.version),
+                  ns_n_v_match_res,
+                  other_ns_n_v,
                   self.namespaces_names_versions)
-        return res
+
+        # If the version field is None, consider that a 'match any namespace.name'
+        if other.repository_spec.version is None:
+            log.debug('checking for just a  namespace.name match')
+            other_ns_n = (other.repository_spec.namespace, other.repository_spec.name)
+            ns_n_match_res = other_ns_n in self.namespaces_names
+
+            log.debug('%s: is %s in %s',
+                      ns_n_match_res,
+                      other_ns_n,
+                      self.namespaces_names)
+
+        return ns_n_v_match_res or ns_n_match_res
 
 
 class MatchNamespace(Match):

@@ -1,4 +1,10 @@
+import logging
+
 import attr
+import semver
+
+from ansible_galaxy.utils.version import convert_string_to_semver
+log = logging.getLogger(__name__)
 
 
 @attr.s(frozen=True)
@@ -11,7 +17,8 @@ class RepositorySpec(object):
     namespace = attr.ib()
     name = attr.ib()
     # TODO: would it be worthwhile to make this a Semver type?
-    version = attr.ib(default=None)
+    version = attr.ib(type=semver.VersionInfo, default=None,
+                      converter=convert_string_to_semver)
 
     # only namespace/name/version are used for eq checks currently
 

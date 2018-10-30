@@ -1,10 +1,24 @@
 import logging
 import re
 
+import semver
+
 log = logging.getLogger(__name__)
 
 VERSION_WITH_LEADING_V_MATCH_RE = re.compile(r'^[vV]\d+\.')
 VERSION_WITH_LEADING_V_SUB_RE = re.compile(r'(^[vV])')
+
+
+def convert_string_to_semver(version):
+    # log.debug('vs: %s type: %s', version, type(version))
+
+    if not version:
+        return None
+
+    if isinstance(version, semver.VersionInfo):
+        return version
+
+    return semver.parse_version_info(version)
 
 
 def normalize_version_string(version_string):

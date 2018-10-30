@@ -1,6 +1,8 @@
 import logging
 import os
 
+import semver
+
 from ansible_galaxy import galaxy_repository_spec
 from ansible_galaxy import repository_spec_parse
 from ansible_galaxy import exceptions
@@ -117,9 +119,14 @@ def repository_spec_from_string(repository_spec_string, namespace_override=None,
 
     log.debug('spec_data: %s', spec_data)
 
+    #version = None
+    #if spec_data.get('version'):
+    #    version = semver.parse_version_info(spec_data.get('version')),
+
     return RepositorySpec(name=spec_data.get('name'),
                           namespace=spec_data.get('namespace'),
                           version=spec_data.get('version'),
+                          # version=version,
                           scm=spec_data.get('scm'),
                           spec_string=spec_data.get('spec_string'),
                           fetch_method=spec_data.get('fetch_method'),

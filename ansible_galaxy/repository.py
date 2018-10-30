@@ -30,7 +30,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     # TODO: or artifact
 
     path_name = os.path.join(content_dir, namespace, name)
-
+    log.debug('START of load of %s to a Repository', path_name)
     # TODO: add trad role or collection detection rules here
     #       Or possibly earlier so we could call 'collection' loading
     #       code/class or trad-role-as-collection loading code/class
@@ -113,7 +113,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
                             requirements=requirements_list,
                             dependencies=role_dependency_specs)
 
-    log.debug('repository: %s', repository)
+    log.debug('FINISH of load of repository %s: %s', path_name, repository)
 
     return repository
 

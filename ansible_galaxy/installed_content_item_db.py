@@ -41,10 +41,10 @@ def plugin_content_item_types(repository):
     plugins_dir = os.path.join(repository.path, 'plugins')
     try:
         res = [x for x in os.listdir(plugins_dir) if is_plugin_dir(os.path.join(plugins_dir, x))]
-        log.debug('plugin_content_item_types: %s', res)
+        # log.debug('plugin_content_item_types: %s', res)
         return res
-    except (OSError, IOError) as e:
-        log.warning(e)
+    except (OSError, IOError):
+        # log.warning(e)
         return []
 
 

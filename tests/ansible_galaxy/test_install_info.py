@@ -26,7 +26,7 @@ def test_load():
 
     assert isinstance(install_info_, InstallInfo)
 
-    assert install_info_.version == '0.1.0'
+    assert str(install_info_.version) == '0.1.0'
     assert isinstance(install_info_.install_date_iso, datetime.datetime)
     assert isinstance(install_info_.install_date, string_types)
 
@@ -38,7 +38,7 @@ def test_load_string():
 
     assert isinstance(install_info_, InstallInfo)
 
-    assert install_info_.version == '0.1.0'
+    assert str(install_info_.version) == '0.1.0'
     assert isinstance(install_info_.install_date_iso, datetime.datetime)
     assert isinstance(install_info_.install_date, string_types)
 
@@ -56,7 +56,7 @@ def test_load_from_filename(tmpdir):
 
     assert isinstance(install_info_, InstallInfo)
 
-    assert install_info_.version == '0.1.0'
+    assert str(install_info_.version) == '0.1.0'
     assert isinstance(install_info_.install_date_iso, datetime.datetime)
     assert isinstance(install_info_.install_date, string_types)
 
@@ -69,7 +69,8 @@ def test_save(tmpdir):
 
     temp_dir = tmpdir.mkdir('mazer_content_install_info_unit_test')
     temp_file = temp_dir.join('.galaxy_install_info')
-    install_info.save(install_info_, temp_file.strpath)
+    install_info.save(install_info_.to_dict_version_strings(),
+                      temp_file.strpath)
 
     log.debug('tmpfile: %s', temp_file)
 
