@@ -76,11 +76,13 @@ def install_repositories_matching_repository_specs(galaxy_context,
     log.debug('already_installed_repository_spec_set: %s', already_installed_repository_spec_set)
 
     if already_installed_repository_spec_set and not force_overwrite:
+
         msg = 'The following repositories are already installed. Use --force to overwrite:\n%s' % \
             '\n'.join([x.label for x in already_installed_repository_spec_set])
+        display_callback(msg, level='warning')
+        # raise exceptions.GalaxyError(msg)
 
-        raise exceptions.GalaxyError(msg)
-
+    # This filters out already installed repositories unless --force. Aside from the warning, 'mazer install alikins.something_installed_already' is ok.
     requirements_to_install = [y for y in requirements_list if y.requirement_spec not in already_installed_repository_spec_set and not force_overwrite]
     # repository_specs_to_install = [y for y in requested_repository_specs if y not in already_installed_repository_spec_set or force_overwrite]
 
@@ -226,6 +228,21 @@ def install_repository(galaxy_context,
     # state machine. That might be a good place to support multiple galaxy servers
     # or preferring local content to remote content, etc.
 
+    # repository_match_filter = matchers.MatchRepositorySpec([repository_spec_to_install])
+
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    # already_installed_generator = irdb.select(repository_match_filter=repository_match_filter)
+    # repositories_matching_spec_that_are_already_installed = already_installed_generator
+    already_installed_iter = irdb.by_repository_spec(repository_spec_to_install)
+    already_installed = sorted(list(already_installed_iter))
+    log.debug('already_installed: %s', already_installed)
+    if already_installed:
+        for already_installed_repository in already_installed:
+            display_callback('%s is already installed at %s' % (already_installed_repository.repository_spec.label,
+                                                                already_installed_repository.path),
+                             level='warning')
+        log.debug('Stuff %s was already installed. In %s', repository_spec_to_install, already_installed)
+
     # FIND state
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
@@ -297,6 +314,7 @@ def install_repository(galaxy_context,
         display_callback(msg % (fetched_repository_spec.label, e), level='warning')
         log.warning(msg, fetched_repository_spec.label, str(e))
         raise_without_ignore(ignore_errors, e)
+        return []
 
     if not installed_repositories:
         log.warning("- %s was NOT installed successfully.", fetched_repository_spec.label)
