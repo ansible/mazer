@@ -282,25 +282,28 @@ def install_repository(galaxy_context,
     #        We can get that from the galaxy API though.
     #
     # FIXME: exc handling
+
+    installed_repositories = []
+
     try:
-        install_repositories = install.install(galaxy_context,
-                                               fetcher,
-                                               fetch_results,
-                                               repository_spec=fetched_repository_spec,
-                                               force_overwrite=force_overwrite)
+        installed_repositories = install.install(galaxy_context,
+                                                 fetcher,
+                                                 fetch_results,
+                                                 repository_spec=fetched_repository_spec,
+                                                 force_overwrite=force_overwrite,
+                                                 display_callback=display_callback)
     except exceptions.GalaxyError as e:
         msg = "- %s was NOT installed successfully: %s "
         display_callback(msg % (fetched_repository_spec.label, e), level='warning')
         log.warning(msg, fetched_repository_spec.label, str(e))
         raise_without_ignore(ignore_errors, e)
 
-    log.debug('installed result: %s', install_repositories)
-
-    if not install_repositories:
+    if not installed_repositories:
         log.warning("- %s was NOT installed successfully.", fetched_repository_spec.label)
         raise_without_ignore(ignore_errors)
 
-    log.debug('installed: %s', pprint.pformat(install_repositories))
+    log.debug('installed: %s', pprint.pformat(installed_repositories))
+
     if no_deps:
         log.warning('- %s was installed but any deps will not be installed because of no_deps',
                     fetched_repository_spec.label)
@@ -315,7 +318,7 @@ def install_repository(galaxy_context,
     deps_and_reqs_set = set()
 
     # install dependencies, if we want them
-    for installed_repository in install_repositories:
+    for installed_repository in installed_repositories:
         log.debug('installed_repository: %s', installed_repository)
 
         # convert deps/reqs to sets. Losing any ordering, but avoids dupes

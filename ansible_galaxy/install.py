@@ -10,6 +10,7 @@ import attr
 from ansible_galaxy import repository_archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
+from ansible_galaxy.models.install_destination import InstallDestinationInfo
 from ansible_galaxy.fetch import fetch_factory
 
 log = logging.getLogger(__name__)
@@ -140,10 +141,10 @@ def install(galaxy_context,
 
     # TODO: this is figuring out the archive type (multi-content collection or a trad role)
     #       could potentially pull this up a layer
-    content_archive_ = repository_archive.load_archive(archive_path)
+    repo_archive_ = repository_archive.load_archive(archive_path)
 
-    log.debug('content_archive_: %s', content_archive_)
-    log.debug('content_archive_.info: %s', content_archive_.info)
+    log.debug('repo_archive_: %s', repo_archive_)
+    log.debug('repo_archive_.info: %s', repo_archive_.info)
 
     # we strip off any higher-level directories for all of the files contained within
     # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other
@@ -155,10 +156,32 @@ def install(galaxy_context,
 
         os.makedirs(galaxy_context.content_path)
 
+    # Build up all the info about where the repository will be installed to
+    namespaced_repository_path = '%s/%s' % (repository_spec.namespace,
+                                            repository_spec.name)
+
+    install_info_path = os.path.join(galaxy_context.content_path,
+                                     namespaced_repository_path,
+                                     'meta/.galaxy_install_info')
+
+    # extract_archive_to_dir depends on the repo_archive type, so ask it
+    extract_archive_to_dir = os.path.join(galaxy_context.content_path,
+                                          namespaced_repository_path,
+                                          repo_archive_.repository_dest_root_subpath(repository_spec.name))
+
+    destination_info = InstallDestinationInfo(destination_root_dir=galaxy_context.content_path,
+                                              repository_spec=repository_spec,
+                                              extract_archive_to_dir=extract_archive_to_dir,
+                                              namespaced_repository_path=namespaced_repository_path,
+                                              install_info_path=install_info_path,
+                                              force_overwrite=force_overwrite)
+
     # A list of InstallationResults
-    res = content_archive_.install(repository_spec=repository_spec,
-                                   extract_to_path=galaxy_context.content_path,
-                                   force_overwrite=force_overwrite)
+    res = repository_archive.install(repo_archive_,
+                                     repository_spec=repository_spec,
+                                     destination_info=destination_info,
+                                     display_callback=display_callback)
+
     just_installed_spec_and_results.append((repository_spec, res))
 
     if display_callback:
