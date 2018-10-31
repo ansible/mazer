@@ -126,8 +126,8 @@ def detect_repository_archive_type(archive_path, archive_members):
         if member.name in type_dir_targets:
             return 'multi-content'
 
-    # TODO: exception
-    return None
+    # otherwise, assume it is a collection / multi-content repo archive
+    return 'multi-content'
 
 
 def load_archive_info(archive_path):
