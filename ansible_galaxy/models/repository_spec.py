@@ -48,3 +48,6 @@ class RepositorySpec(object):
                        src=data.get('src', None),
                        )
         return instance
+
+    def __str__(self):
+        return '{label}-{version}'.format(label=self.label, version=self.version)

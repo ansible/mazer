@@ -3,9 +3,9 @@
 # import datetime
 import logging
 import os
-import pprint
 
 import attr
+import prettyprinter as pprint
 
 from ansible_galaxy import repository_archive
 from ansible_galaxy import exceptions

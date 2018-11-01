@@ -96,3 +96,14 @@ class Requirement(object):
     # do we need to resolve the dep at install time ('requirements') or
     # could we defer until runtime (like role dependencies)
     scope = attr.ib(default=RequirementScopes.INSTALL)
+
+    def __str__(self):
+        return '{repo_spec}->{req_spec_label}{op}{req_spec_version}'.format(repo_spec=str(self.repository_spec),
+                                                                            req_spec_label=str(self.requirement_spec.label),
+                                                                            op=self.op,
+                                                                            req_spec_version=str(self.requirement_spec.version),
+                                                                            )
+
+    # FIXME: just for debugging
+    def __repr__(self):
+        return str(self)

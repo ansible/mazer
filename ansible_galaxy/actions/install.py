@@ -2,6 +2,8 @@ import logging
 import os
 import pprint
 
+import prettyprinter
+
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy import repository_spec
@@ -10,6 +12,7 @@ from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy import requirements
 
+pf = prettyprinter.pformat
 log = logging.getLogger(__name__)
 
 
@@ -52,7 +55,7 @@ def install_repositories_matching_repository_specs(galaxy_context,
                                                    force_overwrite=False):
     '''Install a set of repositories specified by repository_specs if they are not already installed'''
 
-    log.debug('editable: %s', editable)
+    # log.debug('editable: %s', editable)
     log.debug('requirements_list: %s', requirements_list)
 
     _verify_requirements_repository_spec_have_namespaces(requirements_list)
@@ -60,14 +63,11 @@ def install_repositories_matching_repository_specs(galaxy_context,
     # FIXME: mv mv this filtering to it's own method
     # match any of the content specs for stuff we want to install
     # ie, see if it is already installed
-    # requested_repository_specs = [x.that for x in requirements_list]
     requested_repository_specs = [x.requirement_spec for x in requirements_list]
-    repository_match_filter = matchers.MatchRepositorySpec(requested_repository_specs)
+    repository_match_filter = matchers.MatchRepositorySpecNamespaceName(requested_repository_specs)
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
     already_installed_generator = irdb.select(repository_match_filter=repository_match_filter)
-
-    # log.debug('requested_repository_specs before: %s', requested_repository_specs)
 
     # FIXME: if/when GalaxyContent and InstalledGalaxyContent are attr.ib based and frozen and hashable
     #        we can simplify this filter with set ops
@@ -84,7 +84,6 @@ def install_repositories_matching_repository_specs(galaxy_context,
 
     # This filters out already installed repositories unless --force. Aside from the warning, 'mazer install alikins.something_installed_already' is ok.
     requirements_to_install = [y for y in requirements_list if y.requirement_spec not in already_installed_repository_spec_set and not force_overwrite]
-    # repository_specs_to_install = [y for y in requested_repository_specs if y not in already_installed_repository_spec_set or force_overwrite]
 
     log.debug('repository_specs_to_install: %s', pprint.pformat(requirements_to_install))
 
@@ -121,12 +120,14 @@ def install_repository_specs_loop(galaxy_context,
         requirements_list += more_reqs
 
     log.debug('requirements_list: %s', requirements_list)
+    for req in requirements_list:
+        display_callback('Installing %s' % req.requirement_spec.label, level='info')
 
     while True:
         if not requirements_list:
             break
 
-        new_requirements_list = \
+        just_installed_repositories = \
             install_repositories_matching_repository_specs(galaxy_context,
                                                            requirements_list,
                                                            editable=editable,
@@ -136,13 +137,82 @@ def install_repository_specs_loop(galaxy_context,
                                                            no_deps=no_deps,
                                                            force_overwrite=force_overwrite)
 
-        log.debug('new_requirements_list: %s', pprint.pformat(new_requirements_list))
+        # log.debug('new_requirements_list: %s', pprint.pformat(new_requirements_list))
+        log.debug('just_installed_repositories: %s', pprint.pformat(just_installed_repositories))
 
         # set the repository_specs to search for to whatever the install reported as being needed yet
-        requirements_list = new_requirements_list
+        # requirements_list = new_requirements_list
+        requirements_list = find_new_deps_from_installed(galaxy_context,
+                                                         just_installed_repositories,
+                                                         no_deps=no_deps)
 
+        for req in requirements_list:
+            if req.repository_spec:
+                msg = 'Installing requirement %s as needed by %s' % (req.requirement_spec.label, req.repository_spec.label)
+            else:
+                msg = 'Installing requirement %s' % req.requirement_spec.label
+            display_callback(msg, level='info')
+
+    display_callback('All requirements satisfied.', level='info')
     # FIXME: what results to return?
     return 0
+
+
+def find_new_deps_from_installed(galaxy_context, installed_repos, no_deps=False):
+    if no_deps:
+        return []
+
+    # FIXME: Just return the single item list installed_repositories here
+    deps_and_reqs_set = set()
+
+    log.debug('finding new deps for installed repos: %s',
+              [str(x) for x in installed_repos])
+
+    # Remove dupes. Note, can/will change ordering.
+    # installed_repos = list(set(installed_repos))
+
+    # install dependencies, if we want them
+    for installed_repository in installed_repos:
+        log.debug('just_installed_repository: %s', installed_repository)
+
+        # convert deps/reqs to sets. Losing any ordering, but avoids dupes
+        reqs_set = set(installed_repository.requirements)
+        deps_set = set(installed_repository.dependencies)
+
+        # deps_and_reqs_set = deps_set.union(reqs_set)
+        deps_and_reqs_set.update(deps_set, reqs_set)
+        # for dep_req in sorted(deps_and_reqs_set):
+        #    log.debug('deps_and_reqs_set_item: %s', dep_req)
+
+    deps_and_reqs_list = sorted(list(deps_and_reqs_set))
+
+    # log.debug('deps_and_reqs_list: %s', pf(deps_and_reqs_list))
+
+    unsolved_deps_reqs = []
+    for dep_req in deps_and_reqs_list:
+        log.debug('Checking if %s is provided by something installed', str(dep_req))
+
+        # Search for an exact ns_n_v match
+        irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+        already_installed_iter = irdb.by_requirement(dep_req)
+        already_installed = list(already_installed_iter)
+
+        log.debug('already_installed: %s', already_installed)
+
+        solved = False
+        for provider in already_installed:
+            log.debug('The dep_req %s is already provided by %s', dep_req, provider)
+            solved = solved or True
+
+        if solved:
+            log.debug('skipping dep_req %s', dep_req)
+            continue
+
+        unsolved_deps_reqs.append(dep_req)
+
+    log.debug('unsolved_deps_reqs: %s', pprint.pformat(unsolved_deps_reqs))
+
+    return unsolved_deps_reqs
 
 
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
@@ -156,10 +226,11 @@ def install_repositories(galaxy_context,
 
     display_callback = display_callback or display.display_callback
     log.debug('requirements_to_install: %s', requirements_to_install)
-    log.debug('no_deps: %s', no_deps)
-    log.debug('force_overwrite: %s', force_overwrite)
+    # log.debug('no_deps: %s', no_deps)
+    # log.debug('force_overwrite: %s', force_overwrite)
 
-    dep_requirements = []
+    # dep_requirements = []
+    most_installed_repositories = []
 
     # FIXME - Need to handle role files here for backwards compat
 
@@ -172,23 +243,26 @@ def install_repositories(galaxy_context,
     # TODO: if the default ordering of repository_specs isnt useful, may need to tweak it
     for requirement_to_install in sorted(requirements_to_install_uniq):
         log.debug('requirement_to_install: %s', requirement_to_install)
-        new_dep_requirements = install_repository(galaxy_context,
-                                                  requirement_to_install,
-                                                  display_callback=display_callback,
-                                                  ignore_errors=ignore_errors,
-                                                  no_deps=no_deps,
-                                                  force_overwrite=force_overwrite)
+        installed_repositories = install_repository(galaxy_context,
+                                                    requirement_to_install,
+                                                    display_callback=display_callback,
+                                                    ignore_errors=ignore_errors,
+                                                    no_deps=no_deps,
+                                                    force_overwrite=force_overwrite)
 
-        log.debug('new_dep_requirements: %s', pprint.pformat(new_dep_requirements))
-        log.debug('dep_requirement_repository_specs1: %s', pprint.pformat(dep_requirements))
+        for installed_repo in installed_repositories:
+            log.debug('installed_repo: %s', installed_repo)
 
-        if not new_dep_requirements:
+        # log.debug('dep_requirement_repository_specs1: %s', dep_requirements)
+
+        if not installed_repositories:
             log.debug('install_repository returned None for requirement_to_install: %s', requirement_to_install)
             continue
 
-        dep_requirements.extend(new_dep_requirements)
+        most_installed_repositories.extend(installed_repositories)
+        # dep_requirements.extend(new_dep_requirements)
 
-    return dep_requirements
+    return most_installed_repositories
 
 
 def install_repository(galaxy_context,
@@ -203,7 +277,7 @@ def install_repository(galaxy_context,
     display_callback = display_callback or display.display_callback
 
     # INITIAL state
-    dep_requirements = []
+    # dep_requirements = []
 
     # TODO: we could do all the downloads first, then install them. Likely
     #       less error prone mid 'transaction'
@@ -233,6 +307,8 @@ def install_repository(galaxy_context,
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
     # already_installed_generator = irdb.select(repository_match_filter=repository_match_filter)
     # repositories_matching_spec_that_are_already_installed = already_installed_generator
+    log.debug('Checking to see if %s is already installed', repository_spec_to_install)
+
     already_installed_iter = irdb.by_repository_spec(repository_spec_to_install)
     already_installed = sorted(list(already_installed_iter))
 
@@ -322,39 +398,44 @@ def install_repository(galaxy_context,
         log.warning("- %s was NOT installed successfully.", fetched_repository_spec.label)
         raise_without_ignore(ignore_errors)
 
-    log.debug('installed: %s', pprint.pformat(installed_repositories))
+    return installed_repositories
 
-    if no_deps:
-        log.warning('- %s was installed but any deps will not be installed because of no_deps',
-                    fetched_repository_spec.label)
 
-    # TODO?: update the install receipt for 'installed' if succesull?
+# def FIXME():
+#     log.debug('installed: %s', pprint.pformat(installed_repositories))
 
-    # oh dear god, a dep solver...
+#     if no_deps:
+#         log.warning('- %s was installed but any deps will not be installed because of no_deps',
+#                     fetched_repository_spec.label)
 
-    if no_deps:
-        return dep_requirements
+#     # TODO?: update the install receipt for 'installed' if succesull?
 
-    deps_and_reqs_set = set()
+#     # oh dear god, a dep solver...
 
-    # install dependencies, if we want them
-    for installed_repository in installed_repositories:
-        log.debug('installed_repository: %s', installed_repository)
+#     if no_deps:
+#         return dep_requirements
 
-        # convert deps/reqs to sets. Losing any ordering, but avoids dupes
-        reqs_set = set(installed_repository.requirements)
-        deps_set = set(installed_repository.dependencies)
+#     # FIXME: Just return the single item list installed_repositories here
+#     deps_and_reqs_set = set()
 
-        # deps_and_reqs_set = deps_set.union(reqs_set)
-        deps_and_reqs_set.update(deps_set, reqs_set)
-        for dep_req in sorted(deps_and_reqs_set):
-            log.debug('deps_and_reqs_set_item: %s', dep_req)
+#     # install dependencies, if we want them
+#     for installed_repository in installed_repositories:
+#         log.debug('installed_repository: %s', installed_repository)
 
-    deps_and_reqs_list = sorted(list(deps_and_reqs_set))
+#         # convert deps/reqs to sets. Losing any ordering, but avoids dupes
+#         reqs_set = set(installed_repository.requirements)
+#         deps_set = set(installed_repository.dependencies)
 
-    log.debug('deps_and_reqs_list: %s', pprint.pformat(deps_and_reqs_list))
+#         # deps_and_reqs_set = deps_set.union(reqs_set)
+#         deps_and_reqs_set.update(deps_set, reqs_set)
+#         for dep_req in sorted(deps_and_reqs_set):
+#             log.debug('deps_and_reqs_set_item: %s', dep_req)
 
-    return deps_and_reqs_list
+#     deps_and_reqs_list = sorted(list(deps_and_reqs_set))
+
+#     log.debug('deps_and_reqs_list: %s', pprint.pformat(deps_and_reqs_list))
+
+#     return deps_and_reqs_list
 
 # def role_install_post_check():
 #    if False:

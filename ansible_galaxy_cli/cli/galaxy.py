@@ -27,6 +27,7 @@ import logging
 import os
 import sys
 
+import prettyprinter
 
 from ansible_galaxy.actions import build
 from ansible_galaxy.actions import info
@@ -49,6 +50,9 @@ from ansible_galaxy_cli import __version__ as galaxy_cli_version
 from ansible_galaxy_cli import exceptions as cli_exceptions
 
 log = logging.getLogger(__name__)
+
+# https://prettyprinter.readthedocs.io/en/latest/api_reference.html#prettyprinter.install_extras
+prettyprinter.install_extras(exclude=['ipython_repr_pretty', 'ipython', 'dataclasses', 'django'])
 
 
 def exit_without_ignore(ignore_errors, msg=None, rc=1):

@@ -103,7 +103,7 @@ class FetchMethods(object):
 
 
 def chose_repository_fetch_method(repository_spec_string):
-    log.debug('repository_spec_string: %s', repository_spec_string)
+    # log.debug('repository_spec_string: %s', repository_spec_string)
 
     if is_scm(repository_spec_string):
         # create tar file from scm url
@@ -152,12 +152,12 @@ def resolve(data):
 def spec_data_from_string(repository_spec_string, resolver=None):
     fetch_method = chose_repository_fetch_method(repository_spec_string)
 
-#    log.debug('fetch_method: %s', fetch_method)
+    # log.debug('fetch_method: %s', fetch_method)
 
     spec_data = parse_string(repository_spec_string)
     spec_data['fetch_method'] = fetch_method
 
-#    log.debug('spec_data: %s', spec_data)
+    # log.debug('spec_data: %s', spec_data)
 
     # use passed in resolver if provided, otherwise assume 'resolve' is correct
     # but override if it looks like a galaxy requests
@@ -170,7 +170,7 @@ def spec_data_from_string(repository_spec_string, resolver=None):
 
     resolved_name = resolver(spec_data)
 
-    log.debug('resolved_name: %s', resolved_name)
+    # log.debug('resolved_name: %s', resolved_name)
 
     spec_data.update(resolved_name)
 

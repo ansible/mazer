@@ -108,7 +108,7 @@ def detect_repository_archive_type(archive_path, archive_members):
 
     top_dir = archive_members[0].name
 
-    log.debug('top_dir of %s: %s', archive_path, top_dir)
+    # log.debug('top_dir of %s: %s', archive_path, top_dir)
 
     meta_main_target = os.path.join(top_dir, 'meta/main.yml')
 
@@ -116,7 +116,7 @@ def detect_repository_archive_type(archive_path, archive_members):
     # log.debug('type_dirs: %s', type_dirs)
 
     type_dir_targets = set([os.path.join(top_dir, x) for x in type_dirs])
-    log.debug('type_dir_targets: %s', type_dir_targets)
+    # log.debug('type_dir_targets: %s', type_dir_targets)
 
     for member in archive_members:
         if member.name == meta_main_target:
@@ -147,8 +147,8 @@ def load_archive_info(archive_path):
 
     archive_type = detect_repository_archive_type(archive_path, members)
 
-    log.debug('archive_type of %s: %s', archive_path, archive_type)
-    log.debug("archive_parent_dir of %s: %s", archive_path, archive_parent_dir)
+    # log.debug('archive_type of %s: %s', archive_path, archive_type)
+    # log.debug("archive_parent_dir of %s: %s", archive_path, archive_parent_dir)
 
     # looks like we are a role, update the default content_type from all -> role
     if archive_type == 'role':
@@ -159,7 +159,7 @@ def load_archive_info(archive_path):
                                          archive_type=archive_type,
                                          archive_path=archive_path)
 
-    log.debug('role archive_info for %s: %s', archive_path, archive_info)
+    # log.debug('role archive_info for %s: %s', archive_path, archive_info)
 
     return archive_info, repository_tar_file
 
@@ -183,7 +183,7 @@ def load_archive(archive_path):
 
 
 def install(repository_archive, repository_spec, destination_info, display_callback):
-    log.debug('saving repo archive %s to destination %s', repository_archive, destination_info)
+    log.debug('installing/extracting repo archive %s to destination %s', repository_archive, destination_info)
 
     all_installed_files, install_datetime = extract(repository_spec,
                                                     repository_archive.info,

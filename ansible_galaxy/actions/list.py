@@ -51,7 +51,6 @@ def _list(galaxy_context,
             content_items[content_item_type].append(content_dict)
             # content_item_list.append(content_dict)
 
-        log.debug('content_items: %s', content_items)
         repo_dict = {'content_items': content_items,
                      'installed_repository': installed_repository}
         repo_list.append(repo_dict)

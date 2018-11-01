@@ -52,7 +52,7 @@ def installed_repository_iterator(galaxy_context,
                                                    name=repository_path,
                                                    installed=True)
 
-            log.debug('candidate installed repo (pre filter): %s', repository_)
+            # log.debug('candidate installed repo (pre filter): %s', repository_)
 
             if repository_match_filter(repository_):
                 log.debug('Found repository "%s" in namespace "%s"', repository_path, namespace.namespace)
@@ -80,7 +80,22 @@ class InstalledRepositoryDatabase(object):
     def by_repository_spec(self, repository_spec):
         namespace_match_filter = matchers.MatchNamespace([repository_spec.namespace])
 
-        repository_match_filter = matchers.MatchRepositorySpecsNamespaceNameVersion([repository_spec])
+        repository_match_filter = matchers.MatchRepositorySpecNamespaceNameVersion([repository_spec])
+
+        return self.select(namespace_match_filter=namespace_match_filter,
+                           repository_match_filter=repository_match_filter)
+
+    def by_requirement(self, requirement):
+        required_spec = requirement.requirement_spec
+        log.debug('required_spec: %s', required_spec)
+
+        namespace_match_filter = matchers.MatchNamespace([required_spec.namespace])
+
+        # no version specified
+        if required_spec.version is None:
+            repository_match_filter = matchers.MatchRepositorySpecNamespaceName([required_spec])
+        else:
+            repository_match_filter = matchers.MatchRepositorySpecNamespaceNameVersion([required_spec])
 
         return self.select(namespace_match_filter=namespace_match_filter,
                            repository_match_filter=repository_match_filter)

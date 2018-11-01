@@ -14,10 +14,10 @@ class Repository(object):
     installed = attr.ib(default=False, type=bool, cmp=False)
 
     # ie, a role-as-collections-meta-main-deps
-    dependencies = attr.ib(factory=list)
+    dependencies = attr.ib(factory=tuple)
 
     # ie, a collection or role-as-collections-requirement.yml
-    requirements = attr.ib(factory=list)
+    requirements = attr.ib(factory=tuple)
 
     # The data normally found in meta/main.yml for roles
     # meta_main = attr.ib(default=None, type=RoleMetadata)
@@ -25,3 +25,6 @@ class Repository(object):
     @property
     def label(self):
         return self.repository_spec.label
+
+    def __str__(self):
+        return '{repo_spec}[{path}]'.format(repo_spec=self.repository_spec, path=self.path)

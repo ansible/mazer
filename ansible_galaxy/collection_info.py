@@ -1,6 +1,6 @@
 
 import logging
-import pprint
+import prettyprinter as pprint
 
 import yaml
 
@@ -23,7 +23,7 @@ def load(data_or_file_object, klass=None):
 
     data_dict = yaml.safe_load(data_or_file_object)
 
-    log.debug('data: %s', pf(data_dict))
+    # log.debug('data: %s', pf(data_dict))
 
     try:
         collection_info = CollectionInfo(**data_dict)
@@ -31,7 +31,5 @@ def load(data_or_file_object, klass=None):
         raise
     except Exception as exc:
         raise exceptions.GalaxyClientError("Error parsing collection metadata: %s" % str(exc))
-
-    log.debug('artifact_manifest from_kwargs: %s', collection_info)
 
     return collection_info

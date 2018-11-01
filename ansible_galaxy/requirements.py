@@ -1,5 +1,4 @@
 import logging
-import pprint
 
 import yaml
 
@@ -12,11 +11,11 @@ log = logging.getLogger(__name__)
 
 
 def load(data_or_file_object):
-    log.debug('START of load of requirements %s', data_or_file_object)
+    log.debug('START of load of requirements %s', data_or_file_object.name)
 
     requirements_data = yaml.safe_load(data_or_file_object)
 
-    log.debug('requirements_data: %s', pprint.pformat(requirements_data))
+    # log.debug('requirements_data: %s', pprint.pformat(requirements_data))
 
     requirements_list = []
 
@@ -37,11 +36,11 @@ def load(data_or_file_object):
 
         req = Requirement(repository_spec=None, op=RequirementOps.EQ, requirement_spec=req_spec)
 
-        log.debug('req: %s', req)
+        # log.debug('req: %s', req)
 
         requirements_list.append(req)
 
-    log.debug('FINISH of load of requirements: %s: %s', data_or_file_object, requirements_list)
+    log.debug('FINISH of load of requirements: %s: %s', data_or_file_object.name, requirements_list)
     return requirements_list
 
 

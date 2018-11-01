@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 
+import prettyprinter as pprint
 import yaml
 
 from ansible_galaxy import collection_info
@@ -53,7 +54,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
         log.warning('No galaxy.yml found for collection %s.%s: %s', namespace, name, e)
         # log.exception(e)
 
-    log.debug('collection_info_data: %s', collection_info_data)
+    # log.debug('collection_info_data: %s', collection_info_data)
 
     requirements_filename = os.path.join(path_name, 'requirements.yml')
     requirements_list = []
@@ -65,7 +66,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     except EnvironmentError as e:
         log.warning('No requirements.yml found for collection %s.%s: %s', namespace, name, e)
 
-    log.debug('requirements_list: %s', requirements_list)
+    # log.debug('requirements_list: %s', requirements_list)
 
     # Now try the repository as a role-as-collection
     # FIXME: For a repository with one role that matches the collection name and doesn't
@@ -85,8 +86,8 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     #       to load them and combine them with role_depenency_specs
     role_dependency_specs = []
     if role_meta_main:
-        log.debug('role_meta_main: %s', role_meta_main)
-        log.debug('role_meta_main_deps: %s', role_meta_main.dependencies)
+        # log.debug('role_meta_main: %s', role_meta_main)
+        # log.debug('role_meta_main_deps: %s', role_meta_main.dependencies)
         role_dependency_specs = role_meta_main.dependencies
 
     # Now look for any install_info for the repository
@@ -100,7 +101,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     # TODO: figure out what to do if the version from install_info conflicts with version
     #       from galaxy.yml etc.
-    log.debug('install_info: %s', install_info_data)
+    # log.debug('install_info: %s', install_info_data)
     install_info_version = getattr(install_info_data, 'version', None)
 
     repository_spec = RepositorySpec(namespace=namespace,
@@ -113,7 +114,8 @@ def load_from_dir(content_dir, namespace, name, installed=True):
                             requirements=requirements_list,
                             dependencies=role_dependency_specs)
 
-    log.debug('FINISH of load of repository %s: %s', path_name, repository)
+    log.debug('FINISH of load of repository %s: %s', path_name, repository.repository_spec.label)
+    # log.debug('repository: %s', pprint.pformat(repository))
 
     return repository
 
