@@ -39,9 +39,9 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     #       Maybe:
     #       if more than one role in roles/ -> collection
 
-    # if not os.path.isdir(path_name):
-    #    log.debug('No collection found at %s', path_name)
-    #    return None
+    if not os.path.isdir(path_name):
+        log.debug('FAILURE of load of %s to a Repository', path_name)
+        return None
 
     # Now look for any install_info for the repository
     install_info_data = None

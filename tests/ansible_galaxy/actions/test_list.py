@@ -4,6 +4,8 @@ import pprint
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.actions import list as list_action
+from ansible_galaxy.models.repository import Repository
+from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +23,9 @@ def test__list(galaxy_context, mocker):
     mocker.patch('ansible_galaxy.installed_repository_db.get_repository_paths',
                  return_value=iter(['n_bar', 'n_baz']))
 
+    mocker.patch('ansible_galaxy.repository.os.path.isdir',
+                 return_value=True)
+
     mocker.patch('ansible_galaxy.installed_content_item_db.glob_content_path_iterator',
                  return_value=iter(['/dev/null/content/ns_foo/n_bar/roles/role-1',
                                     '/dev/null/content/ns_blip/n_bar/roles/role-3',
@@ -29,7 +34,7 @@ def test__list(galaxy_context, mocker):
     res = list_action._list(galaxy_context,
                             display_callback=display_callback)
 
-    log.debug('res: %s', pprint.pformat(res))
+    # log.debug('res: %s', pprint.pformat(res))
 
     assert isinstance(res, list)
     assert 'ns_blip.n_bar' in [x['installed_repository'].repository_spec.label for x in res]

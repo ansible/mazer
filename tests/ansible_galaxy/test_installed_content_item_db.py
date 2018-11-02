@@ -47,6 +47,8 @@ class MatchContentItemNamesFnmatch(object):
 def test_installed_content_item_iterator_empty(galaxy_context, mocker):
     mocker.patch('ansible_galaxy.installed_namespaces_db.get_namespace_paths',
                  return_value=iter(['foo', 'blip']))
+    mocker.patch('ansible_galaxy.repository.os.path.isdir',
+                 return_value=True)
     mocker.patch('ansible_galaxy.installed_repository_db.get_repository_paths',
                  return_value=iter(['bar', 'baz']))
 

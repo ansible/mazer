@@ -5,6 +5,10 @@ log = logging.getLogger(__name__)
 
 # TODO: abc?
 class Match(object):
+    '''A callable condition/match
+
+    self.match(other) should return a bool'''
+
     def __call__(self, other):
         return self.match(other)
 
