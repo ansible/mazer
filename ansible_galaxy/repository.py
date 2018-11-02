@@ -2,7 +2,6 @@ import logging
 import os
 import shutil
 
-import prettyprinter as pprint
 import yaml
 
 from ansible_galaxy import collection_info
@@ -125,7 +124,6 @@ def load_from_dir(content_dir, namespace, name, installed=True):
                             dependencies=role_dependency_specs)
 
     log.debug('FINISH of load of repository %s: %s', path_name, repository.repository_spec.label)
-    # log.debug('repository: %s', pprint.pformat(repository))
 
     return repository
 

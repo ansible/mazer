@@ -1,6 +1,4 @@
-
 import logging
-import prettyprinter as pprint
 
 import yaml
 
@@ -9,7 +7,6 @@ from ansible_galaxy.models.collection_info import \
 from ansible_galaxy import exceptions
 
 log = logging.getLogger(__name__)
-pf = pprint.pformat
 
 # DEFAULT_FILENAME = "collection_info.yml"
 COLLECTION_INFO_FILENAME = "galaxy.yml"
@@ -18,9 +15,6 @@ COLLECTION_INFO_FILENAME = "galaxy.yml"
 # TODO: replace with a generic version for cases
 #       where SomeClass(**dict_from_yaml) works
 def load(data_or_file_object, klass=None):
-    log.debug('loading collection info from %s',
-              pf(data_or_file_object))
-
     data_dict = yaml.safe_load(data_or_file_object)
 
     # log.debug('data: %s', pf(data_dict))

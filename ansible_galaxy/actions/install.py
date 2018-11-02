@@ -390,66 +390,6 @@ def install_repository(galaxy_context,
     return installed_repositories
 
 
-# def FIXME():
-#     log.debug('installed: %s', pprint.pformat(installed_repositories))
-
-#     if no_deps:
-#         log.warning('- %s was installed but any deps will not be installed because of no_deps',
-#                     fetched_repository_spec.label)
-
-#     # TODO?: update the install receipt for 'installed' if succesull?
-
-#     # oh dear god, a dep solver...
-
-#     if no_deps:
-#         return dep_requirements
-
-#     # FIXME: Just return the single item list installed_repositories here
-#     deps_and_reqs_set = set()
-
-#     # install dependencies, if we want them
-#     for installed_repository in installed_repositories:
-#         log.debug('installed_repository: %s', installed_repository)
-
-#         # convert deps/reqs to sets. Losing any ordering, but avoids dupes
-#         reqs_set = set(installed_repository.requirements)
-#         deps_set = set(installed_repository.dependencies)
-
-#         # deps_and_reqs_set = deps_set.union(reqs_set)
-#         deps_and_reqs_set.update(deps_set, reqs_set)
-#         for dep_req in sorted(deps_and_reqs_set):
-#             log.debug('deps_and_reqs_set_item: %s', dep_req)
-
-#     deps_and_reqs_list = sorted(list(deps_and_reqs_set))
-
-#     log.debug('deps_and_reqs_list: %s', pprint.pformat(deps_and_reqs_list))
-
-#     return deps_and_reqs_list
-
-# def role_install_post_check():
-#    if False:
-#        dep_role = GalaxyContent(galaxy_context, **dep_info)
-#
-#        if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
-#            # we know we can skip this, as it's not going to
-#            # be found on galaxy.ansible.com
-#            continue
-#        if dep_role.install_info is None:
-#            if dep_role not in requested_contents:
-#                display_callback('- adding dependency: %s' % str(dep_role))
-#                requested_contents.append(dep_role)
-#            else:
-#                display_callback('- dependency %s already pending installation.' % dep_role.name)
-#        else:
-#            if dep_role.install_info['version'] != dep_role.version:
-#                log.warning('- dependency %s from role %s differs from already installed version (%s), skipping',
-#                            str(dep_role), installed_content.name, dep_role.install_info['version'])
-#            else:
-#                display_callback('- dependency %s is already installed, skipping.' % dep_role.name)
-
-    # TODO: Need some sort of ContentTransaction for encapsulating pairs of remove and install
-
-
 # FIXME: do we need this? archive.extract_files() may do this for us now
 def stuff_for_updating(content, display_callback, force_overwrite=False):
 

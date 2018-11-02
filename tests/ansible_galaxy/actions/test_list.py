@@ -1,11 +1,8 @@
 import logging
 import os
-import pprint
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.actions import list as list_action
-from ansible_galaxy.models.repository import Repository
-from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
 

@@ -5,7 +5,7 @@ import logging
 import os
 
 import attr
-import prettyprinter as pprint
+import pprint
 
 from ansible_galaxy import repository_archive
 from ansible_galaxy import exceptions
