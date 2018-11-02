@@ -5,6 +5,7 @@ import logging
 from ansible_galaxy import exceptions
 from ansible_galaxy import download
 from ansible_galaxy.fetch import base
+from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.rest_api import GalaxyAPI
 from ansible_galaxy import repository_version
 
@@ -119,6 +120,15 @@ class GalaxyUrlFetch(base.BaseFetch):
         if not external_url:
             raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % self.repository_spec.label)
 
+        # The repo spec of the install candidate with potentially a different version
+        potential_repository_spec = RepositorySpec(namespace=namespace,
+                                                   name=repo_name,
+                                                   version=_repoversion['version'],
+                                                   fetch_method=self.repository_spec.fetch_method,
+                                                   scm=self.repository_spec.scm,
+                                                   spec_string=self.repository_spec.spec_string,
+                                                   src=self.repository_spec.src)
+
         results = {'content': {'galaxy_namespace': namespace,
                                'repo_name': repo_name},
                    'specified_content_version': self.repository_spec.version,
@@ -129,7 +139,8 @@ class GalaxyUrlFetch(base.BaseFetch):
                               'related': related,
                               'repo_data': repo_data,
                               'repo_versions_url': repo_versions_url,
-                              'repoversion': _repoversion},
+                              'repoversion': _repoversion,
+                              'potential_repository_spec': potential_repository_spec},
                    }
 
         return results

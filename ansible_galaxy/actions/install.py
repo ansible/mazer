@@ -2,8 +2,6 @@ import logging
 import os
 import pprint
 
-import prettyprinter
-
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy import repository_spec
@@ -12,7 +10,6 @@ from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy import requirements
 
-pf = prettyprinter.pformat
 log = logging.getLogger(__name__)
 
 
@@ -74,13 +71,6 @@ def install_repositories_matching_repository_specs(galaxy_context,
 
     already_installed_repository_spec_set = set([installed.repository_spec for installed in already_installed_generator])
     log.debug('already_installed_repository_spec_set: %s', already_installed_repository_spec_set)
-
-    if already_installed_repository_spec_set and not force_overwrite:
-
-        msg = 'The following repositories are already installed. Use --force to overwrite:\n%s' % \
-            '\n'.join([x.label for x in already_installed_repository_spec_set])
-        display_callback(msg, level='warning')
-        # raise exceptions.GalaxyError(msg)
 
     # This filters out already installed repositories unless --force. Aside from the warning, 'mazer install alikins.something_installed_already' is ok.
     requirements_to_install = [y for y in requirements_list if y.requirement_spec not in already_installed_repository_spec_set and not force_overwrite]
@@ -153,7 +143,6 @@ def install_repository_specs_loop(galaxy_context,
                 msg = 'Installing requirement %s' % req.requirement_spec.label
             display_callback(msg, level='info')
 
-    display_callback('All requirements satisfied.', level='info')
     # FIXME: what results to return?
     return 0
 
@@ -250,14 +239,14 @@ def install_repositories(galaxy_context,
                                                     no_deps=no_deps,
                                                     force_overwrite=force_overwrite)
 
-        for installed_repo in installed_repositories:
-            log.debug('installed_repo: %s', installed_repo)
-
         # log.debug('dep_requirement_repository_specs1: %s', dep_requirements)
 
         if not installed_repositories:
-            log.debug('install_repository returned None for requirement_to_install: %s', requirement_to_install)
+            log.debug('install_repository() returned None for requirement_to_install: %s', requirement_to_install)
             continue
+
+        for installed_repo in installed_repositories:
+            log.debug('installed_repo: %s', installed_repo)
 
         most_installed_repositories.extend(installed_repositories)
         # dep_requirements.extend(new_dep_requirements)
@@ -293,20 +282,12 @@ def install_repository(galaxy_context,
         return
     # else trans to ... FIND_FETCHER?
 
+    # TODO: check if already installed and move to approriate state
+
     log.debug('About to find() requested repository_spec_to_install: %s', repository_spec_to_install)
 
-    fetcher = install.fetcher(galaxy_context, repository_spec=repository_spec_to_install)
-    # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
-    # could also move some of the logic in fetcher_factory to be driven from here
-    # and make the steps of mapping repository spec -> fetcher method part of the
-    # state machine. That might be a good place to support multiple galaxy servers
-    # or preferring local content to remote content, etc.
-
-    # repository_match_filter = matchers.MatchRepositorySpec([repository_spec_to_install])
-
+    # potential_repository_spec is a repo spec for the install candidate we potentially found.
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    # already_installed_generator = irdb.select(repository_match_filter=repository_match_filter)
-    # repositories_matching_spec_that_are_already_installed = already_installed_generator
     log.debug('Checking to see if %s is already installed', repository_spec_to_install)
 
     already_installed_iter = irdb.by_repository_spec(repository_spec_to_install)
@@ -321,12 +302,20 @@ def install_repository(galaxy_context,
                              level='warning')
         log.debug('Stuff %s was already installed. In %s', repository_spec_to_install, already_installed)
 
+        return None
+
+    fetcher = install.fetcher(galaxy_context, repository_spec=repository_spec_to_install)
+    # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
+    # could also move some of the logic in fetcher_factory to be driven from here
+    # and make the steps of mapping repository spec -> fetcher method part of the
+    # state machine. That might be a good place to support multiple galaxy servers
+    # or preferring local content to remote content, etc.
+
     # FIND state
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
     try:
         find_results = install.find(fetcher)
-        # log.debug('standalone find_results: %s', pprint.pformat(find_results))
     except exceptions.GalaxyError as e:
         log.warning('Unable to find metadata for %s: %s', repository_spec_to_install.label, e)
         # FIXME: raise dep error exception?
