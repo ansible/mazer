@@ -10,7 +10,7 @@ from ansible_galaxy.utils import yaml_parse
 log = logging.getLogger(__name__)
 
 
-def load(data_or_file_object):
+def load(data_or_file_object, repository_spec=None):
     log.debug('START of load of requirements %s', data_or_file_object.name)
 
     requirements_data = yaml.safe_load(data_or_file_object)
@@ -34,7 +34,7 @@ def load(data_or_file_object):
 
         # log.debug('req_spec: %s', req_spec)
 
-        req = Requirement(repository_spec=None, op=RequirementOps.EQ, requirement_spec=req_spec)
+        req = Requirement(repository_spec=repository_spec, op=RequirementOps.EQ, requirement_spec=req_spec)
 
         # log.debug('req: %s', req)
 

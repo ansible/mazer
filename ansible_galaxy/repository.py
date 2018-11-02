@@ -43,6 +43,20 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     #    log.debug('No collection found at %s', path_name)
     #    return None
 
+    # Now look for any install_info for the repository
+    install_info_data = None
+    install_info_filename = os.path.join(path_name, 'meta/.galaxy_install_info')
+    try:
+        with open(install_info_filename, 'r') as ifd:
+            install_info_data = install_info.load(ifd)
+    except EnvironmentError as e:
+        log.warning('Unable to find or load meta/.galaxy_install_info for repository %s.%s: %s', namespace, name, e)
+
+    # TODO: figure out what to do if the version from install_info conflicts with version
+    #       from galaxy.yml etc.
+    # log.debug('install_info: %s', install_info_data)
+    install_info_version = getattr(install_info_data, 'version', None)
+
     # load galaxy.yml
     galaxy_filename = os.path.join(path_name, collection_info.COLLECTION_INFO_FILENAME)
 
@@ -54,7 +68,21 @@ def load_from_dir(content_dir, namespace, name, installed=True):
         log.warning('No galaxy.yml found for collection %s.%s: %s', namespace, name, e)
         # log.exception(e)
 
-    # log.debug('collection_info_data: %s', collection_info_data)
+    # TODO/FIXME: what takes precedence?
+    #           - the dir names a collection lives in ~/.ansible/content/my_ns/my_name
+    #           - Or the namespace/name from galaxy.yml?
+    log.debug('collection_info_data: %s', collection_info_data)
+
+    # Build a repository_spec of the repo now so we can pass it things like requirements.load()
+    # that need to know what requires something
+    repository_spec = RepositorySpec(namespace=namespace,
+                                     name=name,
+                                     version=install_info_version)
+
+    # TODO: add requirements loaded from galaxy.yml
+    # TODO: should the requirements in galaxy.yml be plain strings or dicts?
+    # TODO: should there be requirements in galaxy.yml at all? in liue of requirements.yml
+    # collection_info_requirements = []
 
     requirements_filename = os.path.join(path_name, 'requirements.yml')
     requirements_list = []
@@ -62,7 +90,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     try:
         with open(requirements_filename, 'r') as rfd:
             # requirements_data = yaml.safe_load(rfd)
-            requirements_list = requirements.load(rfd)
+            requirements_list = requirements.load(rfd, repository_spec=repository_spec)
     except EnvironmentError as e:
         log.warning('No requirements.yml found for collection %s.%s: %s', namespace, name, e)
 
@@ -89,24 +117,6 @@ def load_from_dir(content_dir, namespace, name, installed=True):
         # log.debug('role_meta_main: %s', role_meta_main)
         # log.debug('role_meta_main_deps: %s', role_meta_main.dependencies)
         role_dependency_specs = role_meta_main.dependencies
-
-    # Now look for any install_info for the repository
-    install_info_data = None
-    install_info_filename = os.path.join(path_name, 'meta/.galaxy_install_info')
-    try:
-        with open(install_info_filename, 'r') as ifd:
-            install_info_data = install_info.load(ifd)
-    except EnvironmentError as e:
-        log.warning('Unable to find or load meta/.galaxy_install_info for repository %s.%s: %s', namespace, name, e)
-
-    # TODO: figure out what to do if the version from install_info conflicts with version
-    #       from galaxy.yml etc.
-    # log.debug('install_info: %s', install_info_data)
-    install_info_version = getattr(install_info_data, 'version', None)
-
-    repository_spec = RepositorySpec(namespace=namespace,
-                                     name=name,
-                                     version=install_info_version)
 
     repository = Repository(repository_spec=repository_spec,
                             path=path_name,

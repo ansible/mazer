@@ -148,7 +148,7 @@ def install_repository_specs_loop(galaxy_context,
 
         for req in requirements_list:
             if req.repository_spec:
-                msg = 'Installing requirement %s as needed by %s' % (req.requirement_spec.label, req.repository_spec.label)
+                msg = 'Installing requirement %s (required by %s)' % (req.requirement_spec.label, req.repository_spec.label)
             else:
                 msg = 'Installing requirement %s' % req.requirement_spec.label
             display_callback(msg, level='info')
