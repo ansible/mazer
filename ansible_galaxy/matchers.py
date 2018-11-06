@@ -31,7 +31,6 @@ class MatchNames(Match):
         self.names = names
 
     def match(self, other):
-        log.debug('self.names: %s other.repository_spec.name: %s', self.names, other.repository_spec.name)
         return other.repository_spec.name in self.names
 
 
@@ -40,7 +39,6 @@ class MatchLabels(Match):
         self.labels = labels
 
     def match(self, other):
-        log.debug('self.labels: %s other.label: %s', self.labels, other.repository_spec.label)
         return other.repository_spec.label in self.labels
 
 
@@ -50,7 +48,6 @@ class MatchRepositorySpec(Match):
 
     def match(self, other):
         res = other.repository_spec in self.repository_specs
-        log.debug('%s: is %s in %s', res, other.repository_spec, self.repository_specs)
         return res
 
 
@@ -62,11 +59,6 @@ class MatchRepositorySpecNamespaceName(Match):
         ns_n_match_res = False
         other_ns_n = (other.repository_spec.namespace, other.repository_spec.name)
         ns_n_match_res = other_ns_n in self.namespaces_names
-
-        log.debug('%s (ns_n): does %s match %s?',
-                  ns_n_match_res,
-                  other_ns_n,
-                  self.namespaces_names)
 
         return ns_n_match_res
 
@@ -83,22 +75,15 @@ class MatchRepositorySpecNamespaceNameVersion(Match):
 
         ns_n_v_match_res = other_ns_n_v in self.namespaces_names_versions
 
-        log.debug('%s (ns_n_v) : does %s match %s ?',
-                  ns_n_v_match_res,
-                  other_ns_n_v,
-                  self.namespaces_names_versions)
-
         return ns_n_v_match_res
 
 
 class MatchNamespace(Match):
     def __init__(self, namespaces_to_match):
         self.namespaces_to_match = namespaces_to_match or []
-        self.log = logging.getLogger('%s.%s' % (__name__, self.__class__.__name__))
 
     def match(self, other):
         res = other.namespace in self.namespaces_to_match
-        self.log.debug('%s: (ns) %s matches %s', res, other.namespace, self.namespaces_to_match)
         return res
 
 
@@ -107,8 +92,6 @@ class MatchNamespacesOrLabels(Match):
         self.namespaces_or_labels = namespaces_or_labels or []
 
     def match(self, other):
-        log.debug('self.namespaces_or_labels: %s other.namespace: %s other.label: %s',
-                  self.namespaces_or_labels, other.repository_spec.namespace, other.repository_spec.label)
         # TODO: should this matcher require a namespace string or a namespace object? either?
         return any([other.repository_spec.label in self.namespaces_or_labels,
                     other.repository_spec.namespace in self.namespaces_or_labels])
