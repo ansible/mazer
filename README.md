@@ -172,6 +172,26 @@ Example playbook using mazer install roles, using fully qualified role names and
     #
 
 ```
+
+### Building ansible content collection artifacts with 'mazer build'
+
+In the future, galaxy will support importing and ansible content collection
+artifacts. The artifacts are collection archives with the addition of
+a MANIFEST.json providing a manifest of the content (files) in the archive
+as well as additional metadata.
+
+For example, to build the test 'hello' collection included in mazer
+source code in tests/ansible_galaxy/collection_examples/hello/
+
+```
+$ # From a source tree checkout of mazer
+$ cd tests/ansible_galaxy/collection_examples/hello/
+$ mazer build
+```
+
+The above command will create an ansible content collection artifact
+at tests/ansible_galaxy/collection_examples/hello/releases/v11.11.11.tar.gz
+
 ## Configuration
 mazer is configured by a 'mazer.yml' config file in ~/.ansible.
 
