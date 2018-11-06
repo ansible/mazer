@@ -63,7 +63,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     try:
         with open(galaxy_filename, 'r') as gfd:
             collection_info_data = collection_info.load(gfd)
-    except EnvironmentError as e:
+    except EnvironmentError:
         # log.debug('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
         pass
 
@@ -95,7 +95,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     try:
         with open(requirements_filename, 'r') as rfd:
             requirements_list.extend(requirements.load(rfd, repository_spec=repository_spec))
-    except EnvironmentError as e:
+    except EnvironmentError:
         # log.debug('No requirements.yml was loaded for repository %s.%s: %s', namespace, name, e)
         pass
 
@@ -110,7 +110,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     try:
         with open(role_meta_main_filename, 'r') as rmfd:
             role_meta_main = role_metadata.load(rmfd, role_name=role_name)
-    except EnvironmentError as e:
+    except EnvironmentError:
         # log.debug('No meta/main.yml was loaded for repository %s.%s: %s', namespace, name, e)
         pass
 
