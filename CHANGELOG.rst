@@ -1,33 +1,48 @@
-Mazer Changes by Release
-========================
+=======
+History
+=======
 
-v0.3.0 - Active development
----------------------------
+0.3.0 (2018-11-06)
+------------------
 
-Closed PRS
-``````````
-- `124 Remove --roles-path option from init and install commands <https://github.com/ansible/mazer/pull/124>`_.
-- `130 Implement *build* command for building a collection artifact <https://github.com/ansible/mazer/pull/130>`_.
-- `132 Create log directory before initializing logger. Support multiple locations for mazer.yml config <https://github.com/ansible/mazer/pull/132>`_. 
-- `133 Add MAZER_CONFIG environment var for specifying config file location <https://github.com/ansible/mazer/pull/133>`_.
-- `135 For multi-content archive, install all content <https://github.com/ansible/mazer/pull/135>`_.
-- `136 Support global content install option <https://github.com/ansible/pull/136>`_.
-- `141 Add --editable install option. Similar to 'pip install -e' <https://github.com/ansible/mazer/pull/141>`_.
-- `142 Add support for init of a collection, and make it the default <https://github.com/ansible/mazer/pull/142>`_.
+* `155 Implement install of things with dep solving (for trad roles and collections) <https://github.com/ansible/mazer/issues/155>`_.
+* `142 Add support for init of a collection, and make it the default <https://github.com/ansible/mazer/pull/142>`_.
+* `139 Add 'editable' installs via 'install -e' (ala, 'python setup.py develop') <https://github.com/ansible/mazer/issues/139>`_.
+* `138 Install role requirements <https://github.com/ansible/mazer/issues/138>`_.
+* `136 Support global content install option <https://github.com/ansible/pull/136>`_.
+* `135 For multi-content archive, install all content <https://github.com/ansible/mazer/pull/135>`_.
+* `133 Add MAZER_CONFIG environment var for specifying config file location <https://github.com/ansible/mazer/pull/133>`_.
+* `116 Add a 'mazer build' command to build collection artifacts <https://github.com/ansible/mazer/issues/116>`_.
+* `151 Fix install of sdx_licenses.json <https://github.com/ansible/mazer/issues/151>`_.
+* `132 Fix log directory creation before initializing logger. Support multiple locations for mazer.yml config <https://github.com/ansible/mazer/pull/132>`_.
+* `127 Refactor ansible_galaxy.flat_rest_api.content <https://github.com/ansible/mazer/issues/127>`_.
+* `126 Finish replacing core data objects with 'attrs' based classes <https://github.com/ansible/mazer/issues/126>`_.
+* `124 Fix unneeded --roles-path option for init and install commands by removing it <https://github.com/ansible/mazer/pull/124>`_.
+* `119 Fix "'mazer list' on multi-content repos looks for install_info in the wrong places" <https://github.com/ansible/mazer/issues/119>`_.
 
-v0.2.1 - Released 08-Aug-2018
------------------------------
+0.2.1 (2018-08-08)
+------------------
 
-Closed PRS
-``````````
-- `113 Make sure default-mazer-logging.yml gets installed  <https://github.com/ansible/mazer/pull/113>`_.
-- `120 Fix install if a role name is a substring of another role  <https://github.com/ansible/mazer/pull/120>`_.
-- `121 Send X-Request-ID header on HTTP requests <https://github.com/ansible/mazer/pull/121>`_.
-- `122 Fix attr dependency <https://github.com/ansible/mazer/pull/122>`_.
+* Add 'attrs' dep to setup.py. Update requirements.txt
+  to use setup.py requires.
+* Add the default logging config to Manifest.in so
+  logging is setup correctly on pip install.
+  Fixes https://github.com/ansible/mazer/issues/114
+* Fix install if a role name is substring of another role.
+  Fixes https://github.com/ansible/mazer/issues/112
+* Create and send a X-Request-ID on http requests.
 
-v0.2.0 - Released 26-Jul-2018
------------------------------
+0.2.0 (2018-07-26)
+------------------
 
-v0.1.0 - Released 03-Jul-2018
------------------------------
+* Support new
+  ~/.ansible/content/namespace/reponame/content_type/content_name layout
+* Create install receipts (.galaxy_install_info) on
+  install of repos and roles.
+* 'list' and 'info' commands updated.
+* Now requires and uses 'attrs' python module >=18.1.0
 
+0.1.0 (2018-04-18)
+------------------
+
+* First release on PyPI.
