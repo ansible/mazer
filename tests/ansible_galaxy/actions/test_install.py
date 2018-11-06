@@ -5,6 +5,8 @@ from ansible_galaxy.actions import install
 from ansible_galaxy import exceptions
 from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
+from ansible_galaxy.models.repository import Repository
+from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
 
@@ -26,13 +28,14 @@ def test_install_repos_empty_requirements(galaxy_context):
 
 
 def test_install_repositories(galaxy_context, mocker):
-    needed_deps = requirements.from_requirement_spec_strings(['some_namespace.some_name'])
+    repo_spec = RepositorySpec(namespace='some_namespace', name='some_name')
+    expected_repos = [Repository(repository_spec=repo_spec)]
 
     requirements_to_install = \
         requirements.from_requirement_spec_strings(['some_namespace.this_requires_some_name'])
 
     mocker.patch('ansible_galaxy.actions.install.install_repository',
-                 return_value=needed_deps)
+                 return_value=expected_repos)
 
     ret = install.install_repositories(galaxy_context,
                                        requirements_to_install=requirements_to_install,
@@ -40,7 +43,7 @@ def test_install_repositories(galaxy_context, mocker):
 
     log.debug('ret: %s', ret)
     assert isinstance(ret, list)
-    assert ret == needed_deps
+    assert ret == expected_repos
 
 
 def test_install_repositories_no_deps_required(galaxy_context, mocker):
