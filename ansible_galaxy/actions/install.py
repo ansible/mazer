@@ -127,9 +127,6 @@ def install_repository_specs_loop(galaxy_context,
                                                            no_deps=no_deps,
                                                            force_overwrite=force_overwrite)
 
-        # log.debug('new_requirements_list: %s', pprint.pformat(new_requirements_list))
-        log.debug('just_installed_repositories: %s', pprint.pformat(just_installed_repositories))
-
         # set the repository_specs to search for to whatever the install reported as being needed yet
         # requirements_list = new_requirements_list
         requirements_list = find_new_deps_from_installed(galaxy_context,
@@ -162,7 +159,7 @@ def find_new_deps_from_installed(galaxy_context, installed_repos, no_deps=False)
 
     # install dependencies, if we want them
     for installed_repository in installed_repos:
-        log.debug('just_installed_repository: %s', installed_repository)
+        # log.debug('just_installed_repository: %s', installed_repository)
 
         # convert deps/reqs to sets. Losing any ordering, but avoids dupes
         reqs_set = set(installed_repository.requirements)
@@ -199,7 +196,7 @@ def find_new_deps_from_installed(galaxy_context, installed_repos, no_deps=False)
 
         unsolved_deps_reqs.append(dep_req)
 
-    log.debug('unsolved_deps_reqs: %s', pprint.pformat(unsolved_deps_reqs))
+    log.debug('Found additional requirements: %s', pprint.pformat(unsolved_deps_reqs))
 
     return unsolved_deps_reqs
 
@@ -246,7 +243,15 @@ def install_repositories(galaxy_context,
             continue
 
         for installed_repo in installed_repositories:
-            log.debug('installed_repo: %s', installed_repo)
+            required_by_blurb = ''
+            if requirement_to_install.repository_spec:
+                required_by_blurb = ' (required by %s)' % requirement_to_install.repository_spec.label
+
+            log.info('Installed: %s %s to %s%s',
+                     installed_repo.label,
+                     installed_repo.repository_spec.version,
+                     installed_repo.path,
+                     required_by_blurb)
 
         most_installed_repositories.extend(installed_repositories)
         # dep_requirements.extend(new_dep_requirements)

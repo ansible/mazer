@@ -97,16 +97,16 @@ def update_repository_spec(fetch_results,
 
     # If the requested namespace/version is different than the one we got via find()/fetch()...
     if content_data.get('fetched_version', repository_spec.version) != repository_spec.version:
-        log.info('Version "%s" for %s was requested but fetch found version "%s"',
-                 repository_spec.version, '%s.%s' % (repository_spec.namespace, repository_spec.name),
-                 content_data.get('fetched_version', repository_spec.version))
+        log.debug('Version "%s" for %s was requested but fetch found version "%s"',
+                  repository_spec.version, repository_spec.label,
+                  content_data.get('fetched_version', repository_spec.version))
 
         repository_spec = attr.evolve(repository_spec, version=content_data['fetched_version'])
 
     if content_data.get('content_namespace', repository_spec.namespace) != repository_spec.namespace:
-        log.info('Namespace "%s" for %s was requested but fetch found namespace "%s"',
-                 repository_spec.namespace, '%s.%s' % (repository_spec.namespace, repository_spec.name),
-                 content_data.get('content_namespace', repository_spec.namespace))
+        log.warning('Namespace "%s" for %s was requested but fetch found namespace "%s"',
+                    repository_spec.namespace, '%s.%s' % (repository_spec.namespace, repository_spec.name),
+                    content_data.get('content_namespace', repository_spec.namespace))
 
         repository_spec = attr.evolve(repository_spec, namespace=content_data['content_namespace'])
 
@@ -196,7 +196,7 @@ def install(galaxy_context,
     # so now use that info to find the just installed repos on disk and load them and return them.
     just_installed_repository_specs = [x[0] for x in just_installed_spec_and_results]
 
-    log.debug('just_installed_repository_specs: %s', just_installed_repository_specs)
+    # log.debug('just_installed_repository_specs: %s', just_installed_repository_specs)
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
@@ -205,26 +205,14 @@ def install(galaxy_context,
     for just_installed_repository_spec in just_installed_repository_specs:
         just_installed_repository_gen = irdb.by_repository_spec(just_installed_repository_spec)
 
-        # namespace_match_filter = matchers.MatchNamespace([just_installed_repository_spec.namespace])
-
-        # repository_match_filter = matchers.MatchRepositorySpecsNamespaceNameVersion(just_installed_repository_specs)
-
-        # Specify a namespace match here so we only search the one namespace we already know the installed
-        # repository should be in.
-        # just_installed_repository_generator = irdb.select(namespace_match_filter=namespace_match_filter,
-        #                                                  repository_match_filter=repository_match_filter)
-
         # TODO: Eventually, we could make install.install return a generator and yield these results straigt
         #       from just_installed_repository_generator. The loop here is mostly for logging/feedback.
         # Should only get one answer here for now.
         for just_installed_repository in just_installed_repository_gen:
             log.debug('just_installed_repository is installed: %s', pprint.pformat(attr.asdict(just_installed_repository)))
 
-            # log.info('Installed repository repository_spec: %s', just_installed_repository.repository_spec)
-            # log.info('installed repository path: %s', just_installed_repository.path)
-
             just_installed_repositories.append(just_installed_repository)
 
-    log.debug('just_installed_repositories: %s', pprint.pformat(just_installed_repositories))
+    # log.debug('just_installed_repositories: %s', pprint.pformat(just_installed_repositories))
 
     return just_installed_repositories

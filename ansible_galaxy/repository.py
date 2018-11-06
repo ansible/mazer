@@ -30,7 +30,6 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     # TODO: or artifact
 
     path_name = os.path.join(content_dir, namespace, name)
-    log.debug('START of load of %s to a Repository', path_name)
     # TODO: add trad role or collection detection rules here
     #       Or possibly earlier so we could call 'collection' loading
     #       code/class or trad-role-as-collection loading code/class
@@ -39,7 +38,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     #       if more than one role in roles/ -> collection
 
     if not os.path.isdir(path_name):
-        log.debug('FAILURE of load of %s to a Repository', path_name)
+        log.debug('The directory %s does not exist, unable to load a Repository from it', path_name)
         return None
 
     requirements_list = []
@@ -55,7 +54,6 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     # TODO: figure out what to do if the version from install_info conflicts with version
     #       from galaxy.yml etc.
-    # log.debug('install_info: %s', install_info_data)
     install_info_version = getattr(install_info_data, 'version', None)
 
     # load galaxy.yml
@@ -66,8 +64,8 @@ def load_from_dir(content_dir, namespace, name, installed=True):
         with open(galaxy_filename, 'r') as gfd:
             collection_info_data = collection_info.load(gfd)
     except EnvironmentError as e:
-        log.warning('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
-        # log.exception(e)
+        # log.debug('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
+        pass
 
     # TODO/FIXME: what takes precedence?
     #           - the dir names a collection lives in ~/.ansible/content/my_ns/my_name
@@ -96,10 +94,10 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     try:
         with open(requirements_filename, 'r') as rfd:
-            # requirements_data = yaml.safe_load(rfd)
             requirements_list.extend(requirements.load(rfd, repository_spec=repository_spec))
     except EnvironmentError as e:
-        log.warning('No requirements.yml found for collection %s.%s: %s', namespace, name, e)
+        # log.debug('No requirements.yml was loaded for repository %s.%s: %s', namespace, name, e)
+        pass
 
     # Now try the repository as a role-as-collection
     # FIXME: For a repository with one role that matches the collection name and doesn't
@@ -113,14 +111,13 @@ def load_from_dir(content_dir, namespace, name, installed=True):
         with open(role_meta_main_filename, 'r') as rmfd:
             role_meta_main = role_metadata.load(rmfd, role_name=role_name)
     except EnvironmentError as e:
-        log.warning('Unable to find or load meta/main.yml for repository %s.%s: %s', namespace, name, e)
+        # log.debug('No meta/main.yml was loaded for repository %s.%s: %s', namespace, name, e)
+        pass
 
     # TODO: if there are other places to load dependencies (ie, runtime deps) we will need
     #       to load them and combine them with role_depenency_specs
     role_dependency_specs = []
     if role_meta_main:
-        # log.debug('role_meta_main: %s', role_meta_main)
-        # log.debug('role_meta_main_deps: %s', role_meta_main.dependencies)
         role_dependency_specs = role_meta_main.dependencies
 
     repository = Repository(repository_spec=repository_spec,
@@ -129,7 +126,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
                             requirements=requirements_list,
                             dependencies=role_dependency_specs)
 
-    log.debug('FINISH of load of repository %s: %s', path_name, repository.repository_spec.label)
+    log.debug('Repository %s loaded from %s', repository.repository_spec.label, path_name)
 
     return repository
 

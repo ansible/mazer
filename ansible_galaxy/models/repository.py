@@ -27,4 +27,4 @@ class Repository(object):
         return self.repository_spec.label
 
     def __str__(self):
-        return '{repo_spec}[{path}]'.format(repo_spec=self.repository_spec, path=self.path)
+        return '{repo_spec}@{path}'.format(repo_spec=self.repository_spec, path=self.path)

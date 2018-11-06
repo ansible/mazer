@@ -41,10 +41,10 @@ def extract(repository_spec,
     # label = "%s.%s" % (repository_namespace, repository_name)
 
     # 'extract_to_path' is for ex, ~/.ansible/content
-    log.info('About to extract %s "%s" to %s', repository_archive_info.archive_type,
-             repository_spec.label, content_path)
-    display_callback('- extracting %s repository from "%s"' % (repository_archive_info.archive_type,
-                                                               repository_spec.label))
+    log.debug('About to extract %s "%s" to %s', repository_archive_info.archive_type,
+              repository_spec.label, content_path)
+    # display_callback('- extracting %s repository from "%s"' % (repository_archive_info.archive_type,
+    #                                                           repository_spec.label))
 
     tar_members = tar_file.members
 
@@ -87,11 +87,11 @@ def extract(repository_spec,
 
     all_installed_paths.extend(installed_paths)
 
-    log.info('Extracted %s files from %s %s to %s',
-             len(all_installed_paths),
-             repository_archive_info.archive_type,
-             repository_spec.label,
-             extract_archive_to_dir)
+    log.debug('Extracted %s files from %s %s to %s',
+              len(all_installed_paths),
+              repository_archive_info.archive_type,
+              repository_spec.label,
+              extract_archive_to_dir)
 
     # TODO: InstallResults object? installedPaths, InstallInfo, etc?
     return all_installed_paths, install_datetime

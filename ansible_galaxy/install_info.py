@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 def load(data_or_file_object):
-    log.debug('loading content install info from %s', data_or_file_object)
+    # log.debug('loading content install info from %s', getattr(data_or_file_object, 'name', data_or_file_object))
 
     info_dict = yaml.safe_load(data_or_file_object)
 
