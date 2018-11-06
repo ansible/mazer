@@ -44,21 +44,16 @@ def load(data_or_file_object, repository_spec=None):
     return requirements_list
 
 
-def from_requirement_spec_strings(requirement_spec_strings, namespace_override=None, editable=False):
+def from_requirement_spec_strings(requirement_spec_strings, namespace_override=None, editable=False, repository_spec=None):
     reqs = []
     for requirement_spec_string in requirement_spec_strings:
         req_spec_data = spec_data_from_string(requirement_spec_string,
                                               namespace_override=namespace_override,
                                               editable=editable)
 
-        log.debug('req_spec_data: %s', req_spec_data)
-
         req_spec = RepositorySpec.from_dict(req_spec_data)
-        log.debug('req_spec: %s', req_spec)
 
-        req = Requirement(repository_spec=None, op=RequirementOps.EQ, requirement_spec=req_spec)
-
-        log.debug('req: %s', req)
+        req = Requirement(repository_spec=repository_spec, op=RequirementOps.EQ, requirement_spec=req_spec)
 
         reqs.append(req)
 

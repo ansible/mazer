@@ -23,6 +23,9 @@ class CollectionInfo(object):
     description = attr.ib(default=None)
     keywords = attr.ib(default=[])
     readme = attr.ib(default='README.md')
+
+    # Note galaxy.yml 'dependencies' field is what mazer and ansible
+    # consider 'requirements'. ie, install time requirements.
     dependencies = attr.ib(default=[])
 
     @property

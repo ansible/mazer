@@ -42,6 +42,8 @@ def load_from_dir(content_dir, namespace, name, installed=True):
         log.debug('FAILURE of load of %s to a Repository', path_name)
         return None
 
+    requirements_list = []
+
     # Now look for any install_info for the repository
     install_info_data = None
     install_info_filename = os.path.join(path_name, 'meta/.galaxy_install_info')
@@ -64,13 +66,13 @@ def load_from_dir(content_dir, namespace, name, installed=True):
         with open(galaxy_filename, 'r') as gfd:
             collection_info_data = collection_info.load(gfd)
     except EnvironmentError as e:
-        log.warning('No galaxy.yml found for collection %s.%s: %s', namespace, name, e)
+        log.warning('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
         # log.exception(e)
 
     # TODO/FIXME: what takes precedence?
     #           - the dir names a collection lives in ~/.ansible/content/my_ns/my_name
     #           - Or the namespace/name from galaxy.yml?
-    log.debug('collection_info_data: %s', collection_info_data)
+    # log.debug('collection_info_data: %s', collection_info_data)
 
     # Build a repository_spec of the repo now so we can pass it things like requirements.load()
     # that need to know what requires something
@@ -78,22 +80,26 @@ def load_from_dir(content_dir, namespace, name, installed=True):
                                      name=name,
                                      version=install_info_version)
 
+    # The current galaxy.yml 'dependencies' are actually 'requirements' in ansible/ansible terminology
+    # (ie, install-time)
+    if collection_info_data:
+        collection_requires = requirements.from_requirement_spec_strings(collection_info_data.dependencies,
+                                                                         repository_spec=repository_spec)
+        requirements_list.extend(collection_requires)
+
     # TODO: add requirements loaded from galaxy.yml
     # TODO: should the requirements in galaxy.yml be plain strings or dicts?
     # TODO: should there be requirements in galaxy.yml at all? in liue of requirements.yml
     # collection_info_requirements = []
 
     requirements_filename = os.path.join(path_name, 'requirements.yml')
-    requirements_list = []
 
     try:
         with open(requirements_filename, 'r') as rfd:
             # requirements_data = yaml.safe_load(rfd)
-            requirements_list = requirements.load(rfd, repository_spec=repository_spec)
+            requirements_list.extend(requirements.load(rfd, repository_spec=repository_spec))
     except EnvironmentError as e:
         log.warning('No requirements.yml found for collection %s.%s: %s', namespace, name, e)
-
-    # log.debug('requirements_list: %s', requirements_list)
 
     # Now try the repository as a role-as-collection
     # FIXME: For a repository with one role that matches the collection name and doesn't
