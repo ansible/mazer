@@ -1,6 +1,5 @@
 # strategy for installing a Collection (name resolve it, find it,
 #  fetch it's artifact, validate/verify it, install/extract it, update install dbs, etc)
-# import datetime
 import logging
 import os
 
@@ -10,8 +9,9 @@ import pprint
 from ansible_galaxy import repository_archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
-from ansible_galaxy.models.install_destination import InstallDestinationInfo
 from ansible_galaxy.fetch import fetch_factory
+from ansible_galaxy.models.install_destination import InstallDestinationInfo
+from ansible_galaxy.repository_spec import FetchMethods
 
 log = logging.getLogger(__name__)
 
@@ -141,7 +141,7 @@ def install(galaxy_context,
 
     # TODO: this is figuring out the archive type (multi-content collection or a trad role)
     #       could potentially pull this up a layer
-    repo_archive_ = repository_archive.load_archive(archive_path)
+    repo_archive_ = repository_archive.load_archive(archive_path, repository_spec)
 
     log.debug('repo_archive_: %s', repo_archive_)
     log.debug('repo_archive_.info: %s', repo_archive_.info)
@@ -169,12 +169,15 @@ def install(galaxy_context,
                                           namespaced_repository_path,
                                           repo_archive_.repository_dest_root_subpath(repository_spec.name))
 
+    editable = repository_spec.fetch_method == FetchMethods.EDITABLE
+
     destination_info = InstallDestinationInfo(destination_root_dir=galaxy_context.content_path,
                                               repository_spec=repository_spec,
                                               extract_archive_to_dir=extract_archive_to_dir,
                                               namespaced_repository_path=namespaced_repository_path,
                                               install_info_path=install_info_path,
-                                              force_overwrite=force_overwrite)
+                                              force_overwrite=force_overwrite,
+                                              editable=editable)
 
     # A list of InstallationResults
     res = repository_archive.install(repo_archive_,

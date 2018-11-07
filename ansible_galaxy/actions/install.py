@@ -1,10 +1,8 @@
 import logging
-import os
 import pprint
 
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
-from ansible_galaxy import repository_spec
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
@@ -279,12 +277,6 @@ def install_repository(galaxy_context,
 
     repository_spec_to_install = requirement_to_install.requirement_spec
 
-    if repository_spec_to_install.fetch_method == repository_spec.FetchMethods.EDITABLE:
-        # trans to INSTALL_EDITABLE state
-        install_editable_repository(repository_spec_to_install)
-        # check results, then transition to either DONE or INSTALL_EDIBLE_FAILED
-        log.debug('not installing/extractings because of install_repository')
-        return
     # else trans to ... FIND_FETCHER?
 
     # TODO: check if already installed and move to approriate state
@@ -426,23 +418,3 @@ def stuff_for_updating(content, display_callback, force_overwrite=False):
                     display_callback('- %s is already installed, skipping.' % str(content))
                     # continue
                     return None
-
-
-def install_editable_repository(repository):
-    '''Link the repository path to the local checkout, similar to pip install -e'''
-
-    # is it a directory or is it a tarball?
-    if not os.path.isdir(os.path.abspath(repository.src)):
-        log.warning("%s needs to be a local directory for an editable install" % repository.src)
-        raise_without_ignore(None, None)
-
-    namespace = repository.repository_spec.namespace
-    repository = repository.repository_spec.name
-    dst_ns_root = os.path.join(repository.path, namespace)
-    dst_repo_root = os.path.join(repository.path, namespace, repository)
-
-    if not os.path.exists(dst_ns_root):
-        os.makedirs(dst_ns_root)
-
-    if not os.path.exists(dst_repo_root):
-        os.symlink(os.path.abspath(repository.src), dst_repo_root)

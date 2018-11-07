@@ -28,8 +28,8 @@ def extract_file(tar_file, file_to_extract):
 
     # TODO: raise from up a level in the stack?
     dest_path = os.path.join(dest_dir, dest_filename)
-    log.debug('dest_dir: %s, dest_filename: %s, dest_path: %s orig_name: %s',
-              dest_dir, dest_filename, dest_path, orig_name)
+    # log.debug('dest_dir: %s, dest_filename: %s, dest_path: %s orig_name: %s',
+    #          dest_dir, dest_filename, dest_path, orig_name)
     if os.path.exists(dest_path):
         if not force_overwrite:
             message = "The Galaxy content %s appears to already exist." % dest_path

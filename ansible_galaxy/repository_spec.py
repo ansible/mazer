@@ -79,6 +79,17 @@ def resolve(data):
     return data
 
 
+def editable_resolve(data):
+    log.debug('data: %s', data)
+
+    src = data['src']
+    if src.startswith('/'):
+        dir_name = os.path.basename(os.path.normpath(src))
+        log.debug('dir_name: %s', dir_name)
+        data['name'] = dir_name
+    return data
+
+
 def spec_data_from_string(repository_spec_string, namespace_override=None, editable=False):
     fetch_method = chose_repository_fetch_method(repository_spec_string, editable=editable)
 
@@ -92,6 +103,9 @@ def spec_data_from_string(repository_spec_string, namespace_override=None, edita
     resolver = resolve
     if fetch_method == FetchMethods.GALAXY_URL:
         resolver = galaxy_repository_spec.resolve
+
+    if fetch_method == FetchMethods.EDITABLE:
+        resolver = editable_resolve
 
     resolved_name = resolver(spec_data)
     log.debug('resolved_name: %s', resolved_name)
@@ -113,7 +127,7 @@ def spec_data_from_string(repository_spec_string, namespace_override=None, edita
 
 
 def repository_spec_from_string(repository_spec_string, namespace_override=None, editable=False):
-    spec_data = spec_data_from_string(repository_spec_string, namespace_override=None, editable=editable)
+    spec_data = spec_data_from_string(repository_spec_string, namespace_override=namespace_override, editable=editable)
 
     log.debug('spec_data: %s', spec_data)
 

@@ -12,7 +12,7 @@ VERSION_WITH_LEADING_V_SUB_RE = re.compile(r'(^[vV])')
 def convert_string_to_semver(version):
     # log.debug('vs: %s type: %s', version, type(version))
 
-    if not version:
+    if version is None:
         return None
 
     if isinstance(version, semver.VersionInfo):

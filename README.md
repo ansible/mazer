@@ -105,6 +105,9 @@ $ mazer install --content-path ~/my-ansible-content geerlingguy.nginx
 
 This will install the geerlingguy.nginx role to ~/my-ansible-content/geerlingguy/nginx/roles/nginx
 
+### Installing collections in 'editable' mode for development
+
+
 ### Using mazer installed roles in a playbook (requires 'mazer_role_loader' ansible branch)
 
 Before running this example, install the roles required via mazer. Use '--force' if some of the roles are already installed by mazer.

@@ -29,6 +29,8 @@ class InstallDestinationInfo(object):
 
     force_overwrite = attr.ib(default=False)
 
+    editable = attr.ib(default=False)
+
     @property
     def path(self):
         '''The full path to the eventually installed repository

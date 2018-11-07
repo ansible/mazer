@@ -67,9 +67,18 @@ def test_repository_spec_from_string(repository_spec_case):
 
 def test_repository_spec_editable():
     tmpdir = tempfile.mkdtemp()
-    result = repository_spec.repository_spec_from_string(tmpdir, editable=True)
+    expected = os.path.basename(tmpdir)
+    log.debug('expected: %s', expected)
+
+    result = repository_spec.repository_spec_from_string(tmpdir, namespace_override='my_namespace', editable=True)
     os.rmdir(tmpdir)
-    assert result.name == tmpdir
+
+    log.debug('result: %r', result)
+
+    assert result.name == expected
+    assert result.namespace == 'my_namespace'
+    assert result.version is None
+    assert result.src == tmpdir
     assert result.fetch_method == 'EDITABLE'
 
 

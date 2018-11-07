@@ -28,8 +28,13 @@ class InstallInfo(object):
     def to_dict_version_strings(self):
         data = attr.asdict(self)
 
+        if data.get('verison', '') is None:
+            del data['version']
+
         # semver.VersionInfo isnt yaml-able, so build a dict with
         # the VersionInfo replaced with a str version
-        data['version'] = str(data['version'])
+        ver = data.get('version', '')
+        if ver:
+            data['version'] = str(ver)
 
         return data

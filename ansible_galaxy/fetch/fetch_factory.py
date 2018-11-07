@@ -6,6 +6,7 @@ from ansible_galaxy.fetch import galaxy_url
 from ansible_galaxy.fetch import local_file
 from ansible_galaxy.fetch import remote_url
 from ansible_galaxy.fetch import scm_url
+from ansible_galaxy.fetch import editable
 
 log = logging.getLogger(__name__)
 
@@ -20,11 +21,14 @@ def get(galaxy_context, repository_spec):
     # does not really imply that the repo archive download should ignore certs as well
     # (galaxy api server vs cdn) but for now, we use the value for both
 
-    log.debug('repository_spec: %s', repository_spec)
+    log.debug('repository_spec: %r', repository_spec)
     log.debug('repository_spec.fetch_method %s dir(fetchMethods): %s',
               repository_spec.fetch_method, dir(FetchMethods))
 
-    if repository_spec.fetch_method == FetchMethods.SCM_URL:
+    if repository_spec.fetch_method == FetchMethods.EDITABLE:
+        fetcher = editable.EditableFetch(repository_spec=repository_spec,
+                                         galaxy_context=galaxy_context)
+    elif repository_spec.fetch_method == FetchMethods.SCM_URL:
         fetcher = scm_url.ScmUrlFetch(repository_spec=repository_spec)
     elif repository_spec.fetch_method == FetchMethods.LOCAL_FILE:
         # the file is a tar, so open it that way and extract it

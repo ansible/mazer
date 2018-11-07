@@ -66,11 +66,11 @@ class FileWalker(object):
             # NOTE: This modifies dirnames while it is being walked over
             for dirname in dirnames:
                 if dirname in self.ignore_dirs:
-                    log.debug('ignoring dir: %s', dirname)
+                    # log.debug('ignoring dir: %s', dirname)
                     dirnames.remove(dirname)
                 else:
                     dir_full_path = os.path.join(dirpath, dirname)
-                    log.debug('yield dir_full_path: %s', dir_full_path)
+                    # log.debug('yield dir_full_path: %s', dir_full_path)
                     yield dir_full_path
 
             for filename in filenames:
@@ -86,7 +86,7 @@ class FileWalker(object):
                 if file_is_excluded(full_path, self.exclude_patterns):
                     continue
 
-                log.debug('yield (fn full_path)%s', full_path)
+                # log.debug('yield (fn full_path)%s', full_path)
                 yield full_path
                 # yield collection_relative_path
                 # yield CollectionMember(src_full_path=full_path, dest_relative_path=collection_relative_path)

@@ -42,7 +42,8 @@ def load_from_filename(filename):
 
 
 def save(install_info_dict, filename):
-    log.debug('saving install info to %s', filename)
+    # log.debug('saving install info to %s', filename)
+
     if not os.path.exists(os.path.dirname(filename)):
         os.makedirs(os.path.dirname(filename))
 

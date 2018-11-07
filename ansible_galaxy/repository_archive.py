@@ -4,10 +4,12 @@ import os
 import tarfile
 
 from ansible_galaxy import archive
+from ansible_galaxy import collection_members
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
 from ansible_galaxy.models import content
 from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo, CollectionRepositoryArchive, TraditionalRoleRepositoryArchive
+from ansible_galaxy.repository_spec import FetchMethods
 from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.installation_results import InstallationResults
 
@@ -83,7 +85,6 @@ def extract(repository_spec,
     file_extractor = archive.extract_files(tar_file, files_to_extract)
 
     installed_paths = [x for x in file_extractor]
-    install_datetime = datetime.datetime.utcnow()
 
     all_installed_paths.extend(installed_paths)
 
@@ -94,10 +95,10 @@ def extract(repository_spec,
               extract_archive_to_dir)
 
     # TODO: InstallResults object? installedPaths, InstallInfo, etc?
-    return all_installed_paths, install_datetime
+    return all_installed_paths
 
 
-def detect_repository_archive_type(archive_path, archive_members):
+def detect_repository_archive_type(archive_path, file_names):
     '''Try to determine if we are a role, multi-content, apb etc.
 
     if there is a meta/main.yml ->  role
@@ -106,7 +107,7 @@ def detect_repository_archive_type(archive_path, archive_members):
 
     # FIXME: just looking for the root dir...
 
-    top_dir = archive_members[0].name
+    top_dir = file_names[0]
 
     # log.debug('top_dir of %s: %s', archive_path, top_dir)
 
@@ -118,34 +119,23 @@ def detect_repository_archive_type(archive_path, archive_members):
     type_dir_targets = set([os.path.join(top_dir, x) for x in type_dirs])
     # log.debug('type_dir_targets: %s', type_dir_targets)
 
-    for member in archive_members:
-        if member.name == meta_main_target:
+    for member in file_names:
+        if member == meta_main_target:
             return 'role'
 
-    for member in archive_members:
-        if member.name in type_dir_targets:
+    for member in file_names:
+        if member in type_dir_targets:
             return 'multi-content'
 
     # otherwise, assume it is a collection / multi-content repo archive
     return 'multi-content'
 
 
-def load_archive_info(archive_path):
+def build_archive_info(archive_path, file_names):
     archive_parent_dir = None
+    archive_parent_dir = file_names[0]
 
-    if not tarfile.is_tarfile(archive_path):
-        raise exceptions.GalaxyClientError("the file downloaded was not a tar.gz")
-
-    if archive_path.endswith('.gz'):
-        repository_tar_file = tarfile.open(archive_path, "r:gz")
-    else:
-        repository_tar_file = tarfile.open(archive_path, "r")
-
-    members = repository_tar_file.getmembers()
-
-    archive_parent_dir = members[0].name
-
-    archive_type = detect_repository_archive_type(archive_path, members)
+    archive_type = detect_repository_archive_type(archive_path, file_names)
 
     # log.debug('archive_type of %s: %s', archive_path, archive_type)
     # log.debug("archive_parent_dir of %s: %s", archive_path, archive_parent_dir)
@@ -159,15 +149,50 @@ def load_archive_info(archive_path):
                                          archive_type=archive_type,
                                          archive_path=archive_path)
 
+    return archive_info
+
+
+def load_editable_archive_info(archive_path, repository_spec):
+    file_walker = collection_members.FileWalker(collection_path=archive_path)
+    col_members = collection_members.CollectionMembers(walker=file_walker)
+    file_members = list(col_members.run())
+
+    archive_info = build_archive_info(archive_path, file_members)
+
+    return archive_info, None
+
+
+def load_tarfile_archive_info(archive_path, repository_spec):
+
+    if not tarfile.is_tarfile(archive_path):
+        raise exceptions.GalaxyClientError("the file downloaded was not a tar.gz")
+
+    if archive_path.endswith('.gz'):
+        repository_tar_file = tarfile.open(archive_path, "r:gz")
+    else:
+        repository_tar_file = tarfile.open(archive_path, "r")
+
+    members = repository_tar_file.getmembers()
+    archive_info = build_archive_info(archive_path, [m.name for m in members])
+
     # log.debug('role archive_info for %s: %s', archive_path, archive_info)
 
     return archive_info, repository_tar_file
 
 
-def load_archive(archive_path):
+def load_archive_info(archive_path, repository_spec=None):
+
+    # "installing" an existing dir as editable
+    if repository_spec and repository_spec.fetch_method == FetchMethods.EDITABLE:
+        return load_editable_archive_info(archive_path, repository_spec)
+
+    return load_tarfile_archive_info(archive_path, repository_spec)
+
+
+def load_archive(archive_path, repository_spec=None):
     # To avoid opening the archive file twice, and since we have to open/load it to
     # get the archive_info, we also return it from load_archive_info
-    archive_info, tar_file = load_archive_info(archive_path)
+    archive_info, tar_file = load_archive_info(archive_path, repository_spec)
 
     # factory-ish
     if archive_info.archive_type in ['role']:
@@ -185,12 +210,18 @@ def load_archive(archive_path):
 def install(repository_archive, repository_spec, destination_info, display_callback):
     log.debug('installing/extracting repo archive %s to destination %s', repository_archive, destination_info)
 
-    all_installed_files, install_datetime = extract(repository_spec,
-                                                    repository_archive.info,
-                                                    content_path=destination_info.destination_root_dir,
-                                                    extract_archive_to_dir=destination_info.extract_archive_to_dir,
-                                                    tar_file=repository_archive.tar_file,
-                                                    display_callback=display_callback)
+    # An editable install is a symlink to existing dir, so nothing to extract
+    if destination_info.editable:
+        all_installed_files = []
+    else:
+        all_installed_files = extract(repository_spec,
+                                      repository_archive.info,
+                                      content_path=destination_info.destination_root_dir,
+                                      extract_archive_to_dir=destination_info.extract_archive_to_dir,
+                                      tar_file=repository_archive.tar_file,
+                                      display_callback=display_callback)
+
+    install_datetime = datetime.datetime.utcnow()
 
     install_info_ = InstallInfo.from_version_date(repository_spec.version,
                                                   install_datetime=install_datetime)
