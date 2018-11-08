@@ -17,10 +17,11 @@ production environments, nor is it currently intended to replace the `ansible-ga
 If you're installing Ansible content in a production environment, or need assistance with Ansible, please visit the `Ansible Project <https://github.com/ansible/ansible>`__,
 or the `Ansible docs site <https://docs.ansible.com>`__.
 
-Proposed Features
------------------
+Docs
+----
 
-* Support repositories containing multiple roles. In other words, allow for multiple roles all in one repository.
+For additional documentation on mazer, view the `Mazer topic on Ansible Galaxy Docs <https://galaxy.ansible.com/docs/mazer/index.html>`__.
+Also see the more `detailed README at github <https://github.com/ansible/mazer/blob/devel/README.md>`__.
 
 Examples
 --------
