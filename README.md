@@ -107,6 +107,28 @@ This will install the geerlingguy.nginx role to ~/my-ansible-content/geerlingguy
 
 ### Installing collections in 'editable' mode for development
 
+To enable development of collections, it is possible to install a
+local checkout of a collection in 'editable' mode.
+
+Instead of copying a collection into ~/.ansible/content, this mode will
+create a symlink from ~/.ansible/content/my_namespace/my_colllection
+to the directory where the collection being worked on lives.
+
+ie, if ~/src/collections/my_new_collection is being worked on, to install
+the collection in editable mode under the namespace 'my_namespace':
+
+```
+$ mazer install --namespace my_namespace --editable ~/src/collections/my_new_collection
+```
+
+This will result in 'my_namespace.my_new_collection' being "installed".
+The above command symlinks ~/.ansble/content/my_namespace/my_new_collection to
+~/src/collections/my_new_collection.
+
+The install option **'--editable'** or the short **'-e'** can be used.
+
+Note that **'--namespace'** option is required.
+
 
 ### Using mazer installed roles in a playbook (requires 'mazer_role_loader' ansible branch)
 
