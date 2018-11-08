@@ -68,9 +68,9 @@ class BuildResult(object):
 # is a CollectionMember/CollectionMembers object needed? CollectionFileWalker?
 
 
-def filter_artifact_file_name(attr, value):
+def filter_artifact_file_name(attribute, _value):
     '''Used by attr.asdict to remove the src_name attr when serializing'''
-    if attr.name == 'src_name':
+    if attribute.name == 'src_name':
         return False
     return True
 
