@@ -2,14 +2,13 @@
 #  fetch it's artifact, validate/verify it, install/extract it, update install dbs, etc)
 import logging
 import os
+import pprint
 
 import attr
-import pprint
 
 from ansible_galaxy import repository_archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
-from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.install_destination import InstallDestinationInfo
 from ansible_galaxy.repository_spec import FetchMethods
 
@@ -17,17 +16,6 @@ log = logging.getLogger(__name__)
 
 # This should probably be a state machine for stepping through the install states
 # See actions.install.install_collection for a sketch of the states
-
-
-def fetcher(galaxy_context, repository_spec):
-    log.debug('Attempting to get fetcher for repository_spec=%s', repository_spec)
-
-    fetcher = fetch_factory.get(galaxy_context=galaxy_context,
-                                repository_spec=repository_spec)
-
-    log.debug('Using fetcher: %s for repository_spec: %s', fetcher, repository_spec)
-
-    return fetcher
 
 
 def find(fetcher):

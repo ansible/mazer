@@ -7,6 +7,7 @@ from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy import requirements
+from ansible_galaxy.fetch import fetch_factory
 
 log = logging.getLogger(__name__)
 
@@ -301,7 +302,9 @@ def install_repository(galaxy_context,
 
         return None
 
-    fetcher = install.fetcher(galaxy_context, repository_spec=repository_spec_to_install)
+    fetcher = fetch_factory.get(galaxy_context=galaxy_context,
+                                repository_spec=repository_spec_to_install)
+
     # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
     # could also move some of the logic in fetcher_factory to be driven from here
     # and make the steps of mapping repository spec -> fetcher method part of the

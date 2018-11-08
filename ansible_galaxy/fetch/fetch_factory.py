@@ -21,10 +21,6 @@ def get(galaxy_context, repository_spec):
     # does not really imply that the repo archive download should ignore certs as well
     # (galaxy api server vs cdn) but for now, we use the value for both
 
-    log.debug('repository_spec: %r', repository_spec)
-    log.debug('repository_spec.fetch_method %s dir(fetchMethods): %s',
-              repository_spec.fetch_method, dir(FetchMethods))
-
     if repository_spec.fetch_method == FetchMethods.EDITABLE:
         fetcher = editable.EditableFetch(repository_spec=repository_spec,
                                          galaxy_context=galaxy_context)
@@ -43,4 +39,7 @@ def get(galaxy_context, repository_spec):
     else:
         raise exceptions.GalaxyError('No approriate content fetcher found for %s %s',
                                      repository_spec.scm, repository_spec.src)
+
+    log.debug('Using fetcher: %s for repository_spec: %r', fetcher, repository_spec)
+
     return fetcher
