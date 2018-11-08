@@ -31,4 +31,4 @@ class BaseFetch(object):
         try:
             os.unlink(self.local_path)
         except (OSError, IOError) as e:
-            log.warn('Unable to remove tmp file (%s): %s' % (self.local_path, str(e)))
+            log.warning('Unable to remove tmp file (%s): %s' % (self.local_path, str(e)))

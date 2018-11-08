@@ -53,7 +53,7 @@ def save(install_info_dict, filename):
         try:
             yaml.safe_dump(install_info_dict, f, default_flow_style=False)
         except Exception as e:
-            log.warn('unable to serialize .galaxy_install_info to filename=%s for data=%s', filename, install_info_dict)
+            log.warning('unable to serialize .galaxy_install_info to filename=%s for data=%s', filename, install_info_dict)
             log.exception(e)
             return False
 

@@ -154,9 +154,9 @@ def remove(installed_repository):
         shutil.rmtree(installed_repository.path)
         return True
     except EnvironmentError as e:
-        log.warn('Unable to rm the directory "%s" while removing installed repo "%s": %s',
-                 installed_repository.path,
-                 installed_repository.label,
-                 e)
+        log.warning('Unable to rm the directory "%s" while removing installed repo "%s": %s',
+                    installed_repository.path,
+                    installed_repository.label,
+                    e)
         log.exception(e)
         raise

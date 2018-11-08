@@ -41,7 +41,7 @@ def normalize_version_string(version_string):
 
     new_versions_string = VERSION_WITH_LEADING_V_SUB_RE.sub('', version_string, 1)
 
-    log.warn('Stripping leading "v" or "V" from version string "%s", new version string is  "%s"',
-             version_string, new_versions_string)
+    log.warning('Stripping leading "v" or "V" from version string "%s", new version string is  "%s"',
+                version_string, new_versions_string)
 
     return new_versions_string

@@ -33,7 +33,7 @@ def save(data, filename):
         try:
             install_info_ = yaml.safe_dump(attr.asdict(data), f, default_flow_style=False)
         except Exception as e:
-            log.warn('unable to serialize data to filename=%s for data=%s', filename, install_info_)
+            log.warning('unable to serialize data to filename=%s for data=%s', filename, install_info_)
             log.exception(e)
             return False
 

@@ -409,8 +409,8 @@ def stuff_for_updating(content, display_callback, force_overwrite=False):
                     content.remove()
                 else:
                     # eventually need to build a results object here
-                    log.warn('- %s (%s) is already installed - use --force to change version to %s',
-                             content.name, content.install_info['version'], content.version or "unspecified")
+                    log.warning('- %s (%s) is already installed - use --force to change version to %s',
+                                content.name, content.install_info['version'], content.version or "unspecified")
                     # continue
                     return None
             else:

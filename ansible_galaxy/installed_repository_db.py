@@ -22,8 +22,8 @@ def get_repository_paths(namespace_path):
         repository_paths = os.listdir(namespace_path)
     except OSError as e:
         log.exception(e)
-        log.warn('The namespace path %s did not exist so no repositories were found.',
-                 namespace_path)
+        log.warning('The namespace path %s did not exist so no repositories were found.',
+                    namespace_path)
         repository_paths = []
 
     return repository_paths

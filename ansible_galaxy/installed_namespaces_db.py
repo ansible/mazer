@@ -20,8 +20,8 @@ def get_namespace_paths(content_path):
         namespace_paths = os.listdir(content_path)
     except OSError as e:
         log.exception(e)
-        log.warn('The content path %s did not exist so no content or repositories were found.',
-                 content_path)
+        log.warning('The content path %s did not exist so no content or repositories were found.',
+                    content_path)
         namespace_paths = []
 
     return namespace_paths

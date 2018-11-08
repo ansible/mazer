@@ -20,7 +20,7 @@ def load(full_file_path):
         # TODO: add a py2/py3 compat raise_from method for exception chaining
         raise exceptions.GalaxyConfigFileError(e, config_file_path=full_file_path)
 
-    log.warn('No config data was loaded from file (%s), returning None instead', full_file_path)
+    log.warning('No config data was loaded from file (%s), returning None instead', full_file_path)
     # TODO: empty dict instead?
     return None
 
