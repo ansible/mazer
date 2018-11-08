@@ -12,27 +12,6 @@ pf = pprint.pformat
 hello_path = os.path.join(os.path.dirname(__file__), 'collection_examples', 'hello')
 
 
-def test_scm_walker():
-    scm_walker = collection_members.ScmFilesWalker(os.getcwd())
-
-    log.debug('scm_walker: %s', scm_walker)
-
-    members = sorted(list(scm_walker.walk()))
-
-    log.debug('members: %s', pf(members))
-
-    found_setup_py = False
-    found_install_info = False
-    for member in members:
-        if member.endswith('setup.py'):
-            found_setup_py = True
-        if member.endswith('ansible_galaxy/install_info.py'):
-            found_install_info = True
-
-    assert found_setup_py, "no setup.py found in results from walk. members: %s" % pf(members)
-    assert found_install_info, "no ansible_galaxy/install_info.py found in results from walk. members: %s" % pf(members)
-
-
 def test_file_walker_cwd():
     cwd = os.getcwd()
     git_dir = os.path.join(cwd, '.git/')
@@ -67,8 +46,8 @@ def test_file_walker_rel_path():
 def test_collection_members_init():
     # gather files from mazer src dir, not really a role
     collection_path = os.path.join(os.getcwd())
-    scm_walker = collection_members.ScmFilesWalker(collection_path)
-    coll_members = collection_members.CollectionMembers(walker=scm_walker)
+    file_walker = collection_members.FileWalker(collection_path)
+    coll_members = collection_members.CollectionMembers(walker=file_walker)
     log.debug('coll_members: %s', coll_members)
 
     members = coll_members.run()

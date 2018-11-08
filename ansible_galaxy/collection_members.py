@@ -5,10 +5,6 @@ import pprint
 
 import attr
 
-# not surprisingly, setuptools_scm needs very similar file finder utils
-import setuptools_scm
-import setuptools_scm.file_finder_git
-
 log = logging.getLogger(__name__)
 
 # dirtools defaults to .git/.hg/.svn, but we need to extend that set
@@ -31,20 +27,6 @@ class CollectionMember(object):
     '''The info need to add a file to a archive (orig path, dest path, etc)'''
     src_full_path = attr.ib()
     dest_relative_path = attr.ib()
-
-
-@attr.s
-class ScmFilesWalker(object):
-    collection_path = attr.ib()
-
-    def walk(self):
-        '''recursively find members under collection_path and return a list'''
-        # just the files from scm, though this will need to change if/when we support
-        # binary modules or other 'compiled' content
-        scm_files = setuptools_scm.file_finder_git.git_find_files(self.collection_path)
-
-        for full_filename in scm_files:
-            yield full_filename
 
 
 @attr.s

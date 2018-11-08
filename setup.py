@@ -16,8 +16,6 @@ requirements = ['six',
                 'jinja2',
                 'semver',
                 'yamlloader',
-                # for some utils for finding right files to include from a git repo
-                'setuptools_scm',
                 # used for data classes
                 # 18.1.0 introduces the 'factory' keyword
                 'attrs>=18.1.0',
