@@ -14,7 +14,7 @@ from ansible_galaxy.models.collection_artifact_file import \
 log = logging.getLogger(__name__)
 pf = pprint.pformat
 
-COLLECTION_MANIFEST_FILENAME = "MANIFEST.json"
+COLLECTION_MANIFEST_FILENAME = 'MANIFEST.json'
 
 
 # TODO: replace with a generic version for cases
@@ -31,6 +31,8 @@ def load(data_or_file_object, klass=None):
     instance = klass(**data_dict)
 
     log.debug('%s instance from_kwargs: %s', type(instance), instance)
+
+    log.debug('collection_artifact_manifest: %s', instance)
 
     return instance
 

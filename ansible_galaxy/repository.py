@@ -5,13 +5,13 @@ import shutil
 import yaml
 
 from ansible_galaxy import collection_info
+from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
 from ansible_galaxy import requirements
 
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.repository import Repository
-
 
 log = logging.getLogger(__name__)
 
@@ -55,6 +55,18 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     # TODO: figure out what to do if the version from install_info conflicts with version
     #       from galaxy.yml etc.
     install_info_version = getattr(install_info_data, 'version', None)
+
+    # Try to load a MANIFEST.json if we have one
+
+    manifest_filename = os.path.join(path_name, collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME)
+    manifest_data = None
+
+    try:
+        with open(manifest_filename, 'r') as mfd:
+            manifest_data = collection_artifact_manifest.load(mfd)
+    except EnvironmentError:
+        # log.debug('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
+        pass
 
     # load galaxy.yml
     galaxy_filename = os.path.join(path_name, collection_info.COLLECTION_INFO_FILENAME)
