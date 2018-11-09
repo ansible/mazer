@@ -18,15 +18,16 @@ TAG_REGEXP = re.compile('^[a-z0-9]+$')
 class CollectionInfo(object):
     name = attr.ib(default=None)
     version = attr.ib(default=None)
-    authors = attr.ib(default=[])
     license = attr.ib(default=None)
     description = attr.ib(default=None)
-    keywords = attr.ib(default=[])
+
+    authors = attr.ib(factory=list)
+    keywords = attr.ib(factory=list)
     readme = attr.ib(default='README.md')
 
     # Note galaxy.yml 'dependencies' field is what mazer and ansible
     # consider 'requirements'. ie, install time requirements.
-    dependencies = attr.ib(default=[])
+    dependencies = attr.ib(factory=list)
 
     @property
     def namespace(self):
