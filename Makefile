@@ -64,5 +64,9 @@ dev/dist: clean ## builds source and wheel package
 	python setup.py bdist_wheel
 	ls -l dist
 
+dev/spdx-update: ## update the generated ansible_galaxy/data/spdx_licenses.py
+	curl https://raw.githubusercontent.com/spdx/license-list-data/master/json/licenses.json --output data/spdx_licenses.json
+	./spdx_update.py data/spdx_licenses.json > ansible_galaxy/data/spdx_licenses.json ## generate a subset of spdx license info
+
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install

@@ -1,11 +1,11 @@
 from __future__ import print_function
 
 import attr
-import json
 import logging
-import os
 import re
 import semver
+
+from ansible_galaxy.data import spdx_licenses
 
 log = logging.getLogger(__name__)
 
@@ -57,17 +57,18 @@ class CollectionInfo(object):
 
     @license.validator
     def _check_license(self, attribute, value):
-        cwd = os.path.dirname(os.path.abspath(__file__))
-        license_path = os.path.join(cwd, '..', 'data', 'spdx_licenses.json')
-        license_data = json.load(open(license_path, 'r'))
-        for lic in license_data['licenses']:
-            if lic['licenseId'] == value:
-                if lic['isDeprecatedLicenseId']:
-                    print("Warning: collection metadata 'license' value '%s' is "
-                          "deprecated." % value)
-                return True
-        self.value_error("Expecting 'license' to be a valid SPDX license ID, instead found '%s'. "
-                         "For more info, visit https://spdx.org" % value)
+        # load or return already loaded data
+        licenses = spdx_licenses.get_spdx()
+
+        valid = licenses.get(value, None)
+        if valid is None:
+            self.value_error("Expecting 'license' to be a valid SPDX license ID, instead found '%s'. "
+                             "For more info, visit https://spdx.org" % value)
+
+        # license was in list, but is deprecated
+        if valid and valid.get('deprecated', None):
+            print("Warning: collection metadata 'license' value '%s' is "
+                  "deprecated." % value)
 
     @authors.validator
     @keywords.validator

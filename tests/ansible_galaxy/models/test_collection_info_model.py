@@ -22,6 +22,19 @@ def col_info():
     return test_data
 
 
+def test_license_deprecated(col_info):
+    col_info['license'] = 'AGPL-1.0'
+    res = CollectionInfo(**col_info)
+    # Not much to assert, behavior is just a print() side effect
+    assert res.license == 'AGPL-1.0'
+
+
+def test_license_unknown(col_info):
+    col_info['license'] = 'SOME-UNKNOWN'
+    with pytest.raises(ValueError, match=".*license.*SOME-UNKNOWN.*"):
+        CollectionInfo(**col_info)
+
+
 def test_license_error(col_info):
     col_info['license'] = 'GPLv2'
 
