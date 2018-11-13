@@ -73,10 +73,9 @@ def fetch(fetcher, repository_spec, find_results):
 
 def update_repository_spec(fetch_results,
                            repository_spec=None):
-    '''Verify we got the archive we asked for, checksums, check sigs, etc
+    '''Create a new RepositorySpec with updated info from fetch_results.
 
-    At the moment, also side effect and evols repository_spec to match fetch results
-    so that needs to be extracted'''
+    Evolves repository_spec to match fetch results.'''
     # TODO: do we still need to check the fetched version against the spec version?
     #       We do, since the unspecific version is None, so fetched versions wont match
     #       so we need a new repository_spec for install.
@@ -90,6 +89,12 @@ def update_repository_spec(fetch_results,
                   content_data.get('fetched_version', repository_spec.version))
 
         repository_spec = attr.evolve(repository_spec, version=content_data['fetched_version'])
+
+    if content_data.get('fetched_name', repository_spec.name) != repository_spec.name:
+        log.debug('Repository %s was requested but fetch found %s',
+                  repository_spec.name,
+                  content_data.get('fetched_name', repository_spec.name))
+        repository_spec = attr.evolve(repository_spec, name=content_data['fetched_name'])
 
     if content_data.get('content_namespace', repository_spec.namespace) != repository_spec.namespace:
         log.warning('Namespace "%s" for %s was requested but fetch found namespace "%s"',

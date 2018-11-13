@@ -6,8 +6,10 @@ import yaml
 
 from ansible_galaxy import collection_info
 from ansible_galaxy import collection_artifact_manifest
+from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
+from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
 
 from ansible_galaxy.models.repository_spec import RepositorySpec
@@ -24,6 +26,92 @@ log = logging.getLogger(__name__)
 def load(data_or_file_object):
     repository_data = yaml.safe_load(data_or_file_object)
     return repository_data
+
+
+def load_from_archive(repository_archive, namespace=None, installed=True):
+    repo_tarfile = repository_archive.tar_file
+    archive_path = repository_archive.info.archive_path
+
+    # path_name = os.path.join(content_dir, namespace, name)
+    path_name = repository_archive.info.top_dir
+
+    manifest_filename = os.path.join(path_name, collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME)
+    manifest_data = None
+
+    log.debug('Trying to extract %s from %s', manifest_filename, archive_path)
+
+    try:
+        mfd = repo_tarfile.extractfile(manifest_filename)
+        if mfd:
+            manifest_data = collection_artifact_manifest.load(mfd)
+            log.debug('md: %s', manifest_data)
+            log.debug('md.collection_info: %s', manifest_data.collection_info)
+            log.debug('manifest_data.collection_info.name: %s', manifest_data.collection_info.name)
+    except KeyError as e:
+        log.warning('No %s found in archive: %s (Error: %s)', manifest_filename, archive_path, e)
+
+    # load galaxy.yml
+    galaxy_filename = os.path.join(path_name, collection_info.COLLECTION_INFO_FILENAME)
+
+    collection_info_data = None
+
+    try:
+        gfd = repo_tarfile.extractfile(galaxy_filename)
+        if gfd:
+            collection_info_data = collection_info.load(gfd)
+    except KeyError as e:
+        log.warning('No %s found in archive: %s - %s', galaxy_filename, archive_path, e)
+        # log.debug('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
+
+    # TODO/FIXME: what takes precedence?
+    #           - the dir name in the archive that a collection lives in ~/.ansible/content/my_ns/my_name
+    #           - Or the namespace/name from galaxy.yml?
+    # log.debug('collection_info_data: %s', collection_info_data)
+
+    col_info = None
+    if manifest_data:
+        col_info = manifest_data.collection_info
+        log.debug('md.col_info: %s', col_info)
+    elif collection_info_data:
+        col_info = collection_info_data
+    else:
+        raise exceptions.GalaxyArchiveError('No galaxy collection info or manifest found in %s', archive_path)
+
+    log.debug('col_info: %s', col_info)
+
+    # FIXME: change collectionInfo to have separate name/namespace so we dont have to 'parse' the name
+    # repo_spec = repository_spec.repository_spec_from_string(col_info.name, namespace_override=namespace)
+    # spec_data = repository_spec_parse.parse_string(col_info.name)
+    spec_data = repository_spec.spec_data_from_string(col_info.name, namespace_override=namespace)
+
+    log.debug('spec_data: %s', spec_data)
+    # log.debug('repo_spec: %s', repo_spec)
+
+    # Build a repository_spec of the repo now so we can pass it things like requirements.load()
+    # that need to know what requires something
+    repo_spec = RepositorySpec(namespace=spec_data.get('namespace', namespace),
+                               name=spec_data.get('name'),
+                               version=col_info.version,
+                               spec_string=archive_path,
+                               # fetch_method=None,
+                               src=archive_path)
+
+    log.debug('repo spec from %s: %r', archive_path, repo_spec)
+
+    requirements_list = []
+    requirements_list = requirements.from_requirement_spec_strings(col_info.dependencies,
+                                                                   repository_spec=repo_spec)
+
+    repository = Repository(repository_spec=repo_spec,
+                            path=None,
+                            installed=installed,
+                            requirements=requirements_list,
+                            # Assuming this is a collection artifact, FIXME if we support role artifacts
+                            dependencies=[])
+
+    log.debug('repository: %s', repository)
+
+    return repository
 
 
 def load_from_dir(content_dir, namespace, name, installed=True):
@@ -97,8 +185,10 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     # Prefer version from install_info, but for a editable installed, there may be only galaxy version
     installed_version = install_info_version
-    if collection_info_data:
-        installed_version = installed_version or collection_info_data.version
+    if manifest_data:
+        installed_version = manifest_data.collection_info.version
+    elif collection_info_data:
+        installed_version = collection_info_data.version
     # if role_meta_main:
     #    installed_version = installed_version or role_meta_main.version
 

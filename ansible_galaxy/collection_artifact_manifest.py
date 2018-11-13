@@ -6,6 +6,8 @@ import os
 import yaml
 
 from ansible_galaxy.utils import chksums
+from ansible_galaxy.models.collection_info import \
+    CollectionInfo
 from ansible_galaxy.models.collection_artifact_manifest import \
     CollectionArtifactManifest
 from ansible_galaxy.models.collection_artifact_file import \
@@ -19,16 +21,21 @@ COLLECTION_MANIFEST_FILENAME = 'MANIFEST.json'
 
 # TODO: replace with a generic version for cases
 #       where SomeClass(**dict_from_yaml) works
-def load(data_or_file_object, klass=None):
+# def load(data_or_file_object, klass=None):
+def load(data_or_file_object):
     log.debug('loading collection info from %s',
               pf(data_or_file_object))
 
     data_dict = yaml.safe_load(data_or_file_object)
 
-    log.debug('data: %s', pf(data_dict))
+    # log.debug('data: %s', pf(data_dict))
+    log.debug('data_dict: %s', data_dict)
 
-    klass = CollectionArtifactManifest
-    instance = klass(**data_dict)
+    col_info = CollectionInfo(**data_dict['collection_info'])
+    # klass = CollectionArtifactManifest
+    instance = CollectionArtifactManifest(collection_info=col_info,
+                                          files=data_dict['files'])
+    # instance = klass(**data_dict)
 
     log.debug('%s instance from_kwargs: %s', type(instance), instance)
 

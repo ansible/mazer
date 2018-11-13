@@ -90,7 +90,7 @@ def editable_resolve(data):
     return data
 
 
-def spec_data_from_string(repository_spec_string, namespace_override=None, editable=False):
+def spec_data_from_string(repository_spec_string, namespace_override=None, fetch_method=None, editable=False):
     fetch_method = chose_repository_fetch_method(repository_spec_string, editable=editable)
 
     log.debug('fetch_method: %s', fetch_method)
@@ -101,6 +101,7 @@ def spec_data_from_string(repository_spec_string, namespace_override=None, edita
     log.debug('spec_data: %s', spec_data)
 
     resolver = resolve
+    # FIXME need local_file artifact resolver?
     if fetch_method == FetchMethods.GALAXY_URL:
         resolver = galaxy_repository_spec.resolve
 
