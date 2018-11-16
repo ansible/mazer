@@ -1,9 +1,9 @@
 collection_info:
-  namespace: "some_namespace"
-  name: "some_name"
+  name: "some_namespace.some_name"
   version: "1.2.3"
   authors: ["Javale McGee"]
   license: "GPL-3.0-or-later"
+  description: "An example artifact manifest for unit tests"
 format: 1
 files:
   - name: "roles/some_role/defaults/main.yml"
