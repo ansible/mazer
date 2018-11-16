@@ -171,13 +171,19 @@ def load_editable_archive_info(archive_path, repository_spec):
 
 def load_tarfile_archive_info(archive_path, repository_spec):
 
-    if not tarfile.is_tarfile(archive_path):
-        raise exceptions.GalaxyClientError("the file downloaded was not a tar.gz")
+    # if not tarfile.is_tarfile(archive_path):
+    #    raise exceptions.GalaxyClientError("the file downloaded was not a tar.gz")
 
     if archive_path.endswith('.gz'):
-        repository_tar_file = tarfile.open(archive_path, "r:gz")
+        tar_flags = "r:gz"
     else:
-        repository_tar_file = tarfile.open(archive_path, "r")
+        tar_flags = "r"
+
+    try:
+        repository_tar_file = tarfile.open(archive_path, tar_flags)
+    except tarfile.TarError:
+        raise exceptions.GalaxyClientError("Error opening the tar file %s with flags: %s for repo: %s" %
+                                           (archive_path, tar_flags, repository_spec.label))
 
     members = repository_tar_file.getmembers()
     archive_info = build_archive_info(archive_path, [m.name for m in members])
