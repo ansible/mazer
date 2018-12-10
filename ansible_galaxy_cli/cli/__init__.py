@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 class SortedOptParser(optparse.OptionParser):
     '''Optparser which sorts the options by opt before outputting --help'''
 
-    def format_help(self, formatter=Nones):
+    def format_help(self, formatter=None):
         self.option_list.sort(key=operator.methodcaller('get_opt_string'))
         return optparse.OptionParser.format_help(self, formatter=None)
 
