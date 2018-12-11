@@ -59,7 +59,8 @@ class EditableFetch(object):
                    'fetch_method': self.fetch_method}
 
         results['custom'] = {'local_path': self.local_path,
-                             'real_path': real_path}
+                             'real_path': real_path,
+                             'symlinked_repo_root': dst_repo_root}
         results['content'] = find_results['content']
 
         return results
