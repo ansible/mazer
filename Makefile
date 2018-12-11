@@ -36,7 +36,7 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source ansible_galaxy_cli -m pytest
+	coverage run --source ansible_galaxy_cli --source ansible_galaxy -m pytest
 	coverage report -m
 	coverage html
 
