@@ -388,36 +388,3 @@ def install_repository(galaxy_context,
         raise_without_ignore(ignore_errors)
 
     return installed_repositories
-
-
-# FIXME: do we need this? archive.extract_files() may do this for us now
-def stuff_for_updating(content, display_callback, force_overwrite=False):
-
-    #       (or any set of ops needed)
-    # FIXME - Unsure if we want to handle the install info for all galaxy
-    #         content. Skipping for non-role types for now.
-    # FIXME: this is just deciding if the content is installed or not, should check for it in
-    #        a 'installed_content_db' once we have one
-    if content.content_type == "role":
-        if content.install_info is not None:
-            # FIXME: seems like this should be up to the content type specific serializer/installer to figure out
-            # FIXME: this just checks for version difference, will need to enfore update/replace policy somewhre
-            if content.install_info['version'] != content.version or force_overwrite:
-                if force_overwrite:
-                    display_callback('- changing role %s from %s to %s' %
-                                     (content.name, content.install_info['version'], content.version or "unspecified"))
-                    # FIXME: when we get to setting up a tranaction/update plan,
-                    #        this would add a remove step there and an install
-                    #        step (or an update maybe)
-                    content.remove()
-                else:
-                    # eventually need to build a results object here
-                    log.warning('- %s (%s) is already installed - use --force to change version to %s',
-                                content.name, content.install_info['version'], content.version or "unspecified")
-                    # continue
-                    return None
-            else:
-                if not force_overwrite:
-                    display_callback('- %s is already installed, skipping.' % str(content))
-                    # continue
-                    return None
