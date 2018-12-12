@@ -7,6 +7,7 @@ from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
 from ansible_galaxy.models.repository import Repository
 from ansible_galaxy.models.repository_spec import RepositorySpec
+from ansible_galaxy.models.requirement import Requirement, RequirementOps
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ def test_install_repos_empty_requirements(galaxy_context):
                                        display_callback=display_callback)
 
     log.debug('ret: %s', ret)
+
     assert isinstance(ret, list)
     assert ret == []
 
@@ -42,6 +44,7 @@ def test_install_repositories(galaxy_context, mocker):
                                        display_callback=display_callback)
 
     log.debug('ret: %s', ret)
+
     assert isinstance(ret, list)
     assert ret == expected_repos
 
@@ -61,6 +64,7 @@ def test_install_repositories_no_deps_required(galaxy_context, mocker):
                                        display_callback=display_callback)
 
     log.debug('ret: %s', ret)
+
     assert isinstance(ret, list)
     assert ret == needed_deps
 
@@ -80,3 +84,35 @@ def test_verify_repository_specs_have_namespace(galaxy_context):
         return
 
     assert False, 'Expected a GalaxyError to be raised here since the repository_spec %s has no namespace or dots' % repository_spec
+
+
+def test_find_new_deps_from_installed_no_deps(galaxy_context):
+    res = install.find_new_deps_from_installed(galaxy_context, [], no_deps=True)
+    assert res == []
+
+
+def test_find_new_deps_from_installed_nothing_installed(galaxy_context):
+    res = install.find_new_deps_from_installed(galaxy_context, [])
+    assert res == []
+
+
+def test_find_new_deps_from_installed(galaxy_context):
+    repo_spec = RepositorySpec(namespace='some_namespace',
+                               name='some_name',
+                               version='4.3.2')
+
+    req_spec = RepositorySpec(namespace='some_required_namespace',
+                              name='some_required_name',
+                              version='1.0.0')
+
+    some_requirement = Requirement(repository_spec=repo_spec,
+                                   op=RequirementOps.EQ,
+                                   requirement_spec=req_spec)
+
+    installed_repo = Repository(repo_spec, requirements=[some_requirement, some_requirement])
+    res = install.find_new_deps_from_installed(galaxy_context, [installed_repo])
+
+    log.debug('res: %s', res)
+    assert isinstance(res, list)
+    assert isinstance(res[0], Requirement)
+    assert res[0].requirement_spec == req_spec
