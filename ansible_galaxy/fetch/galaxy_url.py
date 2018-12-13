@@ -94,8 +94,6 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         repo_versions_url = related.get('versions', None)
 
-        log.debug('related=%s', related)
-
         # FIXME: exception handling
         repoversions = api.fetch_content_related(repo_versions_url)
 

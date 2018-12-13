@@ -1,7 +1,9 @@
 import logging
 import pytest
 
+from ansible_galaxy import exceptions
 from ansible_galaxy.fetch import galaxy_url
+from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
 
@@ -39,6 +41,80 @@ EXAMPLE_REPO_VERSIONS_LIST = \
         },
         EXAMPLE_REPO_VERSION_LATEST,
     ]
+
+
+@pytest.fixture
+def galaxy_url_fetch(galaxy_context):
+    repo_spec = RepositorySpec(namespace='some_namespace',
+                               name='some_name',
+                               version='9.3.245')
+
+    galaxy_url_fetch = galaxy_url.GalaxyUrlFetch(repo_spec, galaxy_context)
+    log.debug('galaxy_url_fetch: %s', galaxy_url_fetch)
+
+    return galaxy_url_fetch
+
+
+def test_galaxy_url_fetch_find(galaxy_url_fetch, mocker):
+    MockedGalaxyAPI = mocker.patch('ansible_galaxy.fetch.galaxy_url.GalaxyAPI', autospec=True)
+
+    external_url = 'http://example.invalid/invalid/whatever'
+
+    instance = MockedGalaxyAPI.return_value
+    instance.lookup_repo_by_name.return_value = {'related': {'versions': 'http://example.invalid/foo'},
+                                                 'external_url': external_url}
+    instance.fetch_content_related.return_value = [{'version': '1.2.3'}, {'version': '9.3.245'}]
+
+    res = galaxy_url_fetch.find()
+
+    log.debug('res:%s', res)
+
+    assert res['content']['galaxy_namespace'] == 'some_namespace'
+    assert res['content']['repo_name'] == 'some_name'
+
+    assert isinstance(res['custom']['potential_repository_spec'], RepositorySpec)
+    assert res['custom']['external_url'] == external_url
+
+
+def test_galaxy_url_fetch_find_no_repo_data(galaxy_url_fetch, mocker):
+    MockedGalaxyAPI = mocker.patch('ansible_galaxy.fetch.galaxy_url.GalaxyAPI', autospec=True)
+
+    instance = MockedGalaxyAPI.return_value
+    instance.lookup_repo_by_name.return_value = {}
+
+    faux_server_url = 'http://galaxy.invalid/'
+    instance.api_server = faux_server_url
+
+    with pytest.raises(exceptions.GalaxyClientError, match='- sorry, some_namespace.some_name was not found on %s' % faux_server_url) as exc_info:
+        galaxy_url_fetch.find()
+
+    log.debug('exc_info:%s', exc_info)
+
+
+def test_galaxy_url_fetch_fetch(galaxy_url_fetch, mocker):
+    collection_path = '/dev/null/path/to/collection.tar.gz'
+
+    mocked_download_fetch_url = mocker.patch('ansible_galaxy.fetch.galaxy_url.download.fetch_url', autospec=True)
+    mocked_download_fetch_url.return_value = collection_path
+
+    find_results = {'content': {'galaxy_namespace': 'some_namespace',
+                                'repo_name': 'some_name'},
+                    'custom': {'repo_data': {},
+                               'external_url': 'http://example.invalid/invalid/whatever',
+                               'repoversion': {'version': '9.3.245'}
+                               },
+                    }
+
+    res = galaxy_url_fetch.fetch(find_results)
+
+    log.debug('res:%s', res)
+
+    assert isinstance(res, dict)
+    assert res['archive_path'] == collection_path
+    assert res['download_url'] == 'http://example.invalid/invalid/whatever/archive/9.3.245.tar.gz'
+    assert res['fetch_method'] == 'galaxy_url'
+    assert isinstance(res['content'], dict)
+    assert res['content']['fetched_version'] == '9.3.245'
 
 
 # Note that select_collection_version just gets the full version object
@@ -102,3 +178,52 @@ def test_select_collection_version_empty_repoversions():
 
     assert isinstance(res, dict)
     assert res == {}
+
+
+# def test_get_download_url_no_data():
+#    res = galaxy_url.get_download_url()
+
+#    log.debug('res: %s', res)
+
+
+def test_get_download_url_empty_data():
+    repo_data = {}
+    external_url = ""
+    repoversion = []
+    res = galaxy_url.get_download_url(repo_data=repo_data, external_url=external_url, repoversion=repoversion)
+
+    log.debug('res: %s', res)
+    assert res is None
+
+
+def test_get_download_url_download_url_in_repo_data():
+    download_url = 'https://github.com/alikins/collection_reqs_test/archive/0.0.13.tar.gz'
+    repo_data = {'download_url': download_url}
+    external_url = 'https://github.com/alikins/collection_reqs_test'
+    repoversion = []
+    res = galaxy_url.get_download_url(repo_data=repo_data, external_url=external_url, repoversion=repoversion)
+
+    log.debug('res: %s', res)
+    assert res == download_url
+
+
+def test_get_download_url_download_url_in_repo_version():
+    repo_data = {}
+    external_url = 'https://github.com/alikins/collection_reqs_test'
+    repoversion = EXAMPLE_REPO_VERSIONS_LIST[0]
+    res = galaxy_url.get_download_url(repo_data=repo_data, external_url=external_url, repoversion=repoversion)
+
+    log.debug('res: %s', res)
+    assert res == EXAMPLE_REPO_VERSIONS_LIST[0]['download_url']
+
+
+def test_get_download_url_no_download_url_in_repodata_or_repoversion():
+    repo_data = {}
+    external_url = 'https://github.com/alikins/collection_reqs_test'
+    repoversion = EXAMPLE_REPO_VERSIONS_LIST[0].copy()
+    del repoversion['download_url']
+
+    res = galaxy_url.get_download_url(repo_data=repo_data, external_url=external_url, repoversion=repoversion)
+
+    log.debug('res: %s', res)
+    assert res == 'https://github.com/alikins/collection_reqs_test/archive/1.0.6.tar.gz'
