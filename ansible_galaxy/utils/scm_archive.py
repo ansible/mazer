@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import subprocess
@@ -5,9 +6,11 @@ import tempfile
 
 from ansible_galaxy import exceptions
 
+log = logging.getLogger(__name__)
+
 
 # TODO: split hg and git impls into sep methods, kind of a strategy pattern
-def scm_archive_content(src, scm='git', name=None, version='HEAD'):
+def scm_archive_content(src, name, scm='git', version='HEAD'):
     """
     Archive a Galaxy Repository SCM repo locally
 
@@ -19,11 +22,15 @@ def scm_archive_content(src, scm='git', name=None, version='HEAD'):
     tempdir = tempfile.mkdtemp()
     clone_cmd = [scm, 'clone', src, name]
 
+    log.debug('clone_cmd: %s', clone_cmd)
+    log.debug('clone tempdir: %s', tempdir)
+
     with open('/dev/null', 'w') as devnull:
         try:
             popen = subprocess.Popen(clone_cmd, cwd=tempdir, stdout=devnull, stderr=devnull)
-        except Exception as e:
-            raise exceptions.GalaxyClientError('error executing: "%s": %s' % (" ".join(clone_cmd), e))
+        except Exception as exc:
+            log.debug(exc, exc_info=True)
+            raise exceptions.GalaxyClientError('error executing: "%s": %s' % (" ".join(clone_cmd), exc))
         rc = popen.wait()
     if rc != 0:
         raise exceptions.GalaxyClientError("- command %s failed in directory %s (rc=%s)" % (' '.join(clone_cmd), tempdir, rc))
@@ -33,7 +40,8 @@ def scm_archive_content(src, scm='git', name=None, version='HEAD'):
         with open('/dev/null', 'w') as devnull:
             try:
                 popen = subprocess.Popen(checkout_cmd, cwd=os.path.join(tempdir, name), stdout=devnull, stderr=devnull)
-            except (IOError, OSError):
+            except (IOError, OSError) as exc:
+                log.debug(exc, exc_info=True)
                 raise exceptions.GalaxyClientError("error executing: %s" % " ".join(checkout_cmd))
             rc = popen.wait()
         if rc != 0:
@@ -42,6 +50,9 @@ def scm_archive_content(src, scm='git', name=None, version='HEAD'):
     temp_file = tempfile.NamedTemporaryFile(delete=False,
                                             prefix='tmp-ansible-galaxy-content-archive-',
                                             suffix='.tar')
+
+    log.debug('Archiving scm src %s to tar file: %s', src, temp_file.name)
+
     if scm == 'hg':
         archive_cmd = ['hg', 'archive', '--prefix', "%s/" % name]
         if version:
