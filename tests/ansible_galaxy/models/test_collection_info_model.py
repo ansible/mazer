@@ -33,19 +33,57 @@ def test_required_error():
     assert 'name' in str(exc) in str(exc)
 
 
-def test_name_parse_error():
-    test_data = {
-        'namespace': 'foo',
-        'name': '1-foo',
-        'authors': ['chouseknecht'],
-        'license': 'GPL-3.0-or-later',
-        'version': '0.0.1',
-        'description': 'unit testing thing'
-    }
-    # ValueError: Invalid collection metadata. Expecting 'name' to be in Galaxy name format, <namespace>.<collection_name>, instead found 'foo'.
-    with pytest.raises(ValueError) as exc:
+def test_name_parse_error_dots_in_name():
+    test_data = {'namespace': 'foo',
+                 'name': 'foo.bar',
+                 'authors': ['chouseknecht'],
+                 'license': 'GPL-3.0-or-later',
+                 'version': '0.0.1',
+                 'description': 'unit testing thing'}
+
+    # CollectionInfo(**test_data)
+    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to not include any '.' but 'foo.bar' has a '.'
+    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to not include any '\.' but 'foo\.bar' has a '\.'"
+    with pytest.raises(ValueError,
+                       match=error_re) as exc:
         CollectionInfo(**test_data)
     assert 'name' in str(exc)
+
+
+def test_name_parse_error_other_chars_namespace():
+    test_data = {'namespace': 'foo@blip',
+                 'name': 'foo',
+                 'authors': ['chouseknecht'],
+                 'license': 'GPL-3.0-or-later',
+                 'version': '0.0.1',
+                 'description': 'unit testing thing'}
+
+    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to contain alphanumeric characters,
+    # '-', or '_' only but 'foo@blip' contains others"
+    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to contain alphanumeric characters, "
+    "'-', or '_' only but 'foo@blip' contains others"
+    with pytest.raises(ValueError,
+                       match=error_re) as exc:
+        CollectionInfo(**test_data)
+    assert 'foo@blip' in str(exc)
+
+
+def test_name_parse_error_name_leading_underscore():
+    test_data = {'namespace': 'foo',
+                 'name': '_foo',
+                 'authors': ['chouseknecht'],
+                 'license': 'GPL-3.0-or-later',
+                 'version': '0.0.1',
+                 'description': 'unit testing thing'}
+
+    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '-' or '_' but '_foo' did
+    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to contain alphanumeric characters, "
+    "'-', or '_' only but 'foo@blip' contains others"
+    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '-' or '_' but '_foo' did"
+    with pytest.raises(ValueError,
+                       match=error_re) as exc:
+        CollectionInfo(**test_data)
+    assert '_foo' in str(exc)
 
 
 def test_type_list_error():
