@@ -88,4 +88,6 @@ def test_load_from_archive(galaxy_context, tmpdir):
 
     # CollectionRepositoryArtifactArchive(info=RepositoryArchiveInfo(archive_type='multi-content-artifact', top_dir='greetings_namespace.hello-11.11.11'
     assert res.info.archive_type == 'multi-content-artifact'
-    assert res.info.top_dir == 'greetings_namespace.hello-11.11.11'
+
+    # topdir is namespace-name-version (note: not namespace.name-version)
+    assert res.info.top_dir == 'greetings_namespace-hello-11.11.11'
