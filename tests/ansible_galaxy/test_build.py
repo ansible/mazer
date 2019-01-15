@@ -27,13 +27,15 @@ def _build_context(collection_path=None, output_path=None):
 
 
 def _collection_info(namespace=None, name=None, version=None, authors=None):
-    name = name or 'some_namespace.some_name'
+    # name = name or 'some_namespace.some_name'
+    namespace = namespace or 'some_namespace'
+    name = name or 'some_name'
     version = version or '1.2.3'
     authors = authors or ['Rex Chapman']
     description = "Unit testing thing"
     test_license = 'GPL-3.0-or-later'
 
-    return CollectionInfo(name=name, version=version, authors=authors, description=description,
+    return CollectionInfo(namespace=namespace, name=name, version=version, authors=authors, description=description,
                           license=test_license)
 
 

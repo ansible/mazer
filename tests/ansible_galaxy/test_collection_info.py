@@ -15,7 +15,8 @@ log = logging.getLogger(__name__)
 def test_load():
     file_name = "example_collection_info1.yml"
     test_data_path = os.path.join(os.path.dirname(__file__), '%s' % file_name)
-    expected = {'name': 'some_namespace.some_name',
+    expected = {'namespace': 'some_namespace',
+                'name': 'some_name',
                 'version': '11.11.11',
                 'authors': ['Carlos Boozer'],
                 'description': 'something',

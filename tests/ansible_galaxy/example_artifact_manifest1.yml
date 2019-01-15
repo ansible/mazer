@@ -1,5 +1,6 @@
 collection_info:
-  name: "some_namespace.some_name"
+  namespace: "some_namespace"
+  name: "some_name"
   version: "1.2.3"
   authors: ["Javale McGee"]
   license: "GPL-3.0-or-later"

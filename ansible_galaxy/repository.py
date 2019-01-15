@@ -82,15 +82,16 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
     # FIXME: change collectionInfo to have separate name/namespace so we dont have to 'parse' the name
     # repo_spec = repository_spec.repository_spec_from_string(col_info.name, namespace_override=namespace)
     # spec_data = repository_spec_parse.parse_string(col_info.name)
-    spec_data = repository_spec.spec_data_from_string(col_info.name, namespace_override=namespace)
+    # spec_data = repository_spec.spec_data_from_string(col_info.name, namespace_override=namespace)
 
-    log.debug('spec_data: %s', spec_data)
+    # log.debug('spec_data: %s', spec_data)
     # log.debug('repo_spec: %s', repo_spec)
 
     # Build a repository_spec of the repo now so we can pass it things like requirements.load()
     # that need to know what requires something
-    repo_spec = RepositorySpec(namespace=spec_data.get('namespace', namespace),
-                               name=spec_data.get('name'),
+    # if we specify a namespace, use it otherwise use the info from galaxy.yml
+    repo_spec = RepositorySpec(namespace=namespace or col_info.namespace,
+                               name=col_info.name,
                                version=col_info.version,
                                spec_string=archive_path,
                                # fetch_method=None,

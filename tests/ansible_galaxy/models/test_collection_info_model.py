@@ -8,7 +8,8 @@ log = logging.getLogger(__name__)
 
 def test_license_error():
     test_data = {
-        'name': 'foo.foo',
+        'namespace': 'foo',
+        'name': 'foo',
         'authors': ['chouseknecht'],
         'license': 'GPLv2',
         'version': '0.0.1',
@@ -21,6 +22,7 @@ def test_license_error():
 
 def test_required_error():
     test_data = {
+        'namespace': 'foo',
         'authors': ['chouseknecht'],
         'license': 'GPL-3.0-or-later',
         'version': '0.0.1',
@@ -33,7 +35,8 @@ def test_required_error():
 
 def test_name_parse_error():
     test_data = {
-        'name': 'foo',
+        'namespace': 'foo',
+        'name': '1-foo',
         'authors': ['chouseknecht'],
         'license': 'GPL-3.0-or-later',
         'version': '0.0.1',
@@ -47,7 +50,8 @@ def test_name_parse_error():
 
 def test_type_list_error():
     test_data = {
-        'name': 'foo.foo',
+        'namespace': 'foo',
+        'name': 'foo',
         'authors': 'chouseknecht',
         'license': 'GPL-3.0-or-later',
         'version': '0.0.1',
@@ -60,14 +64,15 @@ def test_type_list_error():
 
 def test_empty():
     test_data = {}
-    # ValueError: Invalid collection metadata. 'name' is required
-    with pytest.raises(ValueError, match=".*'name'.*"):
+    # ValueError: Invalid collection metadata. 'namespace' is required
+    with pytest.raises(ValueError, match=".*'namespace'.*"):
         CollectionInfo(**test_data)
 
 
 def test_minimal():
     test_data = {
-        'name': 'foo.foo',
+        'namespace': 'foo',
+        'name': 'foo',
         'license': 'GPL-3.0-or-later',
         'version': '1.0.0',
         'description': 'unit testing thing',
@@ -94,7 +99,8 @@ def test_minimal():
 
 def test_authors_append():
     test_data = {
-        'name': 'foo.foo',
+        'namespace': 'foo',
+        'name': 'foo',
         # let authors go to the defualt
         # 'authors': ['chouseknecht'],
         'license': 'GPL-3.0-or-later',
@@ -131,7 +137,8 @@ def test_authors_append():
 
 def test_semantic_version_error():
     test_data = {
-        'name': 'foo.foo',
+        'namespace': 'foo',
+        'name': 'foo',
         'authors': ['chouseknecht'],
         'license': 'GPL-3.0-or-later',
         'version': 'foo',
@@ -144,7 +151,8 @@ def test_semantic_version_error():
 
 def test_namespace_property():
     test_data = {
-        'name': 'foo.foo',
+        'namespace': 'foo',
+        'name': 'foo',
         'authors': ['chouseknecht'],
         'license': 'GPL-3.0-or-later',
         'version': '1.0.0',
