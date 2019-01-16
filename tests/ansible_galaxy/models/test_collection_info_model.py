@@ -107,6 +107,32 @@ def test_type_authors_not_list_error(col_info):
     assert 'authors' in str(exc)
 
 
+def test_keywords_non_alpha_error(col_info):
+    bad_keyword = 'bad-keyword!'
+    col_info['keywords'] = ['goodkeyword', bad_keyword]
+
+    # ValueError: Invalid collection metadata. Expecting keywords to contain alphanumeric characters only, instead found 'bad-keyword!'.
+    error_re = r"Invalid collection metadata. Expecting keywords to contain alphanumeric characters only, instead found '.*'"
+
+    with pytest.raises(ValueError,
+                       match=error_re) as exc:
+        CollectionInfo(**col_info)
+    assert bad_keyword in str(exc)
+
+
+def test_keywords_not_a_list_error(col_info):
+    not_a_list = 'notakeywordlist'
+    col_info['keywords'] = not_a_list
+
+    # ValueError: Invalid collection metadata. Expecting 'keywords' to be a list
+    error_re = r"Invalid collection metadata. Expecting 'keywords' to be a list"
+
+    with pytest.raises(ValueError,
+                       match=error_re) as exc:
+        CollectionInfo(**col_info)
+    assert 'keywords' in str(exc)
+
+
 def test_empty():
     col_info = {}
     # ValueError: Invalid collection metadata. 'namespace' is required
