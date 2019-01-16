@@ -5,6 +5,9 @@ from ansible_galaxy.models.collection_info import CollectionInfo
 
 log = logging.getLogger(__name__)
 
+NON_ALPHA_ERROR_PAT = r"Invalid collection metadata. Expecting 'name' and 'namespace' to contain only alphanumeric characters "
+"or '_' only but '.*' contains others"
+
 
 @pytest.fixture
 def col_info():
@@ -50,12 +53,10 @@ def test_name_parse_error_dots_in_name(col_info):
 def test_name_parse_error_other_chars_namespace(col_info):
     col_info['namespace'] = 'foo@blip'
 
-    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to contain alphanumeric characters,
-    # '-', or '_' only but 'foo@blip' contains others"
-    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to contain alphanumeric characters, "
-    "'-', or '_' only but 'foo@blip' contains others"
+    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to contain only alphanumeric characters
+    # or '_' only but 'foo@blip' contains others"
     with pytest.raises(ValueError,
-                       match=error_re) as exc:
+                       match=NON_ALPHA_ERROR_PAT) as exc:
         CollectionInfo(**col_info)
     assert 'foo@blip' in str(exc)
 
@@ -63,8 +64,8 @@ def test_name_parse_error_other_chars_namespace(col_info):
 def test_name_parse_error_name_leading_underscore(col_info):
     col_info['name'] = '_foo'
 
-    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '-' or '_' but '_foo' did
-    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '-' or '_' but '_foo' did"
+    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '_' but '_foo' did
+    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '_' but '_foo' did"
     with pytest.raises(ValueError,
                        match=error_re) as exc:
         CollectionInfo(**col_info)
@@ -75,10 +76,8 @@ def test_name_parse_error_name_leading_hyphen(col_info):
     col_info['name'] = '-foo'
 
     # For the case of a leading '-', the 'no dashes' check raises error first
-    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to contain alphanumeric characters, "
-    "'-', or '_' only but '-foo' contains others"
     with pytest.raises(ValueError,
-                       match=error_re) as exc:
+                       match=NON_ALPHA_ERROR_PAT) as exc:
         CollectionInfo(**col_info)
     assert '-foo' in str(exc)
 
@@ -86,10 +85,8 @@ def test_name_parse_error_name_leading_hyphen(col_info):
 def test_name_has_hypen_error(col_info):
     col_info['name'] = 'foo-bar'
 
-    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to contain alphanumeric characters, "
-    "'-', or '_' only but 'foo-bar' contains others"
     with pytest.raises(ValueError,
-                       match=error_re) as exc:
+                       match=NON_ALPHA_ERROR_PAT) as exc:
         CollectionInfo(**col_info)
     assert 'foo-bar' in str(exc)
 
@@ -97,10 +94,8 @@ def test_name_has_hypen_error(col_info):
 def test_namespace_has_hypen_error(col_info):
     col_info['namespace'] = 'foo-namespace'
 
-    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to contain alphanumeric characters, "
-    "'-', or '_' only but 'foo-namespace' contains others"
     with pytest.raises(ValueError,
-                       match=error_re) as exc:
+                       match=NON_ALPHA_ERROR_PAT) as exc:
         CollectionInfo(**col_info)
     assert 'foo-namespace' in str(exc)
 

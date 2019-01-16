@@ -89,6 +89,7 @@ class CollectionInfo(object):
         if '.' in value:
             self.value_error("Expecting 'name' and 'namespace' to not include any '.' but '%s' has a '.'" % value)
         if not re.match(NAME_REGEXP, value):
-            self.value_error("Expecting 'name' and 'namespace' to contain alphanumeric characters, '-', or '_' only but '%s' contains others" % value)
-        if value.startswith(('-', '_')):
-            self.value_error("Expecting 'name' and 'namespace' to not start with '-' or '_' but '%s' did" % value)
+            self.value_error("Expecting 'name' and 'namespace' to contain only alphanumeric characters or '_' only but '%s' contains others" % value)
+        # since the NAME_REGEXP catches use of hyphen '-' at all, the next check doesn't need to check for leading hyphen
+        if value.startswith(('_',)):
+            self.value_error("Expecting 'name' and 'namespace' to not start with '_' but '%s' did" % value)
