@@ -9,7 +9,6 @@ from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
-from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
 
 from ansible_galaxy.models.repository_spec import RepositorySpec
