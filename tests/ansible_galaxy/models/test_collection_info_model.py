@@ -74,8 +74,9 @@ def test_name_parse_error_name_leading_underscore(col_info):
 def test_name_parse_error_name_leading_hyphen(col_info):
     col_info['name'] = '-foo'
 
-    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '-' or '_' but '_foo' did
-    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '-' or '_' but '-foo' did"
+    # For the case of a leading '-', the 'no dashes' check raises error first
+    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to contain alphanumeric characters, "
+    "'-', or '_' only but '-foo' contains others"
     with pytest.raises(ValueError,
                        match=error_re) as exc:
         CollectionInfo(**col_info)

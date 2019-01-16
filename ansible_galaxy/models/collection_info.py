@@ -10,7 +10,7 @@ import semver
 log = logging.getLogger(__name__)
 
 TAG_REGEXP = re.compile('^[a-z0-9]+$')
-NAME_REGEXP = re.compile(r'^[a-z0-9_-]+$')
+NAME_REGEXP = re.compile(r'^[a-z0-9_]+$')
 # see https://github.com/ansible/galaxy/issues/957
 
 
