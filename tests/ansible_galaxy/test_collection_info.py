@@ -21,8 +21,12 @@ def test_load():
                 'authors': ['Carlos Boozer'],
                 'description': 'something',
                 'license': 'GPL-3.0-or-later',
-                'keywords': [],
+                'tags': [],
                 'readme': 'README.md',
+                'documentation': None,
+                'homepage': None,
+                'issues': None,
+                'repository': None,
                 'dependencies': []}
 
     with open(test_data_path, 'r') as data_fd:
