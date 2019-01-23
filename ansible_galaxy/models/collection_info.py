@@ -14,6 +14,16 @@ NAME_REGEXP = re.compile(r'^[a-z0-9_]+$')
 # see https://github.com/ansible/galaxy/issues/957
 
 
+def list_or_none(val):
+    ''' if val is None, return a list'''
+
+    # if val is not a list or val 'None' return val
+    # and let the validators raise errors later
+    if val is None:
+        return []
+    return val
+
+
 @attr.s(frozen=True)
 class CollectionInfo(object):
     namespace = attr.ib(default=None)
@@ -22,6 +32,11 @@ class CollectionInfo(object):
     license = attr.ib(default=None)
     description = attr.ib(default=None)
 
+    repository = attr.ib(default=None)
+    documentation = attr.ib(default=None)
+    homepage = attr.ib(default=None)
+    issues = attr.ib(default=None)
+
     authors = attr.ib(factory=list)
     tags = attr.ib(factory=list)
     readme = attr.ib(default='README.md')
@@ -29,6 +44,7 @@ class CollectionInfo(object):
     # Note galaxy.yml 'dependencies' field is what mazer and ansible
     # consider 'requirements'. ie, install time requirements.
     dependencies = attr.ib(factory=list)
+    dependencies = attr.ib(factory=list, converter=list_or_none)
 
     @property
     def label(self):
@@ -71,9 +87,13 @@ class CollectionInfo(object):
 
     @authors.validator
     @tags.validator
-    @dependencies.validator
     def _check_list_type(self, attribute, value):
         if not isinstance(value, list):
+            self.value_error("Expecting '%s' to be a list" % attribute.name)
+
+    @dependencies.validator
+    def _check_depenencies_type(self, attribute, value):
+        if not isinstance(value, list) or value is None:
             self.value_error("Expecting '%s' to be a list" % attribute.name)
 
     @tags.validator
