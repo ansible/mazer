@@ -23,7 +23,7 @@ class CollectionInfo(object):
     description = attr.ib(default=None)
 
     authors = attr.ib(factory=list)
-    keywords = attr.ib(factory=list)
+    tags = attr.ib(factory=list)
     readme = attr.ib(default='README.md')
 
     # Note galaxy.yml 'dependencies' field is what mazer and ansible
@@ -42,7 +42,6 @@ class CollectionInfo(object):
     @name.validator
     @version.validator
     @license.validator
-    @description.validator
     def _check_required(self, attribute, value):
         if value is None:
             self.value_error("'%s' is required" % attribute.name)
@@ -71,17 +70,17 @@ class CollectionInfo(object):
                   "deprecated." % value)
 
     @authors.validator
-    @keywords.validator
+    @tags.validator
     @dependencies.validator
     def _check_list_type(self, attribute, value):
         if not isinstance(value, list):
             self.value_error("Expecting '%s' to be a list" % attribute.name)
 
-    @keywords.validator
+    @tags.validator
     def _check_keywords(self, attribute, value):
         for k in value:
             if not re.match(TAG_REGEXP, k):
-                self.value_error("Expecting keywords to contain alphanumeric characters only, "
+                self.value_error("Expecting tags to contain alphanumeric characters only, "
                                  "instead found '%s'." % k)
 
     @name.validator
