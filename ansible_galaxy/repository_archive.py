@@ -10,7 +10,7 @@ from ansible_galaxy import install_info
 from ansible_galaxy.models import content
 from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo, CollectionRepositoryArchive
 from ansible_galaxy.models.repository_archive import CollectionRepositoryArtifactArchive, TraditionalRoleRepositoryArchive
-from ansible_galaxy.repository_spec import FetchMethods
+from ansible_galaxy.models.repository_spec import FetchMethods
 from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.installation_results import InstallationResults
 
@@ -181,9 +181,10 @@ def load_tarfile_archive_info(archive_path, repository_spec):
 
     try:
         repository_tar_file = tarfile.open(archive_path, tar_flags)
-    except tarfile.TarError:
+    except tarfile.TarError as e:
+        log.exception(e)
         raise exceptions.GalaxyClientError("Error opening the tar file %s with flags: %s for repo: %s" %
-                                           (archive_path, tar_flags, repository_spec.label))
+                                           (archive_path, tar_flags, repository_spec))
 
     members = repository_tar_file.getmembers()
     archive_info = build_archive_info(archive_path, [m.name for m in members])

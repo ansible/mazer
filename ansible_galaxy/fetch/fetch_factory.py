@@ -1,12 +1,12 @@
 import logging
 
 from ansible_galaxy import exceptions
-from ansible_galaxy.repository_spec import FetchMethods
 from ansible_galaxy.fetch import galaxy_url
 from ansible_galaxy.fetch import local_file
 from ansible_galaxy.fetch import remote_url
 from ansible_galaxy.fetch import scm_url
 from ansible_galaxy.fetch import editable
+from ansible_galaxy.models.repository_spec import FetchMethods
 
 log = logging.getLogger(__name__)
 

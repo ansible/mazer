@@ -5,7 +5,7 @@ import pytest
 
 from ansible_galaxy import repository_spec
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.repository_spec import RepositorySpec
+from ansible_galaxy.models.repository_spec import RepositorySpec, FetchMethods
 
 log = logging.getLogger(__name__)
 
@@ -32,15 +32,15 @@ repo_spec_from_string_cases = \
                                     scm='git')},
         {'spec': 'git+https://mazertestuser@github.com/geerlingguy/ansible-role-apache.git,version=2.0.0',
          'expected': RepositorySpec(name='ansible-role-apache', namespace=None, version='2.0.0',
-                                    scm='git', fetch_method=repository_spec.FetchMethods.SCM_URL)},
+                                    scm='git', fetch_method=FetchMethods.SCM_URL)},
         # A path to a file without a dot in it's name. It's path will include where the tests are run from
         # so specify a ',name=' to provide a predictable name (otherwise it would be the full path)
         {'spec': '%s,name=the_license' % os.path.normpath(os.path.join(os.path.dirname(__file__), '../../LICENSE')),
          'expected': RepositorySpec(name='the_license', namespace=None,
-                                    fetch_method=repository_spec.FetchMethods.LOCAL_FILE)},
+                                    fetch_method=FetchMethods.LOCAL_FILE)},
         {'spec': 'https://docs.ansible.com,name=the_docs',
          'expected': RepositorySpec(name='the_docs', namespace=None,
-                                    scm=None, fetch_method=repository_spec.FetchMethods.REMOTE_URL)},
+                                    scm=None, fetch_method=FetchMethods.REMOTE_URL)},
         # 'foo',
         # 'foo,1.2.3',
         # 'foo,version=1.2.3',

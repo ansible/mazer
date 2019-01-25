@@ -3,6 +3,7 @@ import os
 
 from ansible_galaxy import exceptions
 from ansible_galaxy import galaxy_repository_spec
+from ansible_galaxy.models.repository_spec import FetchMethods
 
 log = logging.getLogger(__name__)
 
@@ -92,14 +93,6 @@ def is_scm(repository_spec_string):
         return True
 
     return False
-
-
-# FIXME: do we have an enum like class for py2.6? worth a dep?
-class FetchMethods(object):
-    SCM_URL = 'SCM_URL'
-    LOCAL_FILE = 'LOCAL_FILE'
-    REMOTE_URL = 'REMOTE_URL'
-    GALAXY_URL = 'GALAXY_URL'
 
 
 def chose_repository_fetch_method(repository_spec_string):

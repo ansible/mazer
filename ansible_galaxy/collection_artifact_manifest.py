@@ -29,7 +29,7 @@ def load(data_or_file_object):
     data_dict = yaml.safe_load(data_or_file_object)
 
     # log.debug('data: %s', pf(data_dict))
-    log.debug('data_dict: %s', data_dict)
+    # log.debug('data_dict: %s', data_dict)
 
     col_info = CollectionInfo(**data_dict['collection_info'])
     # klass = CollectionArtifactManifest
@@ -37,9 +37,10 @@ def load(data_or_file_object):
                                           files=data_dict['files'])
     # instance = klass(**data_dict)
 
-    log.debug('%s instance from_kwargs: %s', type(instance), instance)
+    log.debug('%s instance from_kwargs', type(instance))
+    # instance)
 
-    log.debug('collection_artifact_manifest: %s', instance)
+    # log.debug('collection_artifact_manifest: %r', instance)
 
     return instance
 

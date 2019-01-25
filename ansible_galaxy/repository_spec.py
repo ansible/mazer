@@ -1,10 +1,16 @@
 import logging
 import os
 
+import attr
+
 from ansible_galaxy import galaxy_repository_spec
+from ansible_galaxy import repository
+from ansible_galaxy import repository_archive
 from ansible_galaxy import repository_spec_parse
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.repository_spec import RepositorySpec
+
+from ansible_galaxy.models.repository_spec import RepositorySpec, FetchMethods
+
 
 log = logging.getLogger(__name__)
 
@@ -14,15 +20,6 @@ def is_scm(repository_spec_string):
         return True
 
     return False
-
-
-# FIXME: do we have an enum like class for py2.6? worth a dep?
-class FetchMethods(object):
-    SCM_URL = 'SCM_URL'
-    LOCAL_FILE = 'LOCAL_FILE'
-    REMOTE_URL = 'REMOTE_URL'
-    GALAXY_URL = 'GALAXY_URL'
-    EDITABLE = 'EDITABLE'
 
 
 def chose_repository_fetch_method(repository_spec_string, editable=False):
@@ -90,27 +87,54 @@ def editable_resolve(data):
     return data
 
 
+def load_data_from_repository_archive(repository_spec_string):
+    log.debug('repo_spec_string: %s', repository_spec_string)
+
+    # TODO: may need some name/path sanitations here
+    archive_file_name = repository_spec_string
+
+    repo_archive = repository_archive.load_archive(archive_file_name,
+                                                   repository_spec=None)
+
+    repo = repository.load_from_archive(repo_archive)
+
+    # TODO: asdict?
+    spec_data = repo.repository_spec
+    log.debug('spec_data: %s', spec_data)
+
+    # FIXME: we already have a valid RepositorySpec, but we dict'ify it here
+    #        so existing code that assumes a dict continues to work
+    return attr.asdict(spec_data)
+
+
 def spec_data_from_string(repository_spec_string, namespace_override=None, fetch_method=None, editable=False):
     fetch_method = chose_repository_fetch_method(repository_spec_string, editable=editable)
 
     log.debug('fetch_method: %s', fetch_method)
 
-    spec_data = repository_spec_parse.parse_string(repository_spec_string)
-    spec_data['fetch_method'] = fetch_method
+    if fetch_method == FetchMethods.LOCAL_FILE:
+        # Since only know this is a local file we vaguely recognize, we have to
+        # open it up to get any more details. We _could_ attempt to parse the file
+        # name, but that rarely ends well...
+        spec_data = load_data_from_repository_archive(repository_spec_string)
+        spec_data['fetch_method'] = fetch_method
+    else:
+        spec_data = repository_spec_parse.parse_string(repository_spec_string)
+        spec_data['fetch_method'] = fetch_method
 
     log.debug('spec_data: %s', spec_data)
 
-    resolver = resolve
-    # FIXME need local_file artifact resolver?
+    resolved_data = {}
+
     if fetch_method == FetchMethods.GALAXY_URL:
-        resolver = galaxy_repository_spec.resolve
+        resolved_data = galaxy_repository_spec.resolve(spec_data)
+    elif fetch_method == FetchMethods.EDITABLE:
+        resolved_data = editable_resolve(spec_data)
+    else:
+        resolved_data = resolve(spec_data)
 
-    if fetch_method == FetchMethods.EDITABLE:
-        resolver = editable_resolve
-
-    resolved_name = resolver(spec_data)
-    log.debug('resolved_name: %s', resolved_name)
-    spec_data.update(resolved_name)
+    log.debug('resolved_data: %s', resolved_data)
+    spec_data.update(resolved_data)
 
     if namespace_override:
         if spec_data.get('namespace'):

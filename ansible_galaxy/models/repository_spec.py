@@ -7,6 +7,15 @@ from ansible_galaxy.utils.version import convert_string_to_semver
 log = logging.getLogger(__name__)
 
 
+# FIXME: do we have an enum like class for py2.6? worth a dep?
+class FetchMethods(object):
+    SCM_URL = 'SCM_URL'
+    LOCAL_FILE = 'LOCAL_FILE'
+    REMOTE_URL = 'REMOTE_URL'
+    GALAXY_URL = 'GALAXY_URL'
+    EDITABLE = 'EDITABLE'
+
+
 @attr.s(frozen=True)
 class RepositorySpec(object):
     '''The info used to identify and reference a galaxy content.

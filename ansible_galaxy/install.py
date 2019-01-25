@@ -10,7 +10,7 @@ from ansible_galaxy import repository_archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy.models.install_destination import InstallDestinationInfo
-from ansible_galaxy.repository_spec import FetchMethods
+from ansible_galaxy.models.repository_spec import FetchMethods
 
 log = logging.getLogger(__name__)
 
