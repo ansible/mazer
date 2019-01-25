@@ -269,10 +269,15 @@ class GalaxyAPI(object):
             form.add_field(key, data[key])
 
         form.add_file('file', os.path.basename(archive_path),
-                      fileHandle=codecs.open(archive_path, "rb"))
+                      fileHandle=codecs.open(archive_path, "rb"),
+                      mimetype='application/octet-stream')
 
-        url = '%s/namespaces/%s/collection/' % (self.baseurl, namespace_id)
+        # url = '%s/namespaces/%s/collection/' % (self.baseurl, namespace_id)
+        url = '%s/collections/' % self.baseurl
+        log.debug('url: %s', url)
+
         _, netloc, url, _, _, _ = urlparse(url)
+
         try:
             form_buffer = form.get_binary().getvalue()
             http = http_client.HTTPConnection(netloc)
@@ -283,13 +288,19 @@ class GalaxyAPI(object):
             http.endheaders()
             http.send(form_buffer)
         except socket.error as exc:
-            exceptions.GalaxyPublishError(
-                "Error transferring file to Galaxy server: %s" % str(exc)
+            log.exception(exc)
+            raise exceptions.GalaxyPublishError(
+                'Error transferring file "%s" to Galaxy server: %s' % (archive_path, str(exc))
             )
+
         r = http.getresponse()
+
+        log.debug('code: %s', r.getcode())
+        log.debug('info: %s', r.info())
+
         if r.status == 201:
             return r.read()
         else:
-            exceptions.GalaxyPublishError(
-                "Error transferring file to Galaxy server: %s - %s" % (r.status, r.reason)
+            raise exceptions.GalaxyPublishError(
+                'Error transferring file "%s" to Galaxy server: %s - %s' % (archive_path, r.status, r.reason)
             )
