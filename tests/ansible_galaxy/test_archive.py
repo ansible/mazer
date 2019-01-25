@@ -68,8 +68,8 @@ def test_extract_file_foo():
 
     files_to_extract = []
 
-    # for pathname in tar_example1:
     pathname = 'foo_blip.yml'
+    # for pathname in tar_example1:
     member = tarfile.TarInfo(pathname)
     tar_file.addfile(member, tmp_member_fo)
 

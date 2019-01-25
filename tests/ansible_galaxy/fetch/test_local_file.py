@@ -10,6 +10,46 @@ from ansible_galaxy import repository_spec
 log = logging.getLogger(__name__)
 
 
+JSON_DATA = b'''
+{
+    "collection_info": {
+        "namespace": "bcs",
+        "name": "bcsping",
+        "version": "0.0.1",
+        "license": "GPL-2.0-or-later",
+        "description": "i blatant copy and rename of the ping module",
+        "repository": null,
+        "documentation": null,
+        "homepage": null,
+        "issues": null,
+        "authors": [
+            "me"
+        ],
+        "tags": [],
+        "readme": "README.md",
+        "dependencies": []
+    },
+    "format": 1,
+    "files": [
+        {
+            "name": ".",
+            "ftype": "dir",
+            "chksum_type": null,
+            "chksum_sha256": null,
+            "_format": 1
+        },
+        {
+            "name": "galaxy.yml",
+            "ftype": "file",
+            "chksum_type": "sha256",
+            "chksum_sha256": "728ec435b1717502c305593c7d07116eaacb17ebf714a316f7a925e222f9bb24",
+            "_format": 1
+        }
+    ]
+}
+'''
+
+
 def test_local_file_fetch(mocker):
     tmp_file_fo = tempfile.NamedTemporaryFile(prefix='tmp', suffix='.tar.gz', delete=False)
     tmp_member_fo = tempfile.NamedTemporaryFile(delete=False, prefix='cccccccccc')
@@ -17,11 +57,20 @@ def test_local_file_fetch(mocker):
     tar_file = tarfile.open(mode='w:gz',
                             fileobj=tmp_file_fo)
 
-    pathname = 'MANIFEST.JSON'
+    pathname = 'namespace-name-1.2.3/'
     member = tarfile.TarInfo(pathname)
     tar_file.addfile(member, tmp_member_fo)
 
+    new_member = tarfile.TarInfo('namespace-name-1.2.3/MANIFEST.json')
+    tmp_member_fo.write(b'%s\n' % JSON_DATA)
+    # tmp_member_fo.flush()
+    # tmp_member_fo.close()
+    tar_file.addfile(new_member, tmp_member_fo)
+
+    log.debug('tar_file members: %s', tar_file.getmembers())
     tar_file.close()
+    tmp_file_fo.flush()
+    tmp_file_fo.close()
 
     repository_spec_ = repository_spec.repository_spec_from_string(tmp_file_fo.name)
 
