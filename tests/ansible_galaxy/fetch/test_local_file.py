@@ -6,6 +6,8 @@ import tempfile
 
 from ansible_galaxy.fetch import local_file
 from ansible_galaxy import repository_spec
+from ansible_galaxy.models.repository_archive import RepositoryArchive, RepositoryArchiveInfo
+from ansible_galaxy.models.repository_spec import RepositorySpec, FetchMethods
 
 log = logging.getLogger(__name__)
 
@@ -51,28 +53,23 @@ JSON_DATA = b'''
 
 
 def test_local_file_fetch(mocker):
-    tmp_file_fo = tempfile.NamedTemporaryFile(prefix='tmp', suffix='.tar.gz', delete=False)
-    tmp_member_fo = tempfile.NamedTemporaryFile(delete=False, prefix='cccccccccc')
+    tmp_file_fo = tempfile.NamedTemporaryFile(prefix='tmp', suffix='.tar.gz', delete=True)
     log.debug('tmp_file_fo.name=%s tmp_file=%s', tmp_file_fo.name, tmp_file_fo)
+
     tar_file = tarfile.open(mode='w:gz',
                             fileobj=tmp_file_fo)
 
-    pathname = 'namespace-name-1.2.3/'
-    member = tarfile.TarInfo(pathname)
-    tar_file.addfile(member, tmp_member_fo)
+    _repo_archive_info = RepositoryArchiveInfo(archive_type='foo',
+                                               top_dir='namespace-name-1.2.3',
+                                               archive_path=tmp_file_fo.name)
+    _repo_archive = RepositoryArchive(info=_repo_archive_info,
+                                      tar_file=tar_file)
+    mocker.patch('ansible_galaxy.repository_spec.repository_archive.load_archive',
+                 return_value=_repo_archive)
 
-    new_member = tarfile.TarInfo('namespace-name-1.2.3/MANIFEST.json')
-    tmp_member_fo.write(b'%s\n' % JSON_DATA)
-    # tmp_member_fo.flush()
-    # tmp_member_fo.close()
-    tar_file.addfile(new_member, tmp_member_fo)
-
-    log.debug('tar_file members: %s', tar_file.getmembers())
-    tar_file.close()
-    tmp_file_fo.flush()
-    tmp_file_fo.close()
-
-    repository_spec_ = repository_spec.repository_spec_from_string(tmp_file_fo.name)
+    repository_spec_ = RepositorySpec(namespace='namespace', name='name', version='1.2.3',
+                                      fetch_method=FetchMethods.LOCAL_FILE,
+                                      src=tmp_file_fo.name)
 
     mocker.patch('ansible_galaxy.fetch.local_file.LocalFileFetch._load_repository_archive',
                  return_value=mocker.Mock(name='mockRepoArchive'))
