@@ -1,5 +1,6 @@
 import mimetypes
 import io
+import uuid
 
 
 class MultiPartForm(object):
@@ -11,7 +12,7 @@ class MultiPartForm(object):
     def __init__(self):
         self.form_fields = []
         self.files = []
-        self.boundary = 'FORM-BOUNDRY'
+        self.boundary = '--------------------------%s' % uuid.uuid4().hex
         return
 
     def get_content_type(self):
