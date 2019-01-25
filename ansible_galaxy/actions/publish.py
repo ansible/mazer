@@ -1,4 +1,5 @@
 
+import attr
 import hashlib
 import json
 import logging
@@ -43,7 +44,7 @@ def _publish(galaxy_context,
     except Exception as exc:
         raise exceptions.GalaxyPublishError(str(exc), archive_path=archive_path)
 
-    display_callback(json.dumps(manifest.collection_info))
+    display_callback(json.dumps(attr.asdict(manifest.collection_info)))
 
     api = GalaxyAPI(galaxy_context)
 
