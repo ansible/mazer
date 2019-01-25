@@ -5,7 +5,6 @@ import tempfile
 
 
 from ansible_galaxy.fetch import local_file
-from ansible_galaxy import repository_spec
 from ansible_galaxy.models.repository_archive import RepositoryArchive, RepositoryArchiveInfo
 from ansible_galaxy.models.repository_spec import RepositorySpec, FetchMethods
 
