@@ -293,7 +293,9 @@ class GalaxyAPI(object):
         except socket.error as exc:
             log.exception(exc)
             raise exceptions.GalaxyPublishError(
-                'Error transferring file "%s" to Galaxy server: %s' % (archive_path, str(exc))
+                'Network error while transferring file "%s" to Galaxy server (%s): %s' %
+                (archive_path, self.galaxy.server['url'], str(exc)),
+                archive_path=archive_path
             )
 
         r = http.getresponse()
@@ -310,5 +312,7 @@ class GalaxyAPI(object):
             return response_body
         else:
             raise exceptions.GalaxyPublishError(
-                'Error transferring file "%s" to Galaxy server: %s - %s' % (archive_path, r.status, r.reason)
+                'Error transferring file "%s" to Galaxy server (%s): %s - %s' %
+                (archive_path, self.galaxy.server['url'], r.status, r.reason),
+                archive_path=archive_path
             )

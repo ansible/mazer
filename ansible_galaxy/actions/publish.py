@@ -1,5 +1,4 @@
 
-import attr
 import hashlib
 import json
 import logging
@@ -9,6 +8,7 @@ import tarfile
 from ansible_galaxy.rest_api import GalaxyAPI
 from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy import exceptions
+from ansible_galaxy.utils.text import to_text
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +45,9 @@ def _publish(galaxy_context,
     except Exception as exc:
         raise exceptions.GalaxyPublishError(str(exc), archive_path=archive_path)
 
-    display_callback(json.dumps(attr.asdict(manifest.collection_info)))
+    # display_callback('Creating publish task for %s from artifact archive %s' %
+    #                 (manifest.collection_info.label, archive_path))
+    # display_callback(json.dumps(attr.asdict(manifest.collection_info)))
 
     api = GalaxyAPI(galaxy_context)
 
@@ -59,7 +61,13 @@ def _publish(galaxy_context,
 
     log.debug("Publishing file %s with data: %s" % (archive_path, json.dumps(data)))
 
-    api.publish_file(data, archive_path, publish_api_key)
+    b_response_body = api.publish_file(data, archive_path, publish_api_key)
+    response_body = to_text(b_response_body, errors='surrogate_or_strict')
+
+    # TODO: try/except on json error but let bubble up for now
+
+    response_data = json.loads(response_body)
+    results['response_data'] = response_data
 
     return results
 
@@ -78,6 +86,11 @@ def publish(galaxy_context, archive_path, publish_api_key, display_callback):
             display_callback(error)
 
     if results['success']:
+        if results['response_data'].get('task', None):
+            display_callback('Publish task for %s created at %s/%s' %
+                             (archive_path,
+                              galaxy_context.server['url'],
+                              results['response_data']['task']))
         return os.EX_OK  # 0
 
     return os.EX_SOFTWARE  # 70
