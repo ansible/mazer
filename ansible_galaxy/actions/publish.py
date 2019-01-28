@@ -23,6 +23,7 @@ def _get_file_checksum(file_path):
 
 def _publish(galaxy_context,
              archive_path,
+             publish_api_key=None,
              display_callback=None):
 
     results = {
@@ -49,26 +50,25 @@ def _publish(galaxy_context,
     api = GalaxyAPI(galaxy_context)
 
     collection_name = manifest.collection_info.name
-    namespace_name = manifest.collection_info.namespace
 
-    log.debug("Attempting to fetch Galaxy namespace %s" % namespace_name)
-    namespace = api.fetch_namespace(namespace_name)
-
-    namespace_id = namespace.get('id')
     data = {
         'sha256': _get_file_checksum(archive_path),
         'name': collection_name,
         'version': manifest.collection_info.version
     }
+
     log.debug("Publishing file %s with data: %s" % (archive_path, json.dumps(data)))
-    api.publish_file(namespace_id, data, archive_path)
+
+    api.publish_file(data, archive_path, publish_api_key)
+
     return results
 
 
-def publish(galaxy_context, archive_path, display_callback):
+def publish(galaxy_context, archive_path, publish_api_key, display_callback):
 
     results = _publish(galaxy_context,
                        archive_path,
+                       publish_api_key=publish_api_key,
                        display_callback=display_callback)
 
     log.debug('cli publish action results: %s', json.dumps(results))

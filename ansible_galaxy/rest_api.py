@@ -263,7 +263,7 @@ class GalaxyAPI(object):
         return {}
 
     @g_connect
-    def publish_file(self, namespace_id, data, archive_path):
+    def publish_file(self, data, archive_path, publish_api_key):
         form = MultiPartForm()
         for key in data:
             form.add_field(key, data[key])
@@ -272,7 +272,6 @@ class GalaxyAPI(object):
                       fileHandle=codecs.open(archive_path, "rb"),
                       mimetype='application/octet-stream')
 
-        # url = '%s/namespaces/%s/collection/' % (self.baseurl, namespace_id)
         url = '%s/collections/' % self.baseurl
         log.debug('url: %s', url)
 
@@ -285,6 +284,10 @@ class GalaxyAPI(object):
             http.putrequest("POST", url)
             http.putheader('Content-type', form.get_content_type())
             http.putheader('Content-length', str(len(form_buffer)))
+
+            if publish_api_key:
+                http.putheader('Authorization', 'Token %s' % publish_api_key)
+
             http.endheaders()
             http.send(form_buffer)
         except socket.error as exc:
@@ -297,9 +300,14 @@ class GalaxyAPI(object):
 
         log.debug('code: %s', r.getcode())
         log.debug('info: %s', r.info())
+        log.debug('reason: %s', r.reason)
 
-        if r.status == 201:
-            return r.read()
+        response_body = r.read()
+        log.debug('response_body: %s', response_body)
+
+        # 202 'Accepted'
+        if r.status == 202:
+            return response_body
         else:
             raise exceptions.GalaxyPublishError(
                 'Error transferring file "%s" to Galaxy server: %s - %s' % (archive_path, r.status, r.reason)

@@ -96,7 +96,10 @@ class GalaxyCLI(cli.CLI):
                                    help='The path in which the collection artifact will be created. The default is ./releases/.')
         if self.action == "publish":
             self.parser.set_usage("usage: %prog publish [options] archive_path")
-
+            # TODO: Include the url for the pref page where the API key can be found, however, that
+            #       needs to know the server url which isn't known until after cli args are parsed.
+            self.parser.add_option('--api-key', dest='publish_api_key', action='store', default=None,
+                                   help='The Galaxy API key.')
         if self.action == "info":
             self.parser.set_usage("usage: %prog info [options] repo_name[,version]")
         elif self.action == "install":
@@ -287,6 +290,7 @@ class GalaxyCLI(cli.CLI):
 
         return publish.publish(galaxy_context,
                                self.args[0],
+                               self.options.publish_api_key,
                                display_callback=self.display)
 
     def execute_remove(self):
