@@ -1,13 +1,17 @@
 import logging
 import pprint
 
+from ansible_galaxy import collection_artifact
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
-from ansible_galaxy import requirements
+# from ansible_galaxy import requirements
+from ansible_galaxy import repository_spec
 from ansible_galaxy.fetch import fetch_factory
+from ansible_galaxy.models.repository_spec import RepositorySpec, FetchMethods
+from ansible_galaxy.models.requirement import Requirement, RequirementOps
 
 log = logging.getLogger(__name__)
 
@@ -98,15 +102,32 @@ def install_repository_specs_loop(galaxy_context,
 
     requirements_list = requirements_list or []
 
-    # Turn the repository / requirement names from the cli into a list of RequirementSpec objects
-    if repository_spec_strings:
-        more_reqs = requirements.from_requirement_spec_strings(repository_spec_strings,
-                                                               namespace_override=namespace_override,
-                                                               editable=editable)
-        log.debug('more_reqs: %s', more_reqs)
+    for repository_spec_string in repository_spec_strings:
+        fetch_method = \
+            repository_spec.choose_repository_fetch_method(repository_spec_string,
+                                                           editable=editable)
+        log.debug('fetch_method: %s', fetch_method)
 
-        # a new list is ok/better here
-        requirements_list += more_reqs
+        if fetch_method == FetchMethods.LOCAL_FILE:
+            # Since only know this is a local file we vaguely recognize, we have to
+            # open it up to get any more details. We _could_ attempt to parse the file
+            # name, but that rarely ends well...
+            spec_data = collection_artifact.load_data_from_collection_artifact(repository_spec_string)
+            spec_data['fetch_method'] = fetch_method
+        else:
+            spec_data = repository_spec.spec_data_from_string(repository_spec_string,
+                                                              namespace_override=namespace_override,
+                                                              editable=editable)
+
+            spec_data['fetch_method'] = fetch_method
+
+        log.debug('spec_data: %s', spec_data)
+
+        req_spec = RepositorySpec.from_dict(spec_data)
+
+        req = Requirement(repository_spec=None, op=RequirementOps.EQ, requirement_spec=req_spec)
+
+        requirements_list.append(req)
 
     log.debug('requirements_list: %s', requirements_list)
     for req in requirements_list:

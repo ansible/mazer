@@ -8,7 +8,6 @@ from ansible_galaxy import collection_info
 from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
-from ansible_galaxy import role_metadata
 from ansible_galaxy import requirements
 
 from ansible_galaxy.models.repository_spec import RepositorySpec
@@ -81,7 +80,6 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
     # FIXME: change collectionInfo to have separate name/namespace so we dont have to 'parse' the name
     # repo_spec = repository_spec.repository_spec_from_string(col_info.name, namespace_override=namespace)
     # spec_data = repository_spec_parse.parse_string(col_info.name)
-    # spec_data = repository_spec.spec_data_from_string(col_info.name, namespace_override=namespace)
 
     # log.debug('spec_data: %s', spec_data)
     # log.debug('repo_spec: %s', repo_spec)
@@ -178,6 +176,10 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     try:
         with open(role_meta_main_filename, 'r') as rmfd:
+            # FIXME: kluge to avoid circular import on py2
+            #        repository->role_metadata->dependencies->repository_spec->repository (loop)
+            #        repository->requirements->repository_spec->repository (loop)
+            from ansible_galaxy import role_metadata
             role_meta_main = role_metadata.load(rmfd, role_name=role_name)
     except EnvironmentError:
         # log.debug('No meta/main.yml was loaded for repository %s.%s: %s', namespace, name, e)

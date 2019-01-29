@@ -1,11 +1,9 @@
 import logging
 import os
-import tarfile
 import tempfile
 
 
 from ansible_galaxy.fetch import local_file
-from ansible_galaxy.models.repository_archive import RepositoryArchive, RepositoryArchiveInfo
 from ansible_galaxy.models.repository_spec import RepositorySpec, FetchMethods
 
 log = logging.getLogger(__name__)
@@ -54,17 +52,6 @@ JSON_DATA = b'''
 def test_local_file_fetch(mocker):
     tmp_file_fo = tempfile.NamedTemporaryFile(prefix='tmp', suffix='.tar.gz', delete=True)
     log.debug('tmp_file_fo.name=%s tmp_file=%s', tmp_file_fo.name, tmp_file_fo)
-
-    tar_file = tarfile.open(mode='w:gz',
-                            fileobj=tmp_file_fo)
-
-    _repo_archive_info = RepositoryArchiveInfo(archive_type='foo',
-                                               top_dir='namespace-name-1.2.3',
-                                               archive_path=tmp_file_fo.name)
-    _repo_archive = RepositoryArchive(info=_repo_archive_info,
-                                      tar_file=tar_file)
-    mocker.patch('ansible_galaxy.repository_spec.repository_archive.load_archive',
-                 return_value=_repo_archive)
 
     repository_spec_ = RepositorySpec(namespace='namespace', name='name', version='1.2.3',
                                       fetch_method=FetchMethods.LOCAL_FILE,
