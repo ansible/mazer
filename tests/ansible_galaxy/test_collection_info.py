@@ -27,7 +27,7 @@ def test_load():
                 'homepage': None,
                 'issues': None,
                 'repository': None,
-                'dependencies': []}
+                'dependencies': {}}
 
     with open(test_data_path, 'r') as data_fd:
         res = collection_info.load(data_fd)

@@ -15,13 +15,13 @@ NAME_REGEXP = re.compile(r'^[a-z0-9_]+$')
 # see https://github.com/ansible/galaxy/issues/957
 
 
-def list_or_none(val):
-    ''' if val is None, return a list'''
+def convert_none_to_empty_dict(val):
+    ''' if val is None, return an empty dict'''
 
-    # if val is not a list or val 'None' return val
+    # if val is not a dict or val 'None' return val
     # and let the validators raise errors later
     if val is None:
-        return []
+        return {}
     return val
 
 
@@ -44,8 +44,7 @@ class CollectionInfo(object):
 
     # Note galaxy.yml 'dependencies' field is what mazer and ansible
     # consider 'requirements'. ie, install time requirements.
-    dependencies = attr.ib(factory=list)
-    dependencies = attr.ib(factory=list, converter=list_or_none)
+    dependencies = attr.ib(factory=dict, converter=convert_none_to_empty_dict)
 
     @property
     def label(self):
@@ -91,9 +90,9 @@ class CollectionInfo(object):
             self.value_error("Expecting '%s' to be a list" % attribute.name)
 
     @dependencies.validator
-    def _check_depenencies_type(self, attribute, value):
-        if not isinstance(value, list) or value is None:
-            self.value_error("Expecting '%s' to be a list" % attribute.name)
+    def _check_dependencies_type(self, attribute, value):
+        if not isinstance(value, dict) or value is None:
+            self.value_error("Expecting '%s' to be a dict" % attribute.name)
 
     @tags.validator
     def _check_keywords(self, attribute, value):

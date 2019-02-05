@@ -159,7 +159,8 @@ def test_minimal(col_info):
 
     res.authors.append('Faux Author')
     res.tags.append('sometag')
-    res.dependencies.append(('some_dep', 'stuff'))
+    res.dependencies.update({'some_dep': '1.1.0',
+                             'stuff': '2.2.2'})
 
     log.debug('res %s res.authors: %s', res, res.authors)
 
@@ -172,7 +173,7 @@ def test_minimal(col_info):
     assert res != res2
     assert res2.authors == []
     assert res2.tags == []
-    assert res2.dependencies == []
+    assert res2.dependencies == {}
 
 
 def test_authors_append(col_info):
