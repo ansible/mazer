@@ -9,25 +9,25 @@ log = logging.getLogger(__name__)
 class EditableFetch(object):
     fetch_method = 'editable'
 
-    def __init__(self, galaxy_context, repository_spec):
+    def __init__(self, galaxy_context, requirement_spec):
         self.galaxy_context = galaxy_context
-        self.repository_spec = repository_spec
-        self.local_path = self.repository_spec.src
+        self.requirement_spec = requirement_spec
+        self.local_path = self.requirement_spec.src
 
     def find(self):
-        real_path = os.path.abspath(self.repository_spec.src)
+        real_path = os.path.abspath(self.requirement_spec.src)
 
         log.debug('Searching for a repository to link to as an editable install at %s', real_path)
 
         if not os.path.isdir(real_path):
             log.warning("%s needs to be a local directory for an editable install" % self.repository.src)
-            raise exceptions.GalaxyClientError('Error finding an editable install of %s because %s is not a directory', self.repository_spec.src, real_path)
+            raise exceptions.GalaxyClientError('Error finding an editable install of %s because %s is not a directory', self.requirement_spec.src, real_path)
 
-        results = {'content': {'galaxy_namespace': self.repository_spec.namespace,
-                               'repo_name': self.repository_spec.name},
-                   'specified_content_version': self.repository_spec.version,
-                   'specified_repository_spec': self.repository_spec.scm,
-                   'custom': {'real_path': self.repository_spec.src}
+        results = {'content': {'galaxy_namespace': self.requirement_spec.namespace,
+                               'repo_name': self.requirement_spec.name},
+                   'specified_content_version': self.requirement_spec.version,
+                   'specified_repository_spec': self.requirement_spec.scm,
+                   'custom': {'real_path': self.requirement_spec.src}
                    }
         return results
 
@@ -37,11 +37,11 @@ class EditableFetch(object):
         real_path = find_results.get('custom', {}).get('real_path', None)
         if not real_path:
             raise exceptions.GalaxyClientError('Error fetching an editable install of %s because no "real_path" was found in find_results',
-                                               self.repository_spec.src, real_path)
+                                               self.requirement_spec.src, real_path)
 
-        dst_ns_root = os.path.join(self.galaxy_context.content_path, self.repository_spec.namespace)
+        dst_ns_root = os.path.join(self.galaxy_context.content_path, self.requirement_spec.namespace)
         dst_repo_root = os.path.join(dst_ns_root,
-                                     self.repository_spec.name)
+                                     self.requirement_spec.name)
 
         if not os.path.exists(dst_ns_root):
             os.makedirs(dst_ns_root)

@@ -12,6 +12,7 @@ from ansible_galaxy import repository_spec
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.repository_spec import RepositorySpec, FetchMethods
 from ansible_galaxy.models.requirement import Requirement, RequirementOps
+from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)
 
@@ -123,7 +124,7 @@ def install_repository_specs_loop(galaxy_context,
 
         log.debug('spec_data: %s', spec_data)
 
-        req_spec = RepositorySpec.from_dict(spec_data)
+        req_spec = RequirementSpec.from_dict(spec_data)
 
         req = Requirement(repository_spec=None, op=RequirementOps.EQ, requirement_spec=req_spec)
 
@@ -301,21 +302,22 @@ def install_repository(galaxy_context,
 
     # TODO: we could do all the downloads first, then install them. Likely
     #       less error prone mid 'transaction'
-    log.debug('Processing %s', requirement_to_install)
+    log.debug('Processing %r', requirement_to_install)
 
     repository_spec_to_install = requirement_to_install.requirement_spec
+    requirement_spec_to_install = requirement_to_install.requirement_spec
 
     # else trans to ... FIND_FETCHER?
 
     # TODO: check if already installed and move to approriate state
 
-    log.debug('About to find() requested repository_spec_to_install: %s', repository_spec_to_install)
+    log.debug('About to find() requested requirement_spec_to_install: %s', requirement_spec_to_install)
 
     # potential_repository_spec is a repo spec for the install candidate we potentially found.
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    log.debug('Checking to see if %s is already installed', repository_spec_to_install)
+    log.debug('Checking to see if %s is already installed', requirement_spec_to_install)
 
-    already_installed_iter = irdb.by_repository_spec(repository_spec_to_install)
+    already_installed_iter = irdb.by_repository_spec(requirement_spec_to_install)
     already_installed = sorted(list(already_installed_iter))
 
     log.debug('already_installed: %s', already_installed)
@@ -325,12 +327,13 @@ def install_repository(galaxy_context,
             display_callback('%s is already installed at %s' % (already_installed_repository.repository_spec.label,
                                                                 already_installed_repository.path),
                              level='warning')
-        log.debug('Stuff %s was already installed. In %s', repository_spec_to_install, already_installed)
+        log.debug('Stuff %s was already installed. In %s', requirement_spec_to_install, already_installed)
 
         return None
 
+    # We dont have anything that matches the RequirementSpec installed
     fetcher = fetch_factory.get(galaxy_context=galaxy_context,
-                                repository_spec=repository_spec_to_install)
+                                requirement_spec=requirement_spec_to_install)
 
     # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
     # could also move some of the logic in fetcher_factory to be driven from here
@@ -344,7 +347,7 @@ def install_repository(galaxy_context,
     try:
         find_results = install.find(fetcher)
     except exceptions.GalaxyError as e:
-        log.warning('Unable to find metadata for %s: %s', repository_spec_to_install.label, e)
+        log.warning('Unable to find metadata for %s: %s', requirement_spec_to_install.label, e)
         # FIXME: raise dep error exception?
         raise_without_ignore(ignore_errors, e)
         # continue
@@ -355,7 +358,10 @@ def install_repository(galaxy_context,
     # TODO: state transition, if find_results -> INSTALL
     #       if not, then FIND_FAILED
 
-    log.debug('About to download requested repository_spec_to_install: %s', repository_spec_to_install)
+    # TODO/FIXME: We give find() a RequirementSpec, but find_results should have enough
+    #             info to create a concrete RepositorySpec
+
+    log.debug('About to download repository requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)
 
     # FETCH state
     try:

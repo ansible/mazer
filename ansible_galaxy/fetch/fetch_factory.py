@@ -11,7 +11,7 @@ from ansible_galaxy.models.repository_spec import FetchMethods
 log = logging.getLogger(__name__)
 
 
-def get(galaxy_context, repository_spec):
+def get(galaxy_context, requirement_spec):
     """determine how to download a repo, builds a fetch instance, and returns the instance"""
 
     fetcher = None
@@ -21,25 +21,25 @@ def get(galaxy_context, repository_spec):
     # does not really imply that the repo archive download should ignore certs as well
     # (galaxy api server vs cdn) but for now, we use the value for both
 
-    if repository_spec.fetch_method == FetchMethods.EDITABLE:
-        fetcher = editable.EditableFetch(repository_spec=repository_spec,
+    if requirement_spec.fetch_method == FetchMethods.EDITABLE:
+        fetcher = editable.EditableFetch(requirement_spec=requirement_spec,
                                          galaxy_context=galaxy_context)
-    elif repository_spec.fetch_method == FetchMethods.SCM_URL:
-        fetcher = scm_url.ScmUrlFetch(repository_spec=repository_spec)
-    elif repository_spec.fetch_method == FetchMethods.LOCAL_FILE:
+    elif requirement_spec.fetch_method == FetchMethods.SCM_URL:
+        fetcher = scm_url.ScmUrlFetch(requirement_spec=requirement_spec)
+    elif requirement_spec.fetch_method == FetchMethods.LOCAL_FILE:
         # the file is a tar, so open it that way and extract it
         # to the specified (or default) content directory
-        fetcher = local_file.LocalFileFetch(repository_spec)
-    elif repository_spec.fetch_method == FetchMethods.REMOTE_URL:
-        fetcher = remote_url.RemoteUrlFetch(repository_spec=repository_spec,
+        fetcher = local_file.LocalFileFetch(requirement_spec)
+    elif requirement_spec.fetch_method == FetchMethods.REMOTE_URL:
+        fetcher = remote_url.RemoteUrlFetch(requirement_spec=requirement_spec,
                                             validate_certs=not galaxy_context.server['ignore_certs'])
-    elif repository_spec.fetch_method == FetchMethods.GALAXY_URL:
-        fetcher = galaxy_url.GalaxyUrlFetch(repository_spec=repository_spec,
+    elif requirement_spec.fetch_method == FetchMethods.GALAXY_URL:
+        fetcher = galaxy_url.GalaxyUrlFetch(requirement_spec=requirement_spec,
                                             galaxy_context=galaxy_context)
     else:
         raise exceptions.GalaxyError('No approriate content fetcher found for %s %s',
-                                     repository_spec.scm, repository_spec.src)
+                                     requirement_spec.scm, requirement_spec.src)
 
-    log.debug('Using fetcher: %s for repository_spec: %r', fetcher, repository_spec)
+    log.debug('Using fetcher: %s for requirement_spec: %r', fetcher, requirement_spec)
 
     return fetcher

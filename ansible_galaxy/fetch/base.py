@@ -15,6 +15,13 @@ class BaseFetch(object):
         # just an identifier to use in messages
         self.remote_resource = None
 
+    def find(self):
+        '''Lookup the requested spec, and if found, return a RepositorySpec
+
+        More or less resolve the ambiquious RequirementSpec to a particular concrete
+        RepositorySpec'''
+        raise NotImplementedError
+
     def fetch(self, find_results=None):
         '''Get the content archive, save it to a file locally and return the path to that file'''
         raise NotImplementedError

@@ -8,6 +8,7 @@ from ansible_galaxy import requirements
 from ansible_galaxy.models.repository import Repository
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.requirement import Requirement, RequirementOps
+from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)
 
@@ -101,9 +102,9 @@ def test_find_new_deps_from_installed(galaxy_context):
                                name='some_name',
                                version='4.3.2')
 
-    req_spec = RepositorySpec(namespace='some_required_namespace',
-                              name='some_required_name',
-                              version='1.0.0')
+    req_spec = RequirementSpec(namespace='some_required_namespace',
+                               name='some_required_name',
+                               version_spec='==1.0.0')
 
     some_requirement = Requirement(repository_spec=repo_spec,
                                    op=RequirementOps.EQ,

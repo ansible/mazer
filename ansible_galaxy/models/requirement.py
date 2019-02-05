@@ -1,8 +1,10 @@
 import logging
 
 import attr
+# import semantic_version
 
 from ansible_galaxy.models.repository_spec import RepositorySpec
+from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +54,8 @@ class RequirementScopes(object):
 class Requirement(object):
 
     # The repo that is required. The RHS of the requirement.
-    requirement_spec = attr.ib(type=RepositorySpec)
+    requirement_spec = attr.ib(type=RequirementSpec)
+    # requirement_spec = attr.ib(type=semanticVersion
 
     # the 'operation' or expression type of a requirement
     # for ex, an 'exact' match of namespace, name, version
@@ -98,10 +101,11 @@ class Requirement(object):
     scope = attr.ib(default=RequirementScopes.INSTALL)
 
     def __str__(self):
+        log.debug('self.requirement_spec: %s', self.requirement_spec)
         return '{repo_spec}->{req_spec_label}{op}{req_spec_version}'.format(repo_spec=str(self.repository_spec),
                                                                             req_spec_label=str(self.requirement_spec.label),
                                                                             op=self.op,
-                                                                            req_spec_version=str(self.requirement_spec.version),
+                                                                            req_spec_version=str(self.requirement_spec.version_spec),
                                                                             )
 
     # FIXME: just for debugging

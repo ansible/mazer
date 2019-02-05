@@ -21,6 +21,17 @@ def convert_string_to_semver(version):
     return semantic_version.Version(version)
 
 
+def convert_string_to_version_spec(version_spec):
+    # TODO: or the default '*' spec?
+    if version_spec is None:
+        return None
+
+    if isinstance(version_spec, semantic_version.Spec):
+        return version_spec
+
+    return semantic_version.Spec(version_spec)
+
+
 def normalize_version_string(version_string):
     '''Normalize any version strings (rm 'v' from 'v1.0.0' for ex
 

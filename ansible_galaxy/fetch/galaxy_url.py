@@ -61,22 +61,22 @@ def select_repository_version(repoversions, version):
 class GalaxyUrlFetch(base.BaseFetch):
     fetch_method = 'galaxy_url'
 
-    def __init__(self, repository_spec, galaxy_context):
+    def __init__(self, requirement_spec, galaxy_context):
         super(GalaxyUrlFetch, self).__init__()
 
-        self.repository_spec = repository_spec
+        self.requirement_spec = requirement_spec
         self.galaxy_context = galaxy_context
 
         self.validate_certs = not self.galaxy_context.server['ignore_certs']
 
-        log.debug('repository_spec: %s', repository_spec)
+        log.debug('repository_spec: %s', requirement_spec)
         # log.debug('Validate TLS certificates: %s', self.validate_certs)
 
     def find(self):
         api = GalaxyAPI(self.galaxy_context)
 
-        namespace = self.repository_spec.namespace
-        repo_name = self.repository_spec.name
+        namespace = self.requirement_spec.namespace
+        repo_name = self.requirement_spec.name
 
         log.debug('Querying %s for namespace=%s, name=%s', self.galaxy_context.server['url'], namespace, repo_name)
 
@@ -86,7 +86,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         repo_data = api.lookup_repo_by_name(namespace, repo_name)
 
         if not repo_data:
-            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.repository_spec.label,
+            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.requirement_spec.label,
                                                                                      api.api_server))
 
         # FIXME - Need to update our API calls once Galaxy has them implemented
@@ -102,9 +102,9 @@ class GalaxyUrlFetch(base.BaseFetch):
         # FIXME: mv to it's own method
         # FIXME: pass these to fetch() if it really needs it
         repo_version_best = repository_version.get_repository_version(repo_data,
-                                                                      version=self.repository_spec.version,
+                                                                      version=self.requirement_spec.version,
                                                                       repository_versions=content_repo_versions,
-                                                                      content_content_name=self.repository_spec.name)
+                                                                      content_content_name=self.requirement_spec.name)
 
         # get the RepositoryVersion obj (or its data anyway)
         _repoversion = select_repository_version(repoversions, repo_version_best)
@@ -116,21 +116,21 @@ class GalaxyUrlFetch(base.BaseFetch):
         external_url = repo_data.get('external_url', None)
 
         if not external_url:
-            raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % self.repository_spec.label)
+            raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % self.requirement_spec.label)
 
         # The repo spec of the install candidate with potentially a different version
         potential_repository_spec = RepositorySpec(namespace=namespace,
                                                    name=repo_name,
                                                    version=_repoversion['version'],
-                                                   fetch_method=self.repository_spec.fetch_method,
-                                                   scm=self.repository_spec.scm,
-                                                   spec_string=self.repository_spec.spec_string,
-                                                   src=self.repository_spec.src)
+                                                   fetch_method=self.requirement_spec.fetch_method,
+                                                   scm=self.requirement_spec.scm,
+                                                   spec_string=self.requirement_spec.spec_string,
+                                                   src=self.requirement_spec.src)
 
         results = {'content': {'galaxy_namespace': namespace,
                                'repo_name': repo_name},
-                   'specified_content_version': self.repository_spec.version,
-                   'specified_repository_spec': self.repository_spec,
+                   'specified_content_version': self.requirement_spec.version,
+                   'specified_repository_spec': self.requirement_spec,
                    'custom': {'content_repo_versions': content_repo_versions,
                               'external_url': external_url,
                               'galaxy_context': self.galaxy_context,
@@ -156,7 +156,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         # download_url = _build_download_url(external_url=external_url, version=_content_version)
         # TODO: error handling if there is no download_url
 
-        log.debug('repository_spec=%s', self.repository_spec)
+        log.debug('repository_spec=%s', self.requirement_spec)
         log.debug('download_url=%s', download_url)
 
         # for including in any error messages or logging for this fetch
