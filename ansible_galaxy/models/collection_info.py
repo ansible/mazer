@@ -1,9 +1,10 @@
 from __future__ import print_function
 
-import attr
 import logging
 import re
-import semver
+
+import attr
+import semantic_version
 
 from ansible_galaxy.data import spdx_licenses
 
@@ -64,9 +65,7 @@ class CollectionInfo(object):
 
     @version.validator
     def _check_version_format(self, attribute, value):
-        try:
-            semver.parse_version_info(value)
-        except ValueError:
+        if not semantic_version.validate(value):
             self.value_error("Expecting 'version' to be in semantic version format, "
                              "instead found '%s'." % value)
 

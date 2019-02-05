@@ -14,7 +14,7 @@ with open('CHANGELOG.rst') as changelog_file:
 requirements = ['six',
                 'PyYaml',
                 'jinja2',
-                'semver',
+                'semantic_version',
                 'yamlloader',
                 # used for data classes
                 # 18.1.0 introduces the 'factory' keyword

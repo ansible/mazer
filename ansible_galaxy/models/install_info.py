@@ -2,7 +2,7 @@ import datetime
 import logging
 
 import attr
-import semver
+import semantic_version
 
 from ansible_galaxy.utils.version import convert_string_to_semver
 
@@ -15,7 +15,7 @@ class InstallInfo(object):
     install_date = attr.ib()
     install_date_iso = attr.ib(type=datetime.datetime)
 
-    version = attr.ib(type=semver.VersionInfo, default=None,
+    version = attr.ib(type=semantic_version.Version, default=None,
                       converter=convert_string_to_semver)
 
     @classmethod
@@ -31,8 +31,8 @@ class InstallInfo(object):
         if data.get('verison', '') is None:
             del data['version']
 
-        # semver.VersionInfo isnt yaml-able, so build a dict with
-        # the VersionInfo replaced with a str version
+        # semantic_version.Version isnt yaml-able, so build a dict with
+        # the Version replaced with a str version
         ver = data.get('version', '')
         if ver:
             data['version'] = str(ver)

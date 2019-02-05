@@ -225,7 +225,7 @@ def test_get_latest_version_invalid_semver():
                                               content_data={})
     except exceptions.GalaxyClientError as e:
         assert 'Unable to compare' in '%s' % e
-        assert '4.2 is not valid SemVer' in '%s' % e
+        assert "Invalid version string: '4.2'" in '%s' % e
         return
 
     assert False, 'Expected a GalaxyClientError about invalid versions here, but that did not happen.'

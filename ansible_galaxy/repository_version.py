@@ -1,6 +1,6 @@
 import logging
 
-import semver
+import semantic_version
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.utils.version import normalize_version_string
@@ -12,7 +12,7 @@ def sort_versions(versions):
     # list of tuples of loose_version and original string, the sort
     # will sort based on first value of tuple, then we return just the
     # original strings
-    semver_versions = [(semver.parse_version_info(a), a) for a in versions]
+    semver_versions = [(semantic_version.Version(a), a) for a in versions]
     semver_versions.sort()
     return [v[1] for v in semver_versions]
 
@@ -62,14 +62,11 @@ def validate_versions(content_versions):
     valid_versions = []
     invalid_versions = []
     for version in content_versions:
-        try:
-            semver.parse(version)
-            valid_versions.append(version)
-        except ValueError as e:
-            log.exception(e)
-            log.warning('The version string "%s" is not valid, skipping: %s', version, e)
+        if not semantic_version.validate(version):
+            log.warning('The version string "%s" is not valid, skipping.', version)
             invalid_versions.append(version)
             continue
+        valid_versions.append(version)
 
     return (valid_versions, invalid_versions)
 

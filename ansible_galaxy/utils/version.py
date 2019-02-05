@@ -1,7 +1,7 @@
 import logging
 import re
 
-import semver
+import semantic_version
 
 log = logging.getLogger(__name__)
 
@@ -15,10 +15,10 @@ def convert_string_to_semver(version):
     if version is None:
         return None
 
-    if isinstance(version, semver.VersionInfo):
+    if isinstance(version, semantic_version.Version):
         return version
 
-    return semver.parse_version_info(version)
+    return semantic_version.Version(version)
 
 
 def normalize_version_string(version_string):

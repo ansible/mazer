@@ -245,7 +245,7 @@ def install(repository_archive, repository_spec, destination_info, display_callb
                                                   install_datetime=install_datetime)
 
     # TODO: this save will need to be moved to a step later. after validating install?
-    # The to_dict_version_strings is to convert the un-yaml-able semver.VersionInfo to a string
+    # The to_dict_version_strings is to convert the un-yaml-able semantic_version.Version to a string
     install_info.save(install_info_.to_dict_version_strings(),
                       destination_info.install_info_path)
 
