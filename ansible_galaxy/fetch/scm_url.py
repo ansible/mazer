@@ -23,7 +23,8 @@ class ScmUrlFetch(base.BaseFetch):
         results = {'content': {'galaxy_namespace': self.requirement_spec.namespace,
                                'repo_name': self.requirement_spec.name},
                    'specified_content_version': self.requirement_spec.version,
-                   'specified_repository_spec': self.requirement_spec.scm}
+                   # 'specified_repository_spec': self.requirement_spec.scm,
+                   }
         results['custom'] = {'scm_url': self.requirement_spec.src}
 
         return results

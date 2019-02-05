@@ -16,10 +16,12 @@ class LocalFileFetch(object):
         self.local_path = self.requirement_spec.src
 
     def find(self):
+        log.debug('req_spec: %s', self.requirement_spec)
         results = {'content': {'galaxy_namespace': self.requirement_spec.namespace,
                                'repo_name': self.requirement_spec.name},
-                   'specified_content_version': self.requirement_spec.version,
-                   'specified_repository_spec': self.requirement_spec.scm}
+                   'specified_content_version_spec': self.requirement_spec.version_spec,
+                   # 'specified_repository_spec': self.requirement_spec.scm,
+                   }
         return results
 
     def fetch(self, find_results=None):

@@ -4,7 +4,8 @@ import tempfile
 
 
 from ansible_galaxy.fetch import local_file
-from ansible_galaxy.models.repository_spec import RepositorySpec, FetchMethods
+from ansible_galaxy.models.repository_spec import FetchMethods
+from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)
 
@@ -53,15 +54,15 @@ def test_local_file_fetch(mocker):
     tmp_file_fo = tempfile.NamedTemporaryFile(prefix='tmp', suffix='.tar.gz', delete=True)
     log.debug('tmp_file_fo.name=%s tmp_file=%s', tmp_file_fo.name, tmp_file_fo)
 
-    repository_spec_ = RepositorySpec(namespace='namespace', name='name', version='1.2.3',
-                                      fetch_method=FetchMethods.LOCAL_FILE,
-                                      src=tmp_file_fo.name)
+    requirement_spec_ = RequirementSpec(namespace='namespace', name='name', version_spec='==1.2.3',
+                                        fetch_method=FetchMethods.LOCAL_FILE,
+                                        src=tmp_file_fo.name)
 
     mocker.patch('ansible_galaxy.fetch.local_file.LocalFileFetch._load_repository_archive',
                  return_value=mocker.Mock(name='mockRepoArchive'))
     mocker.patch('ansible_galaxy.fetch.local_file.LocalFileFetch._load_repository',
                  return_value=mocker.Mock(name='mockRepo'))
-    local_fetch = local_file.LocalFileFetch(repository_spec_)
+    local_fetch = local_file.LocalFileFetch(requirement_spec_)
 
     find_results = local_fetch.find()
     results = local_fetch.fetch(find_results=find_results)

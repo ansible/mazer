@@ -21,7 +21,7 @@ class RequirementSpec(object):
                            converter=convert_string_to_version_spec)
 
     fetch_method = attr.ib(default=None, cmp=False)
-    # src = attr.ib(default=None, cmp=False)
+    src = attr.ib(default=None, cmp=False)
     req_spec_string = attr.ib(default=None, cmp=False)
 
     @property
@@ -30,11 +30,19 @@ class RequirementSpec(object):
 
     @classmethod
     def from_dict(cls, data):
+        version_spec = data.get('version_spec', None)
+
+        # If we are specifying a version in the spec_data, then
+        # assume we want to install exactly that version, so build
+        # a version_spec to indicate that (ie, '==1.0.0' etc)
+        if data.get('version', None) and not version_spec:
+            version_spec = '==%s' % data['version']
+
         instance = cls(namespace=data['namespace'],
                        name=data['name'],
-                       version_spec=data.get('version_spec', None),
+                       version_spec=version_spec,
                        fetch_method=data.get('fetch_method', None),
                        req_spec_string=data.get('req_spec_string', None),
-                       # src=data.get('src', None),
+                       src=data.get('src', None),
                        )
         return instance

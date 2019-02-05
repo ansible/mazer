@@ -10,7 +10,7 @@ from ansible_galaxy import repository_archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy.models.install_destination import InstallDestinationInfo
-from ansible_galaxy.models.repository_spec import FetchMethods
+from ansible_galaxy.models.repository_spec import FetchMethods, RepositorySpec
 
 log = logging.getLogger(__name__)
 
@@ -71,8 +71,8 @@ def fetch(fetcher, repository_spec, find_results):
     # return install_time? an InstallInfo? list of InstalledCollection?
 
 
-def update_repository_spec(fetch_results,
-                           repository_spec=None):
+def repository_spec_from_find_results(find_results,
+                                      requirement_spec):
     '''Create a new RepositorySpec with updated info from fetch_results.
 
     Evolves repository_spec to match fetch results.'''
@@ -80,29 +80,28 @@ def update_repository_spec(fetch_results,
     #       We do, since the unspecific version is None, so fetched versions wont match
     #       so we need a new repository_spec for install.
     # TODO: this is more or less a verify/validate step or state transition
-    content_data = fetch_results.get('content', {})
+    content_data = find_results.get('content', {})
+    resolved_version = content_data.get('version')
+    log.debug('version_spec "%s" for %s was requested and was resolved to version "%s"',
+              requirement_spec.version_spec, requirement_spec.label,
+              resolved_version)
 
-    # If the requested namespace/version is different than the one we got via find()/fetch()...
-    if content_data.get('fetched_version', repository_spec.version) != repository_spec.version:
-        log.debug('Version "%s" for %s was requested but fetch found version "%s"',
-                  repository_spec.version, repository_spec.label,
-                  content_data.get('fetched_version', repository_spec.version))
+    # repository_spec = attr.evolve(repository_spec, version=content_data['fetched_version'])
+    # In theory, a fetch can return a different namespace/name than the one request. This
+    # is for things like server side aliases.
+    resolved_name = content_data.get('fetched_name', requirement_spec.name)
+    resolved_namespace = content_data.get('content_namespace', requirement_spec.namespace)
 
-        repository_spec = attr.evolve(repository_spec, version=content_data['fetched_version'])
+    # Build a RepositorySpec based on RequirementSpec and the extra info resolved in find()
+    spec_data = attr.asdict(requirement_spec)
 
-    if content_data.get('fetched_name', repository_spec.name) != repository_spec.name:
-        log.debug('Repository %s was requested but fetch found %s',
-                  repository_spec.name,
-                  content_data.get('fetched_name', repository_spec.name))
-        repository_spec = attr.evolve(repository_spec, name=content_data['fetched_name'])
+    del spec_data['version_spec']
 
-    if content_data.get('content_namespace', repository_spec.namespace) != repository_spec.namespace:
-        log.warning('Namespace "%s" for %s was requested but fetch found namespace "%s"',
-                    repository_spec.namespace, '%s.%s' % (repository_spec.namespace, repository_spec.name),
-                    content_data.get('content_namespace', repository_spec.namespace))
+    spec_data['version'] = resolved_version
+    spec_data['namespace'] = resolved_namespace
+    spec_data['name'] = resolved_name
 
-        repository_spec = attr.evolve(repository_spec, namespace=content_data['content_namespace'])
-
+    repository_spec = RepositorySpec.from_dict(spec_data)
     return repository_spec
 
 

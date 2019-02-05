@@ -1,5 +1,6 @@
 import logging
 
+import semantic_version
 import yaml
 
 from ansible_galaxy.models.repository_spec import RepositorySpec
@@ -25,13 +26,17 @@ def load(data_or_file_object, repository_spec=None):
         # log.debug('type(req_data_item): %s', type(req_data_item))
 
         req_spec_data = yaml_parse.yaml_parse(req_data_item)
-        # log.debug('req_spec_data: %s', req_spec_data)
+
+        # FIXME: find a better place to do this
+        version_spec_str = req_spec_data.get('version_spec') or req_spec_data.pop('version')
+        req_spec_data['version_spec'] = semantic_version.Spec(version_spec_str)
+        log.debug('req_spec_data: %s', req_spec_data)
 
         # name_info = content_name.parse_content_name(data_name)
         # log.debug('data_name (after): %s', data_name)
         # log.debug('name_info: %s', name_info)
 
-        req_spec = RepositorySpec.from_dict(req_spec_data)
+        req_spec = RequirementSpec.from_dict(req_spec_data)
 
         # log.debug('req_spec: %s', req_spec)
 

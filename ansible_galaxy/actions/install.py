@@ -10,7 +10,7 @@ from ansible_galaxy import matchers
 # from ansible_galaxy import requirements
 from ansible_galaxy import repository_spec
 from ansible_galaxy.fetch import fetch_factory
-from ansible_galaxy.models.repository_spec import RepositorySpec, FetchMethods
+from ansible_galaxy.models.repository_spec import FetchMethods
 from ansible_galaxy.models.requirement import Requirement, RequirementOps
 from ansible_galaxy.models.requirement_spec import RequirementSpec
 
@@ -361,6 +361,19 @@ def install_repository(galaxy_context,
     # TODO/FIXME: We give find() a RequirementSpec, but find_results should have enough
     #             info to create a concrete RepositorySpec
 
+    # TODO: if we want client side content whitelist/blacklist, or pinned versions,
+    #       or rules to only update within some semver range (ie, only 'patch' level),
+    #       we could hook rule validation stuff here.
+
+    # TODO: build a new repository_spec based on what we actually fetched to feed to
+    #       install etc. The fetcher.fetch() could return a datastructure needed to build
+    #       the new one instead of doing it in verify()
+    found_repository_spec = install.repository_spec_from_find_results(find_results,
+                                                                      requirement_spec_to_install)
+
+    log.debug('found_repository_spec: %s', found_repository_spec)
+
+    repository_spec_to_install = found_repository_spec
     log.debug('About to download repository requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)
 
     # FETCH state
@@ -380,18 +393,6 @@ def install_repository(galaxy_context,
         # FIXME: raise ?
         return None
 
-    # TODO: if we want client side content whitelist/blacklist, or pinned versions,
-    #       or rules to only update within some semver range (ie, only 'patch' level),
-    #       we could hook rule validation stuff here.
-
-    # TODO: build a new repository_spec based on what we actually fetched to feed to
-    #       install etc. The fetcher.fetch() could return a datastructure needed to build
-    #       the new one instead of doing it in verify()
-    fetched_repository_spec = install.update_repository_spec(fetch_results,
-                                                             repository_spec_to_install)
-
-    log.debug('fetched_repository_spec: %s', fetched_repository_spec)
-
     # FIXME: seems like we want to resolve deps before trying install
     #        We need the role (or other content) deps from meta before installing
     #        though, and sometimes (for galaxy case) we dont know that until we've downloaded
@@ -406,18 +407,18 @@ def install_repository(galaxy_context,
         installed_repositories = install.install(galaxy_context,
                                                  fetcher,
                                                  fetch_results,
-                                                 repository_spec=fetched_repository_spec,
+                                                 repository_spec=found_repository_spec,
                                                  force_overwrite=force_overwrite,
                                                  display_callback=display_callback)
     except exceptions.GalaxyError as e:
         msg = "- %s was NOT installed successfully: %s "
-        display_callback(msg % (fetched_repository_spec.label, e), level='warning')
-        log.warning(msg, fetched_repository_spec.label, str(e))
+        display_callback(msg % (found_repository_spec.label, e), level='warning')
+        log.warning(msg, found_repository_spec.label, str(e))
         raise_without_ignore(ignore_errors, e)
         return []
 
     if not installed_repositories:
-        log.warning("- %s was NOT installed successfully.", fetched_repository_spec.label)
+        log.warning("- %s was NOT installed successfully.", found_repository_spec.label)
         raise_without_ignore(ignore_errors)
 
     return installed_repositories

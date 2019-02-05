@@ -130,7 +130,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         results = {'content': {'galaxy_namespace': namespace,
                                'repo_name': repo_name},
                    'specified_content_version': self.requirement_spec.version,
-                   'specified_repository_spec': self.requirement_spec,
+                   # 'specified_repository_spec': self.requirement_spec,
                    'custom': {'content_repo_versions': content_repo_versions,
                               'external_url': external_url,
                               'galaxy_context': self.galaxy_context,
