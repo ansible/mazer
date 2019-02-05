@@ -28,8 +28,18 @@ def load(data_or_file_object, repository_spec=None):
         req_spec_data = yaml_parse.yaml_parse(req_data_item)
 
         # FIXME: find a better place to do this
-        version_spec_str = req_spec_data.get('version_spec') or req_spec_data.pop('version')
-        req_spec_data['version_spec'] = semantic_version.Spec(version_spec_str)
+        # create a version_spec from the 'version' field, a requiremenst.yml
+        # does not currently expect to have a 'version_spec' data in it
+        version_spec_str = '*'
+        version_str = req_spec_data.pop('version')
+
+        if version_str:
+            version_spec_str = '==%s' % version_str
+
+        version_spec = semantic_version.Spec(version_spec_str)
+        log.debug('version_spec_str: %s', version_spec_str)
+
+        req_spec_data['version_spec'] = version_spec
         log.debug('req_spec_data: %s', req_spec_data)
 
         # name_info = content_name.parse_content_name(data_name)
