@@ -30,17 +30,21 @@ class RequirementSpec(object):
 
     @classmethod
     def from_dict(cls, data):
-        version_spec = data.get('version_spec', None)
+        version_spec_str = data.get('version_spec', None)
 
         # If we are specifying a version in the spec_data, then
         # assume we want to install exactly that version, so build
         # a version_spec to indicate that (ie, '==1.0.0' etc)
-        if data.get('version', None) and not version_spec:
-            version_spec = '==%s' % data['version']
+        if not version_spec_str:
+            if data.get('version', None):
+                version_spec_str = '==%s' % data['version']
+            else:
+                # No version_spec, and version is None, that means match anything
+                version_spec_str = '*'
 
         instance = cls(namespace=data['namespace'],
                        name=data['name'],
-                       version_spec=version_spec,
+                       version_spec=version_spec_str,
                        fetch_method=data.get('fetch_method', None),
                        req_spec_string=data.get('req_spec_string', None),
                        src=data.get('src', None),
