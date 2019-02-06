@@ -106,6 +106,7 @@ class CLI(six.with_metaclass(ABCMeta, object)):
         """
 
         self.args = args
+        self._orig_args_copy = self.args[:]
         self.options = None
         self.parser = None
         self.action = None

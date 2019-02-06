@@ -48,6 +48,14 @@ def main(args=None):
 
         # exit with EX_SOFTWARE on generic error
         exit_code = os.EX_SOFTWARE
+    except Exception as e:
+        log.exception(e)
+        exit_code = os.EX_SOFTWARE
+
+        # let non-Galaxy exceptions bubble up and traceback
+        log.debug('Uncaught exception for invocation: %s', cli._orig_args_copy)
+        log.error('Uncaught exception, existing with exit code: %s', exit_code)
+        raise
 
     log.debug('exit code: %s', exit_code)
     # do any return code setup we need here
