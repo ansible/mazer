@@ -65,10 +65,10 @@ def install_repositories_matching_repository_specs(galaxy_context,
     # match any of the content specs for stuff we want to install
     # ie, see if it is already installed
     requested_repository_specs = [x.requirement_spec for x in requirements_list]
-    repository_match_filter = matchers.MatchRepositorySpecNamespaceName(requested_repository_specs)
+    repository_spec_match_filter = matchers.MatchRepositorySpecNamespaceName(requested_repository_specs)
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    already_installed_generator = irdb.select(repository_match_filter=repository_match_filter)
+    already_installed_generator = irdb.select(repository_spec_match_filter=repository_spec_match_filter)
 
     # FIXME: if/when GalaxyContent and InstalledGalaxyContent are attr.ib based and frozen and hashable
     #        we can simplify this filter with set ops
@@ -317,7 +317,7 @@ def install_repository(galaxy_context,
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
     log.debug('Checking to see if %s is already installed', requirement_spec_to_install)
 
-    already_installed_iter = irdb.by_repository_spec(requirement_spec_to_install)
+    already_installed_iter = irdb.by_requirement_spec(requirement_spec_to_install)
     already_installed = sorted(list(already_installed_iter))
 
     log.debug('already_installed: %s', already_installed)

@@ -25,8 +25,10 @@ class RepositorySpec(object):
                   namespace=testing, raw=testing.ansible-testing-content)'''
     namespace = attr.ib()
     name = attr.ib()
-    version = attr.ib(type=semantic_version.Version, default=None,
-                      converter=convert_string_to_semver)
+    version = attr.ib(type=semantic_version.Version,
+                      # default=None,
+                      converter=convert_string_to_semver,
+                      validator=attr.validators.optional(attr.validators.instance_of(semantic_version.Version)))
 
     # only namespace/name/version are used for eq checks currently
 

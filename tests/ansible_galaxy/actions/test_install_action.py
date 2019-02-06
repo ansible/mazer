@@ -31,7 +31,8 @@ def test_install_repos_empty_requirements(galaxy_context):
 
 
 def test_install_repositories(galaxy_context, mocker):
-    repo_spec = RepositorySpec(namespace='some_namespace', name='some_name')
+    repo_spec = RepositorySpec(namespace='some_namespace', name='some_name',
+                               version='9.4.5')
     expected_repos = [Repository(repository_spec=repo_spec)]
 
     requirements_to_install = \

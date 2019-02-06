@@ -9,13 +9,13 @@ log = logging.getLogger(__name__)
 
 
 def _list(galaxy_context,
-          repository_match_filter=None,
+          repository_spec_match_filter=None,
           list_content=False,
           display_callback=None):
 
     log.debug('list_content: %s', list_content)
 
-    all_repository_match = repository_match_filter or matchers.MatchAll()
+    all_repository_match = repository_spec_match_filter or matchers.MatchAll()
 
     # We search for installed repos to list, and then display all the content in those installed repos
     icidb = installed_content_item_db.InstalledContentItemDatabase(galaxy_context)
@@ -25,7 +25,7 @@ def _list(galaxy_context,
     # accumulate for api return
     repo_list = []
 
-    for installed_repository in irdb.select(repository_match_filter=all_repository_match):
+    for installed_repository in irdb.select(repository_spec_match_filter=all_repository_match):
         log.debug('installed_repo: %s', installed_repository)
 
         content_items = collections.defaultdict(list)
@@ -33,7 +33,7 @@ def _list(galaxy_context,
         # Find all the content items for this particular repo
         repository_match = matchers.MatchRepositorySpec([installed_repository.repository_spec])
 
-        for content_info in icidb.select(repository_match_filter=repository_match):
+        for content_info in icidb.select(repository_spec_match_filter=repository_match):
             content_dict = content_info.copy()
 
             content_item_type = content_dict['content_data'].content_item_type
@@ -82,13 +82,13 @@ def _list(galaxy_context,
 
 
 def list_action(galaxy_context,
-                repository_match_filter=None,
+                repository_spec_match_filter=None,
                 list_content=False,
                 display_callback=None):
     '''Run _list action and return an exit code suitable for process exit'''
 
     _list(galaxy_context,
-          repository_match_filter=repository_match_filter,
+          repository_spec_match_filter=repository_spec_match_filter,
           list_content=list_content,
           display_callback=display_callback)
 

@@ -3,8 +3,8 @@ import logging
 import os
 
 from ansible_galaxy.fetch import editable
-from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
+from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)
 
@@ -19,9 +19,12 @@ def test_editable_fetch_find(galaxy_context, mocker, tmpdir):
                                                            namespace_override=namespace_override,
                                                            editable=True)
 
-    repo_spec = more_reqs[0].requirement_spec
+    import pprint
+    log.debug('more_reqs: %s', pprint.pformat(more_reqs))
 
-    fetcher = editable.EditableFetch(galaxy_context, repo_spec)
+    req_spec = more_reqs[0].requirement_spec
+
+    fetcher = editable.EditableFetch(galaxy_context, req_spec)
 
     log.debug(fetcher)
 
@@ -41,17 +44,18 @@ def test_editable_fetch_fetch(galaxy_context, mocker, tmpdir):
     tmp_working_path = tmpdir.mkdir('some_working_tree')
     dest_tmp_path = tmp_working_path.mkdir('some_checkout')
 
-    repo_spec = repository_spec.RepositorySpec(namespace=namespace_override,
-                                               name=name,
-                                               fetch_method='EDITABLE',
-                                               src=dest_tmp_path)
+    req_spec = RequirementSpec(namespace=namespace_override,
+                               name=name,
+                               fetch_method='EDITABLE',
+                               src=dest_tmp_path,
+                               version_spec='*')
     # RepositorySpec(namespace='some_editable_namespace', name='some_checkout',
     #                version=None, fetch_method='EDITABLE', scm=None,
     #                spec_string='/tmp/pytest-of-adrian/pytest-79/test_editable_fetch_fetch0/some_checkout',
     #                src='/tmp/pytest-of-adrian/pytest-79/test_editable_fetch_fetch0/some_checkout')
-    log.debug('repo_spec: %r', repo_spec)
+    log.debug('req_spec: %r', req_spec)
 
-    fetcher = editable.EditableFetch(galaxy_context, repo_spec)
+    fetcher = editable.EditableFetch(galaxy_context, req_spec)
 
     find_results = {'custom': {'real_path': dest_tmp_path.strpath},
                     'content': []}

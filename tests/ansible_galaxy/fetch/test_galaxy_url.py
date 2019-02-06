@@ -1,9 +1,10 @@
 import logging
+
 import pytest
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.fetch import galaxy_url
-from ansible_galaxy.models.repository_spec import RepositorySpec
+from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)
 
@@ -45,11 +46,11 @@ EXAMPLE_REPO_VERSIONS_LIST = \
 
 @pytest.fixture
 def galaxy_url_fetch(galaxy_context):
-    repo_spec = RepositorySpec(namespace='some_namespace',
+    req_spec = RequirementSpec(namespace='some_namespace',
                                name='some_name',
-                               version='9.3.245')
+                               version_spec='==9.3.245')
 
-    galaxy_url_fetch = galaxy_url.GalaxyUrlFetch(repo_spec, galaxy_context)
+    galaxy_url_fetch = galaxy_url.GalaxyUrlFetch(requirement_spec=req_spec, galaxy_context=galaxy_context)
     log.debug('galaxy_url_fetch: %s', galaxy_url_fetch)
 
     return galaxy_url_fetch
@@ -72,7 +73,6 @@ def test_galaxy_url_fetch_find(galaxy_url_fetch, mocker):
     assert res['content']['galaxy_namespace'] == 'some_namespace'
     assert res['content']['repo_name'] == 'some_name'
 
-    assert isinstance(res['custom']['potential_repository_spec'], RepositorySpec)
     assert res['custom']['external_url'] == external_url
 
 

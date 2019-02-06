@@ -66,7 +66,7 @@ def select_repository_version(repoversions, version):
 class GalaxyUrlFetch(base.BaseFetch):
     fetch_method = 'galaxy_url'
 
-    def __init__(self, requirement_spec, galaxy_context):
+    def __init__(self, galaxy_context, requirement_spec):
         super(GalaxyUrlFetch, self).__init__()
 
         self.requirement_spec = requirement_spec

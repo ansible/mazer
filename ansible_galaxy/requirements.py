@@ -92,7 +92,7 @@ def from_requirement_spec_strings(requirement_spec_strings, namespace_override=N
                                               namespace_override=namespace_override,
                                               editable=editable)
 
-        req_spec = RepositorySpec.from_dict(req_spec_data)
+        req_spec = RequirementSpec.from_dict(req_spec_data)
 
         req = Requirement(repository_spec=repository_spec, op=RequirementOps.EQ, requirement_spec=req_spec)
 

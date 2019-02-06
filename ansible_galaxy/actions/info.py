@@ -141,12 +141,14 @@ def info_repository_specs(galaxy_context,
         label_to_match = '%s.%s' % (galaxy_namespace, repository_name)
         all_labels_to_match.append(label_to_match)
 
-        labels_to_match.append((label_to_match, RepositorySpec(namespace=galaxy_namespace,
-                                                               name=repository_name)))
+        #labels_to_match.append((label_to_match, RepositorySpec(namespace=galaxy_namespace,
+        #                                                       name=repository_name)))
+        labels_to_match.append(label_to_match)
 
     matcher = matchers.MatchRepositorySpec([label_and_spec[1] for label_and_spec in labels_to_match])
+    matcher = matchers.MatchLabels(labels_to_match)
 
-    matched_repositories = irdb.select(repository_match_filter=matcher)
+    matched_repositories = irdb.select(repository_spec_match_filter=matcher)
 
     remote_data = False
 

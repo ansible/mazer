@@ -10,7 +10,8 @@ log = logging.getLogger(__name__)
 
 def CR(namespace=None, name=None):
     cs = RepositorySpec(namespace=namespace,
-                        name=name)
+                        name=name,
+                        version='1.2.3')
     return Repository(repository_spec=cs)
 
 

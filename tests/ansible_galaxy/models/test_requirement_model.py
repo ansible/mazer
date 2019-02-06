@@ -2,6 +2,7 @@ import logging
 
 from ansible_galaxy.models import repository_spec
 from ansible_galaxy.models import requirement
+from ansible_galaxy.models import requirement_spec
 
 log = logging.getLogger(__name__)
 
@@ -13,19 +14,19 @@ def test_requirement_op():
 
 
 def test_requirement():
-    reqs_spec1 = repository_spec.RepositorySpec(namespace='mynamespace',
+    repo_spec1 = repository_spec.RepositorySpec(namespace='mynamespace',
                                                 name='myname',
                                                 version='3.4.5')
 
-    provides_spec2 = repository_spec.RepositorySpec(namespace='othernamespace',
-                                                    name='provides_something',
-                                                    version='1.0.0')
+    provides_spec2 = requirement_spec.RequirementSpec(namespace='othernamespace',
+                                                      name='provides_something',
+                                                      version_spec='==1.0.0')
 
-    req = requirement.Requirement(repository_spec=reqs_spec1, requirement_spec=provides_spec2,
+    req = requirement.Requirement(repository_spec=repo_spec1, requirement_spec=provides_spec2,
                                   op=requirement.RequirementOps.EQ)
 
     assert isinstance(req, requirement.Requirement)
-    assert req.repository_spec == reqs_spec1
+    assert req.repository_spec == repo_spec1
     assert req.requirement_spec == provides_spec2
 
 
@@ -34,16 +35,16 @@ def test_repository_spec_requirement_spec_cmp():
                                                 name='n',
                                                 version='3.4.5')
 
-    repo_spec2 = repository_spec.RepositorySpec(namespace='ns',
+    req_spec = requirement_spec.RequirementSpec(namespace='ns',
                                                 name='n',
-                                                version='3.4.5')
+                                                version_spec='==3.4.5')
 
-    req = requirement.Requirement(repository_spec=repo_spec1, requirement_spec=repo_spec2,
+    req = requirement.Requirement(repository_spec=repo_spec1, requirement_spec=req_spec,
                                   op=requirement.RequirementOps.EQ)
 
     log.debug('req: %s', req)
     log.debug('repo_spec1: %s', repo_spec1)
-    log.debug('repo_spec2: %s', repo_spec2)
+    log.debug('req_spec: %s', req_spec)
 
     assert req.repository_spec == repo_spec1
-    assert req.requirement_spec == repo_spec2
+    assert req.requirement_spec == req_spec

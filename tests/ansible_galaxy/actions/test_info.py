@@ -26,7 +26,8 @@ def test_info(galaxy_context):
     ret = info.info_repository_specs(galaxy_context,
                                      # mock api
                                      mock.Mock(),
-                                     ['namespace.repo.content'],
+                                     # ['namespace.repo.content'],
+                                     ['namespace.repo'],
                                      display_callback=display_callback,
                                      offline=True)
 
