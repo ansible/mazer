@@ -71,7 +71,7 @@ def validate_versions(content_versions):
     return (valid_versions, invalid_versions)
 
 
-def get_repository_version(repository_data, version, repository_versions, content_content_name):
+def get_repository_version(repository_data, version_spec, repository_versions, content_content_name):
     '''find and compare repository version found in repository_data dict
 
     repository_data is a dict based on /api/v1/repositories/13 for ex
@@ -80,9 +80,7 @@ def get_repository_version(repository_data, version, repository_versions, conten
     content_versions is a list of version strings in order
     '''
 
-    log.debug('%s wants ver: %s type: %s', content_content_name, version, type(version))
-#    log.debug('%s vers avail: %s',
-#              content_content_name, json.dumps(content_versions, indent=2))
+    log.debug('%s wants ver: %s type: %s', content_content_name, version_spec, type(version_spec))
 
     # normalize versions, but also build a map of the normalized version string to the orig string
     available_normalized_versions, norm_to_orig_map = normalize_versions(repository_versions)
@@ -92,37 +90,34 @@ def get_repository_version(repository_data, version, repository_versions, conten
     available_versions, dummy = \
         validate_versions(available_normalized_versions)
 
-    # FIXME: support direct semver usage all the way through
-    # str or semver to string, but leave None alone
-    if version:
-        version = str(version)
-
-    normalized_version = normalize_version_string(version)
-
-#    log.debug('normalized_version: %s', normalized_version)
-#    log.debug('avail_normalized_versions: %s', json.dumps(available_normalized_versions, indent=4))
-
     # we specified a particular version is required so look for it in available versions
-    if version and version != 'master':
-        if not available_versions:
-            # FIXME: should we show the actual available versions or the available
-            #        versions we searched in?  act: ['v1.0.0', '1.1'] nor: ['1.0.0', '1.1']
-            msg = "- The list of available versions for %s is empty (%s)." % \
-                (content_content_name or 'content', available_versions)
-            raise exceptions.GalaxyError(msg)
+    if not available_versions:
+        # FIXME: should we show the actual available versions or the available
+        #        versions we searched in?  act: ['v1.0.0', '1.1'] nor: ['1.0.0', '1.1']
+        msg = "- The list of available versions for %s is empty (%s)." % \
+            (content_content_name or 'content', available_versions)
+        raise exceptions.GalaxyError(msg)
 
-        if str(normalized_version) not in available_versions:
-            # TODO: how do we msg 'couldn't find the version you specified
-            #       in actual version tags or ones we made up without the leading v'
-            msg = "- the specified version (%s) of %s was not found in the list of available versions (%s)." % \
-                (version, content_content_name or 'content', available_versions)
-            raise exceptions.GalaxyError(msg)
+    semver_available_versions = [semantic_version.Version(ver) for ver in available_versions]
 
-        # if we get here, 'version' is in available_normalized_versions
-        # return the exact match version since it was available
-        orig_version = norm_to_orig_map[normalized_version]
-        log.debug('%s requested ver: %s, matched: %s, using real ver: %s ', content_content_name, version, normalized_version, orig_version)
-        return orig_version
+    latest_version = version_spec.select(semver_available_versions)
+    if latest_version is None:
+        # TODO: how do we msg 'couldn't find the version you specified
+        #       in actual version tags or ones we made up without the leading v'
+        msg = "- the specified version spec (%s) of %s was not found in the list of available versions (%s)." % \
+            (version_spec, content_content_name or 'content', available_versions)
+        raise exceptions.GalaxyError(msg)
+
+    # if we get here, 'version' is in available_normalized_versions
+    # return the exact match version since it was available
+    latest_version_str = str(latest_version)
+    log.debug('latest_version_str: %s', latest_version_str)
+
+    orig_version_str = norm_to_orig_map[latest_version_str]
+
+    log.debug('%s requested ver: %s, matched: %s, using real ver: %s ', content_content_name, version_spec, latest_version, orig_version_str)
+
+    return orig_version_str
 
     # At this point, we have a list of the available versions. The available versions have
     # been normalized (leading 'v' or 'V' stripped off).

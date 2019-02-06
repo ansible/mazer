@@ -2,6 +2,7 @@
 import logging
 
 import pytest
+import semantic_version
 
 from ansible_galaxy import repository_version
 from ansible_galaxy import exceptions
@@ -244,7 +245,7 @@ def test_get_latest_in_content_versions_1_0_0_v_and_no_v():
 def test_get_content_version_devel_version_not_in_content_versions():
     # FIXME: use pytest expect_exception stuff
     try:
-        ret = repository_version.get_repository_version({}, 'devel', content_versions_147, 'some_content_name')
+        ret = repository_version.get_repository_version({}, semantic_version.Spec('==+devel'), content_versions_147, 'some_content_name')
         log.debug('ret=%s', ret)
     except exceptions.GalaxyError as e:
         log.exception(e)
