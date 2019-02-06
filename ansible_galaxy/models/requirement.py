@@ -54,7 +54,8 @@ class RequirementScopes(object):
 class Requirement(object):
 
     # The repo that is required. The RHS of the requirement.
-    requirement_spec = attr.ib(type=RequirementSpec)
+    requirement_spec = attr.ib(type=RequirementSpec,
+                               validator=attr.validators.instance_of(RequirementSpec))
     # requirement_spec = attr.ib(type=semanticVersion
 
     # the 'operation' or expression type of a requirement
@@ -94,7 +95,8 @@ class Requirement(object):
     op = attr.ib(default=RequirementOps.EQ)
 
     # The repo that has a requirement, can be null
-    repository_spec = attr.ib(default=None, type=RepositorySpec)
+    repository_spec = attr.ib(default=None, type=RepositorySpec,
+                              validator=attr.validators.optional(attr.validators.instance_of(RepositorySpec)))
 
     # do we need to resolve the dep at install time ('requirements') or
     # could we defer until runtime (like role dependencies)
