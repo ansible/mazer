@@ -1,7 +1,7 @@
 import logging
 
-from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.requirement import Requirement, RequirementOps, RequirementScopes
+from ansible_galaxy.models.requirement_spec import RequirementSpec
 from ansible_galaxy.repository_spec import spec_data_from_string
 
 log = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ def from_dependency_spec_strings(dependency_spec_strings, namespace_override=Non
 
         log.debug('dep_spec_data: %s', dep_spec_data)
 
-        dep_spec = RepositorySpec.from_dict(dep_spec_data)
+        dep_spec = RequirementSpec.from_dict(dep_spec_data)
 
         log.debug('dep_spec: %s', dep_spec)
 
