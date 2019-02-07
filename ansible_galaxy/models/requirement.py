@@ -1,7 +1,6 @@
 import logging
 
 import attr
-# import semantic_version
 
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.requirement_spec import RequirementSpec
@@ -103,7 +102,6 @@ class Requirement(object):
     scope = attr.ib(default=RequirementScopes.INSTALL)
 
     def __str__(self):
-        log.debug('self.requirement_spec: %s', self.requirement_spec)
         return '{repo_spec}->{req_spec_label}{op}{req_spec_version}'.format(repo_spec=str(self.repository_spec),
                                                                             req_spec_label=str(self.requirement_spec.label),
                                                                             op=self.op,

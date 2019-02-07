@@ -184,16 +184,11 @@ def find_new_deps_from_installed(galaxy_context, installed_repos, no_deps=False)
 
         # convert deps/reqs to sets. Losing any ordering, but avoids dupes
         reqs_set = set(installed_repository.requirements)
-        log.debug('deps: %s', installed_repository.dependencies)
-        log.debug('reqs: %s', installed_repository.requirements)
 
         deps_set = set(installed_repository.dependencies)
 
-        log.debug('deps_set: %s', deps_set)
-        log.debug('reqs_set: %s', reqs_set)
-
-        # deps_and_reqs_set = deps_set.union(reqs_set)
         deps_and_reqs_set.update(deps_set, reqs_set)
+
         # for dep_req in sorted(deps_and_reqs_set):
         #    log.debug('deps_and_reqs_set_item: %s', dep_req)
 

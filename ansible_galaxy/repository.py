@@ -210,7 +210,6 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     if collection_info_data:
         collection_requires = requirements.from_dependencies_dict(collection_info_data.dependencies,
                                                                   repository_spec=repository_spec)
-        log.debug('collection_requires: %s', collection_requires)
         requirements_list.extend(collection_requires)
 
     # TODO: add requirements loaded from galaxy.yml

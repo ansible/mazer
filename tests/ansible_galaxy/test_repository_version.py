@@ -6,31 +6,26 @@ import semantic_version
 
 from ansible_galaxy import repository_version
 from ansible_galaxy import exceptions
+from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)
 
 
+any_version = semantic_version.Spec('*')
+
+
 def test_get_content_version_none():
-    ret = repository_version.get_repository_version({}, None, [], None)
-    log.debug('ret=%s', ret)
-
-    assert ret == 'master'
-
-
-def test_get_content_version_devel_version_no_content_versions():
-    try:
-        repository_version.get_repository_version({}, 'devel', [], None)
-    except exceptions.GalaxyError:
-        return
-
-    assert False, 'Excepted a GalaxyError here since there are no content versions and "devel" is not in []'
+    req_spec_data = {'namespace': 'some_namespace',
+                     'name': 'some_name',
+                     'version': None}
+    req_spec = RequirementSpec.from_dict(req_spec_data)
+    with pytest.raises(exceptions.GalaxyError, match="The list of available versions for some_namespace.some_name is empty"):
+        repository_version.get_repository_version({}, req_spec, [])
 
 
 @pytest.mark.xfail
 def test_get_content_version_prod_version_in_content_versions():
     ret = repository_version.get_repository_version({}, 'prod', content_versions_147, None)
-    log.debug('ret=%s', ret)
-
     assert ret == 'prod'
 
 
@@ -81,12 +76,10 @@ content_versions_map = {
 }
 
 test_data = [
-    {'ask': None, 'vid': 'empty', 'exp': 'master'},
     {'ask': 'v1.0.0', 'vid': 'v', 'exp': 'v1.0.0'},
     {'ask': 'v1.0.0', 'vid': 'no_v', 'exp': '1.0.0'},
     {'ask': '1.0.0', 'vid': 'v', 'exp': 'v1.0.0'},
     {'ask': '1.0.0', 'vid': 'no_v', 'exp': '1.0.0'},
-    {'ask': '1.0.0', 'vid': 'v_and_no_v', 'exp': 'v1.0.0'},
     {'ask': '2.3.7', 'vid': '147', 'exp': '2.3.7'},
     {'ask': 'v2.3.7', 'vid': '147', 'exp': '2.3.7'},
 ]
@@ -137,7 +130,7 @@ def test_sort_versions(ver_sort_data):
 
 def test_normalize_versions():
     vers = ['v1.0.0', '1.0.1', 'V1.2.3', '3.4.5']
-    norm_vers, norm_to_orig_map = repository_version.normalize_versions(vers)
+    norm_vers, norm_to_orig = repository_version.normalize_versions(vers)
 
     log.debug('     vers: %s', vers)
     log.debug('norm_vers: %s', norm_vers)
@@ -153,10 +146,11 @@ def test_normalize_versions():
     assert '1.0.0' in norm_vers
     assert '1.2.3' in norm_vers
 
-    assert norm_to_orig_map['1.0.0'] == 'v1.0.0'
-    assert norm_to_orig_map['1.2.3'] == 'V1.2.3'
-    assert norm_to_orig_map['1.0.1'] == '1.0.1'
-    assert norm_to_orig_map['3.4.5'] == '3.4.5'
+    log.debug('ntoo_map: %s', norm_to_orig)
+    assert norm_to_orig[0][1] == 'v1.0.0'
+    assert norm_to_orig[1][1] == '1.0.1'
+    assert norm_to_orig[2][1] == 'V1.2.3'
+    assert norm_to_orig[3][1] == '3.4.5'
 
 
 @pytest.mark.parametrize("versions,exp_valid,exp_invalid", [
@@ -181,8 +175,12 @@ def test_validate_versions(versions, exp_valid, exp_invalid):
 
 
 def test_get_content_version(ver_data):
-    log.debug('ver_data: %s', ver_data)
-    res = repository_version.get_repository_version({}, ver_data['ask'], ver_data['vlist'], 'some_content_name')
+    req_spec_data = {'namespace': 'some_namespace',
+                     'name': 'some_name',
+                     'version': ver_data['ask']}
+    req_spec = RequirementSpec.from_dict(req_spec_data)
+
+    res = repository_version.get_repository_version({}, req_spec, ver_data['vlist'])
     log.debug('res: %s', res)
     assert res == ver_data['exp']
 
@@ -206,7 +204,12 @@ def latest_ver_data(request):
 
 def test_get_content_version_latest(latest_ver_data):
     log.debug('latest_ver_data: %s', latest_ver_data)
-    res = repository_version.get_repository_version({}, None, latest_ver_data['vlist'], 'some_content_name')
+    req_spec_data = {'namespace': 'some_namespace',
+                     'name': 'some_name',
+                     'version_spec': '*'}
+    req_spec = RequirementSpec.from_dict(req_spec_data)
+
+    res = repository_version.get_repository_version({}, req_spec, latest_ver_data['vlist'])
     log.debug('res: %s', res)
     assert res == latest_ver_data['exp']
 
@@ -233,22 +236,11 @@ def test_get_latest_version_invalid_semver():
 
 
 def test_get_latest_in_content_versions_1_0_0_v_and_no_v():
-    ret1 = repository_version.get_repository_version({}, None, content_versions_1_0_v_and_no_v, 'some_content_name')
-    log.debug('ret1: %s', ret1)
-    # assert ret1 == '3.0.0'
-    content_versions_1_0_v_and_no_v.reverse()
-    ret2 = repository_version.get_repository_version({}, None, content_versions_1_0_v_and_no_v, 'some_content_name')
-    log.debug('ret2: %s', ret2)
-    assert ret1 == ret2
+    req_spec_data = {'namespace': 'some_namespace',
+                     'name': 'some_name',
+                     'version_spec': '*'}
+    req_spec = RequirementSpec.from_dict(req_spec_data)
 
-
-def test_get_content_version_devel_version_not_in_content_versions():
-    # FIXME: use pytest expect_exception stuff
-    try:
-        ret = repository_version.get_repository_version({}, semantic_version.Spec('==+devel'), content_versions_147, 'some_content_name')
-        log.debug('ret=%s', ret)
-    except exceptions.GalaxyError as e:
-        log.exception(e)
-        return
-
-    assert False is True, "should have raise an exception earlier"
+    with pytest.raises(exceptions.GalaxyClientError, match=""):
+        repository_version.get_repository_version({}, req_spec,
+                                                  content_versions_1_0_v_and_no_v)

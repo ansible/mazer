@@ -35,8 +35,6 @@ def get_download_url(repo_data=None, external_url=None, repoversion=None):
 
 
 def select_repository_version(repoversions, version):
-    log.debug('repoversions: %s', repoversions)
-    log.debug('version: %r', version)
     # repoversion's 'version' is 'not null' so should always exist
     # however, the list of repoversions can be empty
 
@@ -49,7 +47,6 @@ def select_repository_version(repoversions, version):
     # once, so this linear search is ok, since building the map would be that
     # plus the getitem
     results = [x for x in repoversions if x['version'] == version]
-    # results = [x for x in repoversions if semantic_version.Version(x['version']) == version]
 
     # no matching versions, return an empty dict
     # TODO: raise VersionNotFoundError ? return some sort of NullRepositoryVersion instance?
@@ -90,9 +87,6 @@ class GalaxyUrlFetch(base.BaseFetch):
         # FIXME: exception handling
         repo_data = api.lookup_repo_by_name(namespace, repo_name)
 
-        import pprint
-        log.debug('repo_data: %s', pprint.pformat(repo_data))
-
         if not repo_data:
             raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.requirement_spec.label,
                                                                                      api.api_server))
@@ -108,13 +102,11 @@ class GalaxyUrlFetch(base.BaseFetch):
         content_repo_versions = [a.get('version') for a in repoversions if a.get('version', None)]
 
         repo_version_best = repository_version.get_repository_version(repo_data,
-                                                                      version_spec=self.requirement_spec.version_spec,
-                                                                      repository_versions=content_repo_versions,
-                                                                      content_content_name=self.requirement_spec.name)
+                                                                      requirement_spec=self.requirement_spec,
+                                                                      repository_versions=content_repo_versions)
 
         # get the RepositoryVersion obj (or its data anyway)
         _repoversion = select_repository_version(repoversions, repo_version_best)
-        log.debug('_repoversion: %s', _repoversion)
 
         # Note: download_url can point anywhere...
         external_url = repo_data.get('external_url', None)
@@ -135,8 +127,6 @@ class GalaxyUrlFetch(base.BaseFetch):
         return results
 
     def fetch(self, find_results=None):
-        import pprint
-        log.debug('fetch: find_results: %s', pprint.pformat(find_results))
         find_results = find_results or {}
 
         results = {}

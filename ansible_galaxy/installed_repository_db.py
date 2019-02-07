@@ -4,9 +4,6 @@ import os
 from ansible_galaxy import repository
 from ansible_galaxy import matchers
 from ansible_galaxy import installed_namespaces_db
-# from ansible_galaxy.models.requirement_spec import RequirementSpec
-
-from icecream import ic
 
 log = logging.getLogger(__name__)
 
@@ -91,8 +88,7 @@ class InstalledRepositoryDatabase(object):
         repository_spec_match_filter = repository_spec_match_filter or matchers.MatchAll()
         requirement_spec_match_filter = requirement_spec_match_filter or matchers.MatchAll()
 
-        log.debug('repository_spec_match_filter: %s', repository_spec_match_filter)
-        log.debug(ic(repository_spec_match_filter))
+        # log.debug('repository_spec_match_filter: %s', repository_spec_match_filter)
 
         installed_repositories = installed_repository_iterator(self.installed_context,
                                                                namespace_match_filter=namespace_match_filter,
@@ -103,18 +99,15 @@ class InstalledRepositoryDatabase(object):
             yield matched_installed_repository
 
     def by_repository_spec(self, repository_spec):
-        log.debug('repository_spec: %s', repository_spec)
         repository_spec_match_filter = matchers.MatchRepositorySpec([repository_spec])
-        return self.select(repository_spec=repository_spec_match_filter)
+        return self.select(repository_spec_match_filter=repository_spec_match_filter)
 
     def by_requirement(self, requirement):
         requirement_spec = requirement.requirement_spec
-        log.debug('requirement_spec: %s', requirement_spec)
 
         return self.by_requirement_spec(requirement_spec=requirement_spec)
 
     def by_requirement_spec(self, requirement_spec):
-        log.debug('requirement_spec: %s', requirement_spec)
         requirement_spec_match_filter = matchers.MatchRepositoryToRequirementSpec([requirement_spec])
 
         return self.select(requirement_spec_match_filter=requirement_spec_match_filter)
