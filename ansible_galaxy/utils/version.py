@@ -32,6 +32,19 @@ def convert_string_to_version_spec(version_spec):
     return semantic_version.Spec(version_spec)
 
 
+def version_needs_aka(version_string):
+    '''Return True if version_string is in v1.0.0 form'''
+    if not version_string:
+        return False
+
+    matches = VERSION_WITH_LEADING_V_MATCH_RE.match(version_string)
+
+    if not matches:
+        return False
+
+    return True
+
+
 def normalize_version_string(version_string):
     '''Normalize any version strings (rm 'v' from 'v1.0.0' for ex
 

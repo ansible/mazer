@@ -3,7 +3,8 @@ import logging
 import attr
 import semantic_version
 
-from ansible_galaxy.utils.version import convert_string_to_version_spec
+from ansible_galaxy.utils.version import convert_string_to_version_spec, version_needs_aka, \
+    normalize_version_string
 
 log = logging.getLogger(__name__)
 
@@ -20,6 +21,10 @@ class RequirementSpec(object):
     version_spec = attr.ib(type=semantic_version.Spec, default=semantic_version.Spec('*'),
                            converter=convert_string_to_version_spec)
 
+    # This is for supporting 'v1.0.0' etc. In that case the version_spec is '==1.0.0' and
+    # version_aka is 'v1.0.0'. Need to track it because it is used to build github download
+    # urls sometimes
+    version_aka = attr.ib(default=None)
     fetch_method = attr.ib(default=None, cmp=False)
     src = attr.ib(default=None, cmp=False)
     req_spec_string = attr.ib(default=None, cmp=False)
@@ -37,6 +42,12 @@ class RequirementSpec(object):
         # a version_spec to indicate that (ie, '==1.0.0' etc)
         if not version_spec_str:
             if data.get('version', None):
+                ver = data['version']
+
+                # try to handle matching 'v1.0.0' etc
+                if version_needs_aka(ver):
+                    data['version'] = normalize_version_string(ver)
+                    data['version_aka'] = ver
                 version_spec_str = '==%s' % data['version']
             else:
                 # No version_spec, and version is None, that means match anything
@@ -45,6 +56,7 @@ class RequirementSpec(object):
         instance = cls(namespace=data['namespace'],
                        name=data['name'],
                        version_spec=version_spec_str,
+                       version_aka=data.get('version_aka', None),
                        fetch_method=data.get('fetch_method', None),
                        req_spec_string=data.get('req_spec_string', None),
                        src=data.get('src', None),
