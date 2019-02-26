@@ -5,6 +5,7 @@ import re
 
 import attr
 import semantic_version
+import six
 
 from ansible_galaxy.data import spdx_licenses
 
@@ -40,7 +41,8 @@ class CollectionInfo(object):
 
     authors = attr.ib(factory=list)
     tags = attr.ib(factory=list)
-    readme = attr.ib(default='README.md')
+    readme = attr.ib(default=None,
+                     validator=attr.validators.optional(attr.validators.instance_of(six.string_types)))
 
     # Note galaxy.yml 'dependencies' field is what mazer and ansible
     # consider 'requirements'. ie, install time requirements.

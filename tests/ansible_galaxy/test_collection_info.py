@@ -22,7 +22,7 @@ def test_load():
                 'description': 'something',
                 'license': 'GPL-3.0-or-later',
                 'tags': [],
-                'readme': 'README.md',
+                'readme': None,
                 'documentation': None,
                 'homepage': None,
                 'issues': None,
