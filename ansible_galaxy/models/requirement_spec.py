@@ -45,7 +45,7 @@ class RequirementSpec(object):
                 ver = data['version']
 
                 # try to handle matching 'v1.0.0' etc
-                if version_needs_aka(ver):
+                if version_needs_aka(str(ver)):
                     data['version'] = normalize_version_string(ver)
                     data['version_aka'] = ver
                 version_spec_str = '==%s' % data['version']
