@@ -1,0 +1,10 @@
+files:
+  - name: "roles/some_role/defaults/main.yml"
+    chksum_type: "sha256"
+    chksum_sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ftype: "file"
+  - name: "callback_plugins/some_callback.py"
+    chksum_type: "sha256"
+    chksum_sha256: "bc7c8f9fd65865bcd3998107c119e39d1cd26935436fa965ddb8058beabbafc3"
+    ftype: "file"
+format: 1

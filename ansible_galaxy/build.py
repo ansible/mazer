@@ -9,6 +9,7 @@ import six
 
 from ansible_galaxy import collection_members
 from ansible_galaxy import collection_artifact_manifest
+from ansible_galaxy import collection_artifact_file_manifest
 from ansible_galaxy.collection_info import COLLECTION_INFO_FILENAME
 from ansible_galaxy.models.collection_artifact_manifest import \
     CollectionArtifactManifest
@@ -93,8 +94,8 @@ class Build(object):
         log.debug('INFO self.collection_info: %s', self.collection_info)
 
         col_file_names = col_members.run()
-        col_files = collection_artifact_manifest.gen_manifest_artifact_files(col_file_names,
-                                                                             self.build_context.collection_path)
+        col_files = collection_artifact_file_manifest.gen_manifest_artifact_files(col_file_names,
+                                                                                  self.build_context.collection_path)
 
         file_manifest = CollectionArtifactFileManifest(files=col_files)
         manifest = CollectionArtifactManifest(collection_info=self.collection_info,)
@@ -170,7 +171,7 @@ class Build(object):
         log.debug('archive_manifest_path: %s', archive_manifest_path)
 
         archive_file_manifest_path = os.path.join(archive_top_dir,
-                                                  collection_artifact_manifest.COLLECTION_FILE_MANIFEST_FILENAME)
+                                                  collection_artifact_file_manifest.COLLECTION_FILE_MANIFEST_FILENAME)
         log.debug('archive_file_manifest_path: %s', archive_file_manifest_path)
 
         # copy the uid/gid/perms for galaxy.yml to use on the manifes. Need sep instances for manifest and file_manifest

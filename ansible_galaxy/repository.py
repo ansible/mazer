@@ -6,6 +6,7 @@ import yaml
 
 from ansible_galaxy import collection_info
 from ansible_galaxy import collection_artifact_manifest
+# from ansible_galaxy import collection_artifact_file_manifest
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
 from ansible_galaxy import requirements
@@ -154,6 +155,17 @@ def load_from_dir(content_dir, namespace, name, installed=True):
         # log.debug('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
         pass
 
+    # # TODO/FIXME: do we even need to load file_manifest here?
+    # file_manifest_filename = os.path.join(path_name, collection_artifact_file_manifest.COLLECTION_FILE_MANIFEST_FILENAME)
+    # file_manifest_data = None
+
+    # try:
+    #     with open(file_manifest_filename, 'r') as mfd:
+    #         file_manifest_data = collection_artifact_file_manifest.load(mfd)
+    # except EnvironmentError:
+    #     # log.debug('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
+    #     pass
+
     # load galaxy.yml
     galaxy_filename = os.path.join(path_name, collection_info.COLLECTION_INFO_FILENAME)
 
@@ -212,6 +224,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
                                                                   repository_spec=repository_spec)
         requirements_list.extend(collection_requires)
 
+    # TODO: add reqs from MANIFEST.json
     # TODO: add requirements loaded from galaxy.yml
     # TODO: should the requirements in galaxy.yml be plain strings or dicts?
     # TODO: should there be requirements in galaxy.yml at all? in liue of requirements.yml
@@ -228,6 +241,9 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     # TODO: if there are other places to load dependencies (ie, runtime deps) we will need
     #       to load them and combine them with role_depenency_specs
+
+    # TODO/FIXME: load deps from MANIFEST.json if it exists (and prefer it over galaxy.yml)
+
     role_dependency_specs = []
     if role_meta_main:
         role_dependency_specs = role_meta_main.dependencies
