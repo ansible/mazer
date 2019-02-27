@@ -16,8 +16,15 @@ class LocalFileFetch(object):
         self.local_path = self.requirement_spec.src
 
     def find(self):
+        vspec = self.requirement_spec.version_spec.specs[0].spec
+
         results = {'content': {'galaxy_namespace': self.requirement_spec.namespace,
-                               'repo_name': self.requirement_spec.name},
+                               'repo_name': self.requirement_spec.name,
+                               # For a local file, we created the version_spec to match
+                               # exactly the version from the file, so dig into the version_spec
+                               # a bit to pull that out.
+                               # TODO/FIXME: helper method/wrapper for making this less coupled
+                               'version': str(vspec)},
                    }
         return results
 
