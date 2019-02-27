@@ -12,6 +12,8 @@ from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy.collection_info import COLLECTION_INFO_FILENAME
 from ansible_galaxy.models.collection_artifact_manifest import \
     CollectionArtifactManifest
+from ansible_galaxy.models.collection_artifact_file_manifest import \
+    CollectionArtifactFileManifest
 from ansible_galaxy.utils.text import to_bytes
 
 log = logging.getLogger(__name__)
@@ -32,7 +34,8 @@ class BuildStatuses(object):
 @attr.s
 class BuildResult(object):
     status = attr.ib()
-    manifest = attr.ib()
+    manifest = attr.ib(validator=attr.validators.instance_of(CollectionArtifactManifest))
+    file_manifest = attr.ib(validator=attr.validators.instance_of(CollectionArtifactFileManifest))
     messages = attr.ib(factory=list)
     errors = attr.ib(factory=list)
     artifact_file_path = attr.ib(default=None)
@@ -93,18 +96,24 @@ class Build(object):
         col_files = collection_artifact_manifest.gen_manifest_artifact_files(col_file_names,
                                                                              self.build_context.collection_path)
 
-        manifest = CollectionArtifactManifest(collection_info=self.collection_info,
-                                              files=col_files)
+        file_manifest = CollectionArtifactFileManifest(files=col_files)
+        manifest = CollectionArtifactManifest(collection_info=self.collection_info,)
 
+        log.debug('file_manifest: %s', file_manifest)
         log.debug('manifest: %s', manifest)
 
+        # TODO: should be able to move this later
         manifest_buf = json.dumps(attr.asdict(manifest,
                                               filter=filter_artifact_file_name),
                                   # sort_keys=True,
                                   indent=4)
-        # manifest_buf = yaml.safe_dump(attr.asdict(manifest),
-        #                              default_flow_style=False)
         log.debug('manifest buf: %s', manifest_buf)
+
+        # TODO/FIXME: find and use some streamable file format for the filelist (csv?)
+        file_manifest_buf = json.dumps(attr.asdict(file_manifest),
+                                       indent=4)
+
+        log.debug('file_manifest_buf: %s', file_manifest_buf)
 
         # ie, 'v1.2.3.tar.gz', not full path
         archive_filename_basename = \
@@ -129,7 +138,7 @@ class Build(object):
 
         # tar_file.add(archive_top_dir, arcname=archive_top_dir, recursive=False)
 
-        for col_member_file in manifest.files:
+        for col_member_file in file_manifest.files:
             top_dir = False
             # arcname will be a relative path not an abspath at this point
             rel_path = col_member_file.name or col_member_file.src_name
@@ -153,20 +162,35 @@ class Build(object):
         b_manifest_buf = to_bytes(manifest_buf)
         b_manifest_buf_bytesio = six.BytesIO(b_manifest_buf)
 
+        b_file_manifest_buf = to_bytes(file_manifest_buf)
+        b_file_manifest_buf_bytesio = six.BytesIO(b_file_manifest_buf)
+
         archive_manifest_path = os.path.join(archive_top_dir,
                                              collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME)
         log.debug('archive_manifest_path: %s', archive_manifest_path)
 
-        # copy the uid/gid/perms for galaxy.yml to use on the manifest
+        archive_file_manifest_path = os.path.join(archive_top_dir,
+                                                  collection_artifact_manifest.COLLECTION_FILE_MANIFEST_FILENAME)
+        log.debug('archive_file_manifest_path: %s', archive_file_manifest_path)
+
+        # copy the uid/gid/perms for galaxy.yml to use on the manifes. Need sep instances for manifest and file_manifest
         # TODO: decide on what the generators owner/group/perms should be (root.root 644?)
         manifest_tar_info = tar_file.gettarinfo(os.path.join(self.build_context.collection_path, COLLECTION_INFO_FILENAME))
+        file_manifest_tar_info = tar_file.gettarinfo(os.path.join(self.build_context.collection_path, COLLECTION_INFO_FILENAME))
 
         manifest_tar_info.name = archive_manifest_path
         manifest_tar_info.size = len(b_manifest_buf)
+
+        file_manifest_tar_info.name = archive_file_manifest_path
+        file_manifest_tar_info.size = len(b_file_manifest_buf)
+
         # TODO: set mtime equal to the 'build time' / build_info when we start creating that.
 
         tar_file.addfile(tarinfo=manifest_tar_info,
                          fileobj=b_manifest_buf_bytesio)
+
+        tar_file.addfile(tarinfo=file_manifest_tar_info,
+                         fileobj=b_file_manifest_buf_bytesio)
 
         log.debug('populated tarfile %s: %s', archive_path,
                   pprint.pformat(tar_file.getmembers))
@@ -184,6 +208,7 @@ class Build(object):
                              # errors=[],
                              errors=col_members.walker.file_errors,
                              manifest=manifest,
+                             file_manifest=file_manifest,
                              artifact_file_path=archive_path)
 
         for message in result.messages:

@@ -17,12 +17,16 @@ log = logging.getLogger(__name__)
 pf = pprint.pformat
 
 COLLECTION_MANIFEST_FILENAME = 'MANIFEST.json'
+COLLECTION_FILE_MANIFEST_FILENAME = 'FILES.json'
 
 
 # TODO: replace with a generic version for cases
 #       where SomeClass(**dict_from_yaml) works
 # def load(data_or_file_object, klass=None):
 def load(data_or_file_object):
+
+    # FIXME: This file is json now, so could use the regular json.load()
+    #        (this works as well since json is subset of yaml...)
     log.debug('loading collection info from %s',
               pf(data_or_file_object))
 

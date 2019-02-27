@@ -61,16 +61,16 @@ def test_build_run(tmpdir):
     assert isinstance(res, build.BuildResult)
     assert isinstance(res.manifest, CollectionArtifactManifest)
     assert isinstance(res.manifest.collection_info, CollectionInfo)
-    assert isinstance(res.manifest.files, list)
+    assert isinstance(res.file_manifest.files, list)
 
     assert res.manifest.collection_info == collection_info
 
-    for manifest_file in res.manifest.files:
+    for manifest_file in res.file_manifest.files:
         if manifest_file.ftype == 'file':
             assert manifest_file.chksum_type == 'sha256'
 
-    file_names = [x.name for x in res.manifest.files if x.ftype == 'file']
-    dir_names = [x.name for x in res.manifest.files if x.ftype == 'dir']
+    file_names = [x.name for x in res.file_manifest.files if x.ftype == 'file']
+    dir_names = [x.name for x in res.file_manifest.files if x.ftype == 'dir']
 
     log.debug('file_names: %s', file_names)
     log.debug('dir_names: %s', dir_names)

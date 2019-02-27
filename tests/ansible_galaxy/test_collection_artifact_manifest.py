@@ -3,7 +3,6 @@ import os
 
 from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy.models.collection_artifact_manifest import CollectionArtifactManifest
-from ansible_galaxy.models.collection_artifact_file import CollectionArtifactFile
 from ansible_galaxy import yaml_persist
 
 log = logging.getLogger(__name__)
@@ -17,13 +16,6 @@ def test_load():
         log.debug('res: %s', res)
 
         assert isinstance(res, CollectionArtifactManifest)
-        assert isinstance(res.files, list)
-        assert isinstance(res.files[0], CollectionArtifactFile)
-
-        assert res.files[0].name == 'roles/some_role/defaults/main.yml'
-        assert res.files[0].ftype == 'file'
-        assert res.files[0].chksum_type == 'sha256'
-        assert res.files[0].chksum_sha256 == 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
 
 
 def test_save(tmpdir):
