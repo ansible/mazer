@@ -12,7 +12,12 @@ from ansible_galaxy.data import spdx_licenses
 log = logging.getLogger(__name__)
 
 TAG_REGEXP = re.compile('^[a-z0-9]+$')
-NAME_REGEXP = re.compile(r'^[a-z0-9_]+$')
+# match only lowercase alphanumerics or underscore without
+# leading numbers or underscores or multiple consecutive underscores
+# This excludes dashes '-', punct (',' or '.' etc).
+# NAME_REGEXP = re.compile(r'^[a-z0-9_]+$')
+NAME_REGEXP = re.compile(r'^(?!.*__)[a-z]+[0-9a-z_]*$')
+MATCH_LEADING_NUMBER_REGEXP = re.compile(r'^[0-9]')
 # see https://github.com/ansible/galaxy/issues/957
 
 
@@ -100,7 +105,7 @@ class CollectionInfo(object):
     def _check_keywords(self, attribute, value):
         for k in value:
             if not re.match(TAG_REGEXP, k):
-                self.value_error("Expecting tags to contain alphanumeric characters only, "
+                self.value_error("Expecting tags to contain lowercase alphanumeric characters only, "
                                  "instead found '%s'." % k)
 
     @name.validator
@@ -108,8 +113,10 @@ class CollectionInfo(object):
     def _check_name(self, attribute, value):
         if '.' in value:
             self.value_error("Expecting 'name' and 'namespace' to not include any '.' but '%s' has a '.'" % value)
-        if not re.match(NAME_REGEXP, value):
-            self.value_error("Expecting 'name' and 'namespace' to contain only alphanumeric characters or '_' only but '%s' contains others" % value)
+        if re.match(MATCH_LEADING_NUMBER_REGEXP, value):
+            self.value_error("Expecting 'name' and 'namespace' to not start with a number but '%s' did" % value)
         # since the NAME_REGEXP catches use of hyphen '-' at all, the next check doesn't need to check for leading hyphen
         if value.startswith(('_',)):
             self.value_error("Expecting 'name' and 'namespace' to not start with '_' but '%s' did" % value)
+        if not re.match(NAME_REGEXP, value):
+            self.value_error("Expecting 'name' and 'namespace' to contain only lowercase alphanumeric characters or '_' only but '%s' contains others" % value)

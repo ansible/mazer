@@ -5,7 +5,7 @@ from ansible_galaxy.models.collection_info import CollectionInfo
 
 log = logging.getLogger(__name__)
 
-NON_ALPHA_ERROR_PAT = r"Invalid collection metadata. Expecting 'name' and 'namespace' to contain only alphanumeric characters "
+NON_ALPHA_ERROR_PAT = r"Invalid collection metadata. Expecting 'name' and 'namespace' to contain only lowercase alphanumeric characters "
 "or '_' only but '.*' contains others"
 
 
@@ -22,6 +22,231 @@ def col_info():
     return test_data
 
 
+valid_name_or_namespaces = \
+    ['some_name',
+     'some_namespace',
+     'roles2go',
+     'ews',
+     'ews_',
+     'geerlingguy',
+     'red_hat',
+     ]
+
+
+@pytest.fixture(scope='module',
+                params=valid_name_or_namespaces)
+def valid_name(request):
+    yield request.param
+
+
+def test_valid_names(col_info, valid_name):
+    col_info['name'] = valid_name
+
+    log.debug('valid_name: %s', valid_name)
+
+    res = CollectionInfo(**col_info)
+
+    assert isinstance(res, CollectionInfo)
+    assert res.name == valid_name
+
+
+invalid_name_or_namespaces = \
+    [
+     '2punk__rock--Valid|n a M e s',
+     '__builtin__',
+     '../../../bin/bash',
+     r'\.',
+     r'C:\huh\what',
+     r'C:\AUX',
+     ]
+
+
+@pytest.fixture(scope='module',
+                params=invalid_name_or_namespaces)
+def invalid_name(request):
+    yield request.param
+
+
+def test_invalid_names(col_info, invalid_name):
+    col_info['name'] = invalid_name
+
+    log.debug('invalid_name: %s', invalid_name)
+
+    with pytest.raises(ValueError) as exc:
+        CollectionInfo(**col_info)
+
+    log.debug('exc: %s', str(exc))
+
+
+invalid_name_leading_underscore = \
+    [
+        '_scoop_co',
+        '__dunder_mifflin',
+        '_',
+        '_foo',
+    ]
+
+
+@pytest.fixture(scope='module',
+                params=invalid_name_leading_underscore)
+def invalid_name_leading_underscore(request):
+    yield request.param
+
+
+def test_name_invalid_names_leading_underscore(col_info, invalid_name_leading_underscore):
+    col_info['name'] = invalid_name_leading_underscore
+
+    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '_' but '.*' did"
+
+    log.debug('invalid_name_leading_underscore: %s', invalid_name_leading_underscore)
+
+    with pytest.raises(ValueError,
+                       match=error_re) as exc:
+        CollectionInfo(**col_info)
+    assert invalid_name_leading_underscore in str(exc)
+
+
+invalid_name_non_alphanumeric = \
+    [
+     # the '.' in github.com would match the 'no dots' rule first
+     'git@github',
+     'foo@blip',
+     # /, ?, # are non alphanumeric and are invalid
+     'rohitggarg/docker-swarm?',
+     'c#',
+     # leading dash/hyphen and non alpha are invalid
+     '--version',
+     '-name',
+     '-foo',
+     # inline '-' is invalid
+     'foo-bar',
+     'joes-house-of-collections',
+     'ansible-galaxy',
+     'adfinis-sygroup',
+     # double underscores
+     'punk__rock',
+     'foo__name',
+    ]
+
+
+@pytest.fixture(scope='module',
+                params=invalid_name_non_alphanumeric)
+def invalid_name_non_alphanumeric(request):
+    yield request.param
+
+
+def test_name_invalid_name_non_alphanumeric(col_info, invalid_name_non_alphanumeric):
+    col_info['name'] = invalid_name_non_alphanumeric
+    col_info['namespace'] = invalid_name_non_alphanumeric
+
+    log.debug('invalid_name_non_alphanumeric: %s', invalid_name_non_alphanumeric)
+
+    with pytest.raises(ValueError,
+                       match=NON_ALPHA_ERROR_PAT) as exc:
+        CollectionInfo(**col_info)
+
+    log.debug('exc: %s', str(exc))
+    assert invalid_name_non_alphanumeric in str(exc)
+
+
+def _namespace_invalid_name_non_alphanumeric(col_info, invalid_name_non_alphanumeric):
+
+    log.debug('invalid_name_non_alphanumeric: %s', invalid_name_non_alphanumeric)
+
+    with pytest.raises(ValueError,
+                       match=NON_ALPHA_ERROR_PAT) as exc:
+        CollectionInfo(**col_info)
+
+    log.debug('exc: %s', str(exc))
+    assert invalid_name_non_alphanumeric in str(exc)
+
+
+invalid_name_leading_number = \
+    [
+     '0x43',
+     '030',
+     '2fast2furious',
+    ]
+
+
+@pytest.fixture(scope='module',
+                params=invalid_name_leading_number)
+def invalid_name_leading_number(request):
+    yield request.param
+
+
+def test_name_invalid_leading_number(col_info, invalid_name_leading_number):
+    col_info['name'] = invalid_name_leading_number
+    col_info['namespace'] = invalid_name_leading_number
+
+    log.debug('invalid_name_leading_number: %s', invalid_name_leading_number)
+
+    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to not start with a number but '%s' did" % invalid_name_leading_number
+    with pytest.raises(ValueError,
+                       match=error_re) as exc:
+        CollectionInfo(**col_info)
+    assert invalid_name_leading_number in str(exc)
+
+
+invalid_name_uppercase = \
+    [
+     'EWS',
+     'AAROC',
+     'AdopteUnOps',
+    ]
+
+
+@pytest.fixture(scope='module',
+                params=invalid_name_uppercase)
+def invalid_name_uppercase(request):
+    yield request.param
+
+
+def test_name_invalid_uppercase(col_info, invalid_name_uppercase):
+    col_info['name'] = invalid_name_uppercase
+    col_info['namespace'] = invalid_name_uppercase
+
+    log.debug('invalid_name_uppercase: %s', invalid_name_uppercase)
+
+    with pytest.raises(ValueError,
+                       match=NON_ALPHA_ERROR_PAT) as exc:
+        CollectionInfo(**col_info)
+
+    log.debug('exc: %s', str(exc))
+    assert invalid_name_uppercase in str(exc)
+
+
+invalid_name_has_dots = \
+    [
+     'alban.andrieu',
+     'dot.net',
+     '.',
+     '..',
+     '_.fsd',
+    ]
+
+
+@pytest.fixture(scope='module',
+                params=invalid_name_has_dots)
+def invalid_name_has_dots(request):
+    yield request.param
+
+
+def test_name_invalid_has_dots(col_info, invalid_name_has_dots):
+    col_info['name'] = invalid_name_has_dots
+    col_info['namespace'] = invalid_name_has_dots
+
+    log.debug('invalid_name_has_dots: %s', invalid_name_has_dots)
+    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to not include any '\.' but .* has a '\.'"
+
+    with pytest.raises(ValueError,
+                       match=error_re) as exc:
+        CollectionInfo(**col_info)
+
+    log.debug('exc: %s', str(exc))
+    assert invalid_name_has_dots in str(exc)
+
+
 def test_license_deprecated(col_info):
     col_info['license'] = 'AGPL-1.0'
     res = CollectionInfo(**col_info)
@@ -29,6 +254,7 @@ def test_license_deprecated(col_info):
     assert res.license == 'AGPL-1.0'
 
 
+# TODO maybe... build a text fixture for all of these cases
 def test_license_unknown(col_info):
     col_info['license'] = 'SOME-UNKNOWN'
     with pytest.raises(ValueError, match=".*license.*SOME-UNKNOWN.*"):
@@ -51,66 +277,12 @@ def test_name_required_error(col_info):
     assert 'name' in str(exc) in str(exc)
 
 
-def test_name_parse_error_dots_in_name(col_info):
-    col_info['name'] = 'foo.bar'
+def test_namespace_required_error(col_info):
+    del col_info['namespace']
 
-    # CollectionInfo(**col_info)
-    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to not include any '.' but 'foo.bar' has a '.'
-    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to not include any '\.' but 'foo\.bar' has a '\.'"
-    with pytest.raises(ValueError,
-                       match=error_re) as exc:
+    with pytest.raises(ValueError) as exc:
         CollectionInfo(**col_info)
-    assert 'name' in str(exc)
-
-
-def test_name_parse_error_other_chars_namespace(col_info):
-    col_info['namespace'] = 'foo@blip'
-
-    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to contain only alphanumeric characters
-    # or '_' only but 'foo@blip' contains others"
-    with pytest.raises(ValueError,
-                       match=NON_ALPHA_ERROR_PAT) as exc:
-        CollectionInfo(**col_info)
-    assert 'foo@blip' in str(exc)
-
-
-def test_name_parse_error_name_leading_underscore(col_info):
-    col_info['name'] = '_foo'
-
-    # ValueError: Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '_' but '_foo' did
-    error_re = r"Invalid collection metadata. Expecting 'name' and 'namespace' to not start with '_' but '_foo' did"
-    with pytest.raises(ValueError,
-                       match=error_re) as exc:
-        CollectionInfo(**col_info)
-    assert '_foo' in str(exc)
-
-
-def test_name_parse_error_name_leading_hyphen(col_info):
-    col_info['name'] = '-foo'
-
-    # For the case of a leading '-', the 'no dashes' check raises error first
-    with pytest.raises(ValueError,
-                       match=NON_ALPHA_ERROR_PAT) as exc:
-        CollectionInfo(**col_info)
-    assert '-foo' in str(exc)
-
-
-def test_name_has_hypen_error(col_info):
-    col_info['name'] = 'foo-bar'
-
-    with pytest.raises(ValueError,
-                       match=NON_ALPHA_ERROR_PAT) as exc:
-        CollectionInfo(**col_info)
-    assert 'foo-bar' in str(exc)
-
-
-def test_namespace_has_hypen_error(col_info):
-    col_info['namespace'] = 'foo-namespace'
-
-    with pytest.raises(ValueError,
-                       match=NON_ALPHA_ERROR_PAT) as exc:
-        CollectionInfo(**col_info)
-    assert 'foo-namespace' in str(exc)
+    assert 'namespace' in str(exc) in str(exc)
 
 
 def test_type_authors_not_list_error(col_info):
@@ -125,7 +297,7 @@ def test_tags_non_alpha_error(col_info):
     col_info['tags'] = ['goodtag', bad_tag]
 
     # ValueError: Invalid collection metadata. Expecting tags to contain alphanumeric characters only, instead found 'bad-tag!'.
-    error_re = r"Invalid collection metadata. Expecting tags to contain alphanumeric characters only, instead found '.*'"
+    error_re = r"Invalid collection metadata. Expecting tags to contain lowercase alphanumeric characters only, instead found '.*'"
 
     with pytest.raises(ValueError,
                        match=error_re) as exc:
