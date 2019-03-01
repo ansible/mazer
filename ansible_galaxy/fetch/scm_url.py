@@ -32,7 +32,7 @@ class ScmUrlFetch(base.BaseFetch):
         repository_archive_path = scm_archive.scm_archive_content(src=self.requirement_spec.src,
                                                                   scm=self.requirement_spec.scm,
                                                                   name=self.requirement_spec.name,
-                                                                  version=self.requirement_spec.version)
+                                                                  version=str(self.requirement_spec.version))
         self.local_path = repository_archive_path
 
         log.debug('repository_archive_path=%s', repository_archive_path)
