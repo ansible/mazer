@@ -6,6 +6,8 @@ import yaml
 
 from ansible_galaxy.models.collection_info import \
     CollectionInfo
+from ansible_galaxy.models.collection_artifact_file import \
+    CollectionArtifactFile
 from ansible_galaxy.models.collection_artifact_manifest import \
     CollectionArtifactManifest
 
@@ -30,7 +32,13 @@ def load(data_or_file_object):
     # log.debug('data_dict: %s', data_dict)
 
     col_info = CollectionInfo(**data_dict['collection_info'])
-    instance = CollectionArtifactManifest(collection_info=col_info)
+
+    file_manifest_file = None
+    if data_dict.get('file_manifest_file', None):
+        file_manifest_file = CollectionArtifactFile(**data_dict['file_manifest_file'])
+
+    instance = CollectionArtifactManifest(collection_info=col_info,
+                                          file_manifest_file=file_manifest_file)
 
     log.debug('%s instance from_kwargs', type(instance))
 

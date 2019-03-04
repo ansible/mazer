@@ -5,6 +5,9 @@ import logging
 import attr
 
 from ansible_galaxy.models.collection_info import CollectionInfo
+# from ansible_galaxy.models.collection_artifact_file_manifest_info import \
+#    CollectionArtifactFileManifestInfo
+from ansible_galaxy.models.collection_artifact_file import CollectionArtifactFile
 
 log = logging.getLogger(__name__)
 
@@ -12,7 +15,13 @@ log = logging.getLogger(__name__)
 # see https://github.com/ansible/galaxy/issues/957
 @attr.s(frozen=True)
 class CollectionArtifactManifest(object):
-    collection_info = attr.ib(type=CollectionInfo)
+    collection_info = attr.ib(type=CollectionInfo,
+                              validator=attr.validators.instance_of(CollectionInfo))
+
+    file_manifest_file = attr.ib(default=None,
+                                 type=CollectionArtifactFile,
+                                 validator=attr.validators.optional(attr.validators.instance_of(CollectionArtifactFile)))
+
     format = attr.ib(default=1)
 
     # TODO: add a attr with info about the FILES.* file,

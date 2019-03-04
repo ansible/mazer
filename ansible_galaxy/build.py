@@ -7,10 +7,12 @@ import tarfile
 import attr
 import six
 
+from ansible_galaxy.utils import chksums
 from ansible_galaxy import collection_members
 from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy import collection_artifact_file_manifest
 from ansible_galaxy.collection_info import COLLECTION_INFO_FILENAME
+from ansible_galaxy.models.collection_artifact_file import CollectionArtifactFile
 from ansible_galaxy.models.collection_artifact_manifest import \
     CollectionArtifactManifest
 from ansible_galaxy.models.collection_artifact_file_manifest import \
@@ -85,34 +87,7 @@ class Build(object):
 
     def run(self, display_callback):
 
-        file_walker = collection_members.FileWalker(collection_path=self.build_context.collection_path)
-        col_members = collection_members.CollectionMembers(walker=file_walker)
-
-        log.debug('col_members: %s', col_members)
         log.debug('INFO self.collection_info: %s', self.collection_info)
-
-        col_file_names = col_members.run()
-        col_files = collection_artifact_file_manifest.gen_manifest_artifact_files(col_file_names,
-                                                                                  self.build_context.collection_path)
-
-        file_manifest = CollectionArtifactFileManifest(files=col_files)
-        manifest = CollectionArtifactManifest(collection_info=self.collection_info,)
-
-        log.debug('file_manifest: %s', file_manifest)
-        log.debug('manifest: %s', manifest)
-
-        # TODO: should be able to move this later
-        manifest_buf = json.dumps(attr.asdict(manifest,
-                                              filter=filter_artifact_file_name),
-                                  # sort_keys=True,
-                                  indent=4)
-        log.debug('manifest buf: %s', manifest_buf)
-
-        # TODO/FIXME: find and use some streamable file format for the filelist (csv?)
-        file_manifest_buf = json.dumps(attr.asdict(file_manifest),
-                                       indent=4)
-
-        log.debug('file_manifest_buf: %s', file_manifest_buf)
 
         # ie, 'v1.2.3.tar.gz', not full path
         archive_filename_basename = \
@@ -132,7 +107,19 @@ class Build(object):
         # 'x:gz' is 'create exclusive gzipped'
         tar_file = tarfile.open(archive_path, mode='w:gz')
 
-        # tar_file.add(archive_top_dir, arcname=archive_top_dir, recursive=False)
+        # Find collection files, build a file manifest, serialize to json and add to the tarfile
+        file_walker = collection_members.FileWalker(collection_path=self.build_context.collection_path)
+        col_members = collection_members.CollectionMembers(walker=file_walker)
+
+        log.debug('col_members: %s', col_members)
+
+        col_file_names = col_members.run()
+        col_files = collection_artifact_file_manifest.gen_file_manifest_items(col_file_names,
+                                                                              self.build_context.collection_path)
+
+        file_manifest = CollectionArtifactFileManifest(files=col_files)
+
+        log.debug('file_manifest: %s', file_manifest)
 
         for col_member_file in file_manifest.files:
             top_dir = False
@@ -153,10 +140,13 @@ class Build(object):
             #     tar_file.add(col_member_file.name, arcname=archive_member_path, recursive=False)
             tar_file.add(col_member_file.src_name, arcname=archive_member_path, recursive=False)
 
-        # add MANIFEST.yml to archive
+        # Generate FILES.json contents
+        # TODO/FIXME: find and use some streamable file format for the filelist (csv?)
+        file_manifest_buf = json.dumps(attr.asdict(file_manifest,
+                                                   filter=filter_artifact_file_name),
+                                       indent=4)
 
-        b_manifest_buf = to_bytes(manifest_buf)
-        b_manifest_buf_bytesio = six.BytesIO(b_manifest_buf)
+        log.debug('file_manifest_buf: %s', file_manifest_buf)
 
         b_file_manifest_buf = to_bytes(file_manifest_buf)
         b_file_manifest_buf_bytesio = six.BytesIO(b_file_manifest_buf)
@@ -167,24 +157,61 @@ class Build(object):
         archive_file_manifest_path = collection_artifact_file_manifest.COLLECTION_FILE_MANIFEST_FILENAME
         log.debug('archive_file_manifest_path: %s', archive_file_manifest_path)
 
-        # copy the uid/gid/perms for galaxy.yml to use on the manifes. Need sep instances for manifest and file_manifest
-        # TODO: decide on what the generators owner/group/perms should be (root.root 644?)
-        manifest_tar_info = tar_file.gettarinfo(os.path.join(self.build_context.collection_path, COLLECTION_INFO_FILENAME))
         file_manifest_tar_info = tar_file.gettarinfo(os.path.join(self.build_context.collection_path, COLLECTION_INFO_FILENAME))
-
-        manifest_tar_info.name = archive_manifest_path
-        manifest_tar_info.size = len(b_manifest_buf)
 
         file_manifest_tar_info.name = archive_file_manifest_path
         file_manifest_tar_info.size = len(b_file_manifest_buf)
+
+        # Add FILES.json contents to tarball
+        tar_file.addfile(tarinfo=file_manifest_tar_info,
+                         fileobj=b_file_manifest_buf_bytesio)
+
+        # addfile reads to end of bytesio, seek back to begin
+        b_file_manifest_buf_bytesio.seek(0)
+        file_manifest_file_chksum = chksums.sha256sum_from_fo(b_file_manifest_buf_bytesio)
+
+        log.debug('file_manifest_file_chksum: %s', file_manifest_file_chksum)
+
+        # file_manifest_file_name_in_archive = os.path.relpath(archive_file_manifest_path, self.build_context.collection_path)
+
+        file_manifest_file_item = CollectionArtifactFile(src_name=collection_artifact_file_manifest.COLLECTION_FILE_MANIFEST_FILENAME,
+                                                         # The path where the file will live inside the archive
+                                                         name=collection_artifact_file_manifest.COLLECTION_FILE_MANIFEST_FILENAME,
+                                                         ftype='file',
+                                                         chksum_type='sha256',
+                                                         chksum_sha256=file_manifest_file_chksum)
+
+        # Generage MANIFEST.json contents
+        manifest = CollectionArtifactManifest(collection_info=self.collection_info,
+                                              file_manifest_file=file_manifest_file_item)
+
+        log.debug('manifest: %s', manifest)
+
+        manifest_buf = json.dumps(attr.asdict(manifest,
+                                              filter=filter_artifact_file_name),
+                                  # sort_keys=True,
+                                  indent=4)
+        log.debug('manifest buf: %s', manifest_buf)
+
+        # add MANIFEST.yml to archive
+        b_manifest_buf = to_bytes(manifest_buf)
+        b_manifest_buf_bytesio = six.BytesIO(b_manifest_buf)
+
+        archive_manifest_path = os.path.join(archive_top_dir,
+                                             collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME)
+        log.debug('archive_manifest_path: %s', archive_manifest_path)
+
+        # copy the uid/gid/perms for galaxy.yml to use on the manifes. Need sep instances for manifest and file_manifest
+        # TODO: decide on what the generators owner/group/perms should be (root.root 644?)
+        manifest_tar_info = tar_file.gettarinfo(os.path.join(self.build_context.collection_path, COLLECTION_INFO_FILENAME))
+
+        manifest_tar_info.name = archive_manifest_path
+        manifest_tar_info.size = len(b_manifest_buf)
 
         # TODO: set mtime equal to the 'build time' / build_info when we start creating that.
 
         tar_file.addfile(tarinfo=manifest_tar_info,
                          fileobj=b_manifest_buf_bytesio)
-
-        tar_file.addfile(tarinfo=file_manifest_tar_info,
-                         fileobj=b_file_manifest_buf_bytesio)
 
         log.debug('populated tarfile %s: %s', archive_path,
                   pprint.pformat(tar_file.getmembers))

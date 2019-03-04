@@ -37,36 +37,36 @@ def load(data_or_file_object):
     return instance
 
 
-def gen_manifest_artifact_files(file_names, collection_path, chksum_type=None):
-    # file_names = file_names or []
+def create_file_manifest_item(file_name, file_name_in_archive):
+    if os.path.isfile(file_name):
+        # At the moment, 'sha256' is the only supported chksum_type for files
+        ftype = 'file'
+        chksum_type = 'sha256'
+        chksum = chksums.sha256sum_from_path(file_name)
+
+    if os.path.isdir(file_name):
+        chksum = None
+        chksum_type = None
+        ftype = 'dir'
+
+    log.debug('ftype: %s file_name: %s fnia: %s', ftype, file_name, file_name_in_archive)
+
+    artifact_file_item = CollectionArtifactFile(src_name=file_name,
+                                                # The path where the file will live inside the archive
+                                                name=file_name_in_archive,
+                                                ftype=ftype,
+                                                chksum_type=chksum_type,
+                                                chksum_sha256=chksum)
+
+    return artifact_file_item
+
+
+def gen_file_manifest_items(file_names, collection_path):
     file_names = file_names or []
-    default_chksum_type = chksum_type or 'sha256'
 
     for file_name in file_names:
+        file_name_in_archive = os.path.relpath(file_name, collection_path)
 
-        current_chksum_type = default_chksum_type
+        artifact_file_item = create_file_manifest_item(file_name, file_name_in_archive=file_name_in_archive)
 
-        # TODO: enum
-        if os.path.isfile(file_name):
-            ftype = 'file'
-        if os.path.isdir(file_name):
-            ftype = 'dir'
-
-        chksum = None
-        if ftype == 'file':
-            chksum = chksums.sha256sum_from_path(file_name)
-        else:
-            chksum = None
-            current_chksum_type = None
-
-        dest_relative_path = os.path.relpath(file_name, collection_path)
-        arcname = dest_relative_path
-
-        artifact_file = CollectionArtifactFile(src_name=file_name,
-                                               # The path where the file will live inside the archive
-                                               name=arcname,
-                                               ftype=ftype,
-                                               chksum_type=current_chksum_type,
-                                               chksum_sha256=chksum)
-
-        yield artifact_file
+        yield artifact_file_item
