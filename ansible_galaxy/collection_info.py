@@ -17,8 +17,6 @@ COLLECTION_INFO_FILENAME = "galaxy.yml"
 def load(data_or_file_object, klass=None):
     data_dict = yaml.safe_load(data_or_file_object)
 
-    # log.debug('data: %s', pf(data_dict))
-
     try:
         collection_info = CollectionInfo(**data_dict)
     except ValueError:

@@ -214,6 +214,12 @@ $ cd tests/ansible_galaxy/collection_examples/hello/
 $ mazer build
 ```
 
+### Migrating an existing traditional style role to a collection with 'mazer migrate_role'
+
+```
+$ mazer migrate_role --role roles/some_trad_role/ --output-dir collections/roles/some_trad_role --namespace some_ns --version=1.2.3
+```
+
 The above command will create an ansible content collection artifact
 at tests/ansible_galaxy/collection_examples/hello/releases/v11.11.11.tar.gz
 

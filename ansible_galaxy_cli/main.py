@@ -50,6 +50,7 @@ def main(args=None):
         exit_code = os.EX_SOFTWARE
     except Exception as e:
         log.exception(e)
+        stderr_log.error(e)
         exit_code = os.EX_SOFTWARE
 
         # let non-Galaxy exceptions bubble up and traceback

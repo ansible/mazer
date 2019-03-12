@@ -31,6 +31,7 @@ from ansible_galaxy.actions import build
 from ansible_galaxy.actions import info
 from ansible_galaxy.actions import install
 from ansible_galaxy.actions import list as list_action
+from ansible_galaxy.actions import migrate_role
 from ansible_galaxy.actions import remove
 from ansible_galaxy.actions import version
 from ansible_galaxy.actions import publish
@@ -42,6 +43,7 @@ from ansible_galaxy import rest_api
 
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.build_context import BuildContext
+from ansible_galaxy.models.migrate_role_context import MigrateRoleContext
 
 from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
@@ -77,7 +79,7 @@ def get_config_path_from_env():
 
 class GalaxyCLI(cli.CLI):
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
-    VALID_ACTIONS = ("build", "info", "install", "list", "publish", "remove", "version")
+    VALID_ACTIONS = ("build", "info", "install", "list", "migrate_role", "publish", "remove", "version")
     VALID_ACTION_ALIASES = {'content-install': 'install'}
 
     def __init__(self, args):
@@ -133,6 +135,22 @@ class GalaxyCLI(cli.CLI):
             self.parser.add_option('-C', '--content-path', dest='content_path',
                                    help='The path to the directory containing your Galaxy content. The default is the content_path configured in your'
                                         'mazer.yml file (~/.ansible/content, if not configured)', type='str')
+
+        if self.action == "migrate_role":
+            self.parser.add_option('--role', dest='role_convertee_path',
+                                   help='The path to the role that will be converted to a collection')
+            self.parser.add_option('--output-dir', dest='collection_output_dir',
+                                   help='The path to write the new collection to')
+            self.parser.add_option('--force', dest='output_force', action='store_true', default=False,
+                                   help='Write to the output dir even if parts of it already exists')
+            self.parser.add_option('--namespace', dest='collection_namespace',
+                                   help='The namespace to use for the new collection')
+            self.parser.add_option('--name', dest='collection_name',
+                                   help='The name to use for the new collection')
+            self.parser.add_option('--version', dest='collection_version',
+                                   help='The version to use for the new collection')
+            self.parser.add_option('--license', dest='collection_license', default=None,
+                                   help='The SPDX license identifier to use for the new collection. For ex, "GPL-3.0-or-later", "MIT", "BSD-3-Clause"')
 
         if self.action in ("install",):
             self.parser.add_option('-f', '--force', dest='force', action='store_true', default=False, help='Force overwriting an existing collection')
@@ -332,3 +350,16 @@ class GalaxyCLI(cli.CLI):
         return version.version(config_file_path=self.config_file_path,
                                cli_version=galaxy_cli_version,
                                display_callback=self.display)
+
+    def execute_migrate_role(self):
+
+        migrate_role_context = MigrateRoleContext(role_path=self.options.role_convertee_path,
+                                                  output_path=self.options.collection_output_dir,
+                                                  collection_namespace=self.options.collection_namespace,
+                                                  collection_name=self.options.collection_name,
+                                                  collection_version=self.options.collection_version,
+                                                  collection_license=self.options.collection_license,
+                                                  output_force=self.options.output_force)
+
+        return migrate_role.migrate(migrate_role_context=migrate_role_context,
+                                    display_callback=self.display)

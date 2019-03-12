@@ -42,6 +42,7 @@ def load(data_or_file_object, role_name=None):
                            cloud_platforms=galaxy_info.get('cloud_platforms'),
                            min_ansible_version=galaxy_info.get('min_ansible_version'),
                            min_ansible_container_version=galaxy_info.get('min_ansible_container_version'),
+                           issue_tracker=galaxy_info.get('issue_tracker_url'),
                            # from outside of galaxy_info dict
                            dependencies=deps,
                            allow_duplicates=allow_duplicates)
@@ -66,3 +67,12 @@ def load_from_filename(filename, role_name=None):
         return False
     finally:
         f.close()
+
+
+def load_from_dir(dirname, role_name=None):
+    log.debug("Going to load role from dir %s %s", dirname, role_name or "")
+
+    role_meta_main_filename = os.path.join(dirname, 'meta', 'main.yml')
+    # role_name = '%s.%s' % (namespace, name)
+
+    return load_from_filename(role_meta_main_filename, role_name=role_name)

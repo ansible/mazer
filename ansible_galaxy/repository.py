@@ -10,6 +10,7 @@ from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
 from ansible_galaxy import requirements
+from ansible_galaxy import role_metadata
 
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.repository import Repository
@@ -173,7 +174,8 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     try:
         with open(galaxy_filename, 'r') as gfd:
-            collection_info_data = collection_info.load(gfd)
+            if gfd:
+                collection_info_data = collection_info.load(gfd)
     except EnvironmentError:
         # log.debug('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
         pass
@@ -182,20 +184,14 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     # FIXME: For a repository with one role that matches the collection name and doesn't
     #        have a galaxy.yml, that's indistinguishable from a role-as-collection
     # FIXME: But in theory, if there is more than one role in roles/, we should skip this
-    role_meta_main_filename = os.path.join(path_name, 'roles', name, 'meta', 'main.yml')
-    role_meta_main = None
+
+    role_dir_path = os.path.join(path_name, 'roles')
     role_name = '%s.%s' % (namespace, name)
 
-    try:
-        with open(role_meta_main_filename, 'r') as rmfd:
-            # FIXME: kluge to avoid circular import on py2
-            #        repository->role_metadata->dependencies->repository_spec->repository (loop)
-            #        repository->requirements->repository_spec->repository (loop)
-            from ansible_galaxy import role_metadata
-            role_meta_main = role_metadata.load(rmfd, role_name=role_name)
-    except EnvironmentError:
-        # log.debug('No meta/main.yml was loaded for repository %s.%s: %s', namespace, name, e)
-        pass
+    role_meta_main = role_metadata.load_from_dir(dirname=role_dir_path,
+                                                 role_name=role_name)
+
+    log.debug('role_meta_main: %s', role_meta_main)
 
     # Prefer version from install_info, but for a editable installed, there may be only galaxy version
     installed_version = install_info_version

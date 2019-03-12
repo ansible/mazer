@@ -64,7 +64,6 @@ class CollectionInfo(object):
     @namespace.validator
     @name.validator
     @version.validator
-    @license.validator
     def _check_required(self, attribute, value):
         if value is None:
             self.value_error("'%s' is required" % attribute.name)
@@ -77,6 +76,10 @@ class CollectionInfo(object):
 
     @license.validator
     def _check_license(self, attribute, value):
+        if value is None:
+            self.value_error("'%s' is required and needs to be a valid SPDX license ID, instead found '%s'. "
+                             "For more info, visit https://spdx.org" % (attribute.name, value))
+
         # load or return already loaded data
         licenses = spdx_licenses.get_spdx()
 
