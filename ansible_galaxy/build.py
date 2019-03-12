@@ -22,8 +22,6 @@ log = logging.getLogger(__name__)
 ARCHIVE_FILENAME_TEMPLATE = '{namespace}-{name}-{version}.{extension}'
 ARCHIVE_FILENAME_EXTENSION = 'tar.gz'
 
-ARCHIVE_TOPDIR_TEMPLATE = '{collection_info.namespace}-{collection_info.name}-{collection_info.version}'
-
 
 # TODO: enum
 class BuildStatuses(object):
@@ -127,11 +125,8 @@ class Build(object):
                                     archive_filename_basename)
         log.debug('Building archive into archive_path: %s', archive_path)
 
-        # The name of the top level dir in the tar file. It is
-        # in the format '{collection_name}-{version}'.
-        # NOTE: This doesnt follow convention of 'foo-bar-1.2.3.tar.gz -> foo-bar-1.2.3/*'
-        archive_top_dir = ARCHIVE_TOPDIR_TEMPLATE.format(collection_info=self.collection_info)
-
+        # The name of the top level dir in the tar file, ie, there isnt one.
+        archive_top_dir = ""
         log.debug('archive_top_dir: %s', archive_top_dir)
 
         # 'x:gz' is 'create exclusive gzipped'
@@ -145,7 +140,7 @@ class Build(object):
             rel_path = col_member_file.name or col_member_file.src_name
             if rel_path == '.':
                 rel_path = ''
-            archive_member_path = os.path.join(archive_top_dir, rel_path)
+            archive_member_path = rel_path
 
             log.debug('adding %s to %s (from %s)', archive_member_path,
                       archive_path, col_member_file.name)
@@ -166,12 +161,10 @@ class Build(object):
         b_file_manifest_buf = to_bytes(file_manifest_buf)
         b_file_manifest_buf_bytesio = six.BytesIO(b_file_manifest_buf)
 
-        archive_manifest_path = os.path.join(archive_top_dir,
-                                             collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME)
+        archive_manifest_path = collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME
         log.debug('archive_manifest_path: %s', archive_manifest_path)
 
-        archive_file_manifest_path = os.path.join(archive_top_dir,
-                                                  collection_artifact_file_manifest.COLLECTION_FILE_MANIFEST_FILENAME)
+        archive_file_manifest_path = collection_artifact_file_manifest.COLLECTION_FILE_MANIFEST_FILENAME
         log.debug('archive_file_manifest_path: %s', archive_file_manifest_path)
 
         # copy the uid/gid/perms for galaxy.yml to use on the manifes. Need sep instances for manifest and file_manifest
