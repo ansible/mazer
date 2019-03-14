@@ -272,7 +272,15 @@ class GalaxyAPI(object):
                       fileHandle=codecs.open(archive_path, "rb"),
                       mimetype='application/octet-stream')
 
-        url = '%s/collections/' % self.baseurl
+        # FIXME: override api version in POST to collections/ as 'v2' for now, as
+        #        self.baseurl will automatically choose v1 based on 'GET /api'
+        #        results, but collections/ api endpoints are v2 only.
+        # TODO: figure out how to track API versions finer grained? Ideally
+        #       simple enough to not end up with adhoc HATEAOS imp
+        #       Maybe just hardcode api ver in calls?
+        collection_url_ver = 'v2'
+        url = '%s/api/%s/collections/' % (self._api_server, collection_url_ver)
+
         log.debug('url: %s', url)
 
         _, netloc, url, _, _, _ = urlparse(url)
