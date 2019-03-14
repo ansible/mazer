@@ -85,7 +85,7 @@ def g_connect(method):
 class GalaxyAPI(object):
     ''' This class is meant to be used as a API client for an Ansible Galaxy server '''
 
-    SUPPORTED_VERSIONS = ['v1']
+    SUPPORTED_VERSIONS = ['v1', 'v2']
 
     # FIXME: just pass in server_url
     def __init__(self, galaxy):
