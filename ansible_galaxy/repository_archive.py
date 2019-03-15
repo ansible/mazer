@@ -51,11 +51,6 @@ def extract(repository_spec,
 
     tar_members = tar_file.members
 
-    # This assumes the first entry in the tar archive / tar members
-    # is the top dir of the content, ie 'my_content_name-branch' for collection
-    # or 'ansible-role-my_content-1.2.3' for a traditional role.
-    parent_dir = tar_members[0].name
-
     # self.log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
 
     # self.log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
@@ -67,8 +62,7 @@ def extract(repository_spec,
     #       not in the archive
     files_to_extract = []
     for member in tar_members:
-        # rel_path ~  roles/some-role/meta/main.yml for ex
-        rel_path = member.name[len(parent_dir) + 1:]
+        rel_path = member.name
 
         extract_to_filename_path = os.path.join(extract_archive_to_dir, rel_path)
 
