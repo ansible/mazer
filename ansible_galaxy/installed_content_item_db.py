@@ -22,15 +22,14 @@ def glob_content_path_iterator(repository, content_item_sub_dir):
 
 
 def is_plugin_dir(plugin_dir_path):
-    '''Check plugins/ items to see if a dir with a __init__.py in it'''
+    '''Check plugins/ items to see if a potential plugin dir is a dir
+
+    No other checks are used to determine if plugin_dir_path is actually a plugin dir'''
     log.debug('plugin_dir_path: %s', plugin_dir_path)
 
     if os.path.isdir(plugin_dir_path):
-        if os.path.isfile(os.path.join(plugin_dir_path, '__init__.py')):
-            return True
+        return True
 
-        log.warning('There is a directory in "%s" that has no __init__.py and does not appear to be a plugin dir',
-                    plugin_dir_path)
     return False
 
 
