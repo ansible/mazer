@@ -57,10 +57,10 @@ $ mazer install testing.ansible_testing_content
 ```
 
 This will install all of the roles in the https://galaxy-qa.ansible.com/testing/ansible_testing_content
-to ~/.ansible/content/testing/ansible_testing_content/roles/
+to ~/.ansible/content/ansible_collections/testing/ansible_testing_content/roles/
 
 ```
-/home/adrian/.ansible/content/
+/home/adrian/.ansible/content/ansible_collections/
 └── testing
     └── ansible_testing_content
         └── roles
@@ -110,8 +110,8 @@ This will install the geerlingguy.nginx role to ~/my-ansible-content/geerlingguy
 To enable development of collections, it is possible to install a
 local checkout of a collection in 'editable' mode.
 
-Instead of copying a collection into ~/.ansible/content, this mode will
-create a symlink from ~/.ansible/content/my_namespace/my_colllection
+Instead of copying a collection into ~/.ansible/content/ansible_collections, this mode will
+create a symlink from ~/.ansible/content/ansible_collections/my_namespace/my_colllection
 to the directory where the collection being worked on lives.
 
 ie, if ~/src/collections/my_new_collection is being worked on, to install
@@ -145,7 +145,7 @@ Example playbook using mazer install roles, using fully qualified role names and
 - name: Using some mazer installed roles
   hosts: localhost
   roles:
-    # expect to load from ~/.ansible/content
+    # expect to load from ~/.ansible/content/ansible_collections
     # a traditional role, one role per repo
     #  referenced with the style namespace.reponame.rolename style
     - GROG.debug-variable.debug-variable
@@ -165,7 +165,7 @@ Example playbook using mazer install roles, using fully qualified role names and
 
     # If a traditional role is installed in multiple places like:
     #    # mazer content path
-    #    ~/.ansible/content/alikins/everywhere/roles/everywhere
+    #    ~/.ansible/content/ansible_collections/alikins/everywhere/roles/everywhere
     #
     #    # default ansible roles_path
     #    ~/.ansible/roles/everywhere
@@ -177,14 +177,14 @@ Example playbook using mazer install roles, using fully qualified role names and
     # ansible will first look in the mazer content path.
     #
     # This traditional role 'alikins.everywhere.everwhere' will be
-    # found in ~/.ansible/content/content/alikins/everywhere/roles/everywhere
+    # found in ~/.ansible/content/ansible_collections/content/alikins/everywhere/roles/everywhere
     # - alikins.everywhere.everywhere
     #
     # If the role is references with the "namespace.name" style,
     # ansible will first look in the mazer content path.
     #
     # This role 'alikins.everywhere'
-    # will be found in ~/.ansible/content/alikins/everywhere/roles/everywhere
+    # will be found in ~/.ansible/content/ansible_collections/alikins/everywhere/roles/everywhere
     # - alikins.everywhere
 
     # A role from a multi-content repo
@@ -247,9 +247,9 @@ server:
 # When installing content like ansible roles, mazer will install into
 # sub directories of this path.
 #
-# default: ~/.ansible/content
+# default: ~/.ansible/content/ansible_collections
 #
-content_path: ~/.ansible/content
+content_path: ~/.ansible/content/ansible_collections
 
 options:
   # A list of file glob patterns to ignore when

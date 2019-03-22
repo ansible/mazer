@@ -2,7 +2,7 @@ defaults: {}
 server:
   ignore_certs: false
   url: https://galaxy-qa.ansible.com
-content_path: ~/.ansible/content
+content_path: ~/.ansible/content/ansible_collections
 options:
   local_tmp: ~/.ansible/tmp
   role_skeleton_ignore:
