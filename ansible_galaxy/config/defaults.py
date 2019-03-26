@@ -21,8 +21,8 @@ DEFAULTS = [
      ),
 
     # In order of priority
-    ('content_path', '~/.ansible/content/ansible_collections'),
-    ('global_content_path', '/usr/share/ansible/content/ansible_collections'),
+    ('content_path', '~/.ansible/collections/ansible_collections'),
+    ('global_content_path', '/usr/share/ansible/collections/ansible_collections'),
 
     # runtime options
     ('options',
