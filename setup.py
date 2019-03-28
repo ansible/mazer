@@ -34,6 +34,7 @@ setup(
     install_requires=requirements,
     license="GPLv3",
     long_description=readme + '\n\n' + changelog,
+    long_description_content_type='text/x-rst',
     include_package_data=True,
     keywords='mazer',
     packages=find_packages(include=['ansible_galaxy', 'ansible_galaxy_cli',
