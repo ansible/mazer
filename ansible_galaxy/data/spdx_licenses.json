@@ -302,6 +302,12 @@
     "CECILL-C":{
         "deprecated":false
     },
+    "CERN-OHL-1.1":{
+        "deprecated":false
+    },
+    "CERN-OHL-1.2":{
+        "deprecated":false
+    },
     "CNRI-Jython":{
         "deprecated":false
     },
@@ -512,6 +518,9 @@
     "HPND":{
         "deprecated":false
     },
+    "HPND-sell-variant":{
+        "deprecated":false
+    },
     "HaskellReport":{
         "deprecated":false
     },
@@ -549,6 +558,9 @@
         "deprecated":false
     },
     "Interbase-1.0":{
+        "deprecated":false
+    },
+    "JPNIC":{
         "deprecated":false
     },
     "JSON":{
@@ -977,6 +989,9 @@
     "SugarCRM-1.1.3":{
         "deprecated":false
     },
+    "TAPR-OHL-1.0":{
+        "deprecated":false
+    },
     "TCL":{
         "deprecated":false
     },
@@ -1119,6 +1134,9 @@
         "deprecated":false
     },
     "iMatix":{
+        "deprecated":false
+    },
+    "libpng-2.0":{
         "deprecated":false
     },
     "libtiff":{
