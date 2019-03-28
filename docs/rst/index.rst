@@ -11,7 +11,7 @@ Welcome to ansible-galaxy-cli's documentation!
    modules
    contributing
    authors
-   history
+   changelog
 
 Indices and tables
 ==================
