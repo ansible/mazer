@@ -2,6 +2,32 @@
 Changelog
 =========
 
+0.4.0 (2019-03-28)
+------------------
+
+* The default path for collections to be installed
+  is now '~/.ansible/collections/ansible_collections'
+  which is also the default place ansible 2.8 or higher will search
+  for collections.
+* Add the 'mazer publish' for publishing a collection artifact to Ansible Galaxy
+* `186 Implement 'migrate_role' command to convert traditional roles to collections <https://github.com/ansible/mazer/issues/186>`_.
+* galaxy.yml 'authors' field is now a list
+* galaxy.yml 'dependencies' field is now a dict where the key is the
+  collection and the value is a https://github.com/rbarrois/python-semanticversion version spec
+* galaxy.yml 'tags' field (a list of tags) added
+* galaxy.yml 'readme' field added. The value is the path to the README file.
+* galaxy.yml optional new fields 'repository', 'documentation', 'homepage', 'issues'
+* galaxy.yml optional field 'license_file' added. It's value is a path
+  to a file containing additional license information
+* collection artifacts file manifest info is now in the generated FILES.json
+* MANIFEST.json now includes path and sha256sum of new generated FILES.json
+* Dependency solving version matching now supports the python-semanticversion style version specs
+* Fixes and improvements for install of local collection artifacts.
+  ie. `mazer install my_namespace-my_collection-1.2.3.tar.gz`
+* Updates to the use Galaxy REST v2 API
+* Updates to how SPDX data is loaded and used.
+* SPDX data updated to 3.4-59-ga68ef3c
+
 0.3.0 (2018-11-06)
 ------------------
 
