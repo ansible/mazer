@@ -16,11 +16,6 @@ from ansible_galaxy.models.installation_results import InstallationResults
 
 log = logging.getLogger(__name__)
 
-# TODO: better place to define?
-META_MAIN = os.path.join('meta', 'main.yml')
-GALAXY_FILE = 'ansible-galaxy.yml'
-APB_YAML = 'apb.yml'
-
 
 def null_display_callback(*args, **kwargs):
     log.debug('display_callback: %s', args)
