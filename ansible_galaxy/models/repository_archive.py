@@ -41,19 +41,5 @@ class RepositoryArchive(object):
 
 
 @attr.s(frozen=True)
-class TraditionalRoleRepositoryArchive(RepositoryArchive):
-    ROLES_SUBPATH = 'roles'
-
-    def repository_dest_root_subpath(self, repository_name):
-        '''Traditional role archive repository gets installed into subpath of 'roles/CONTENT_NAME/'''
-        return os.path.join(self.ROLES_SUBPATH, repository_name)
-
-
-@attr.s(frozen=True)
-class CollectionRepositoryArchive(RepositoryArchive):
-    pass
-
-
-@attr.s(frozen=True)
 class CollectionRepositoryArtifactArchive(RepositoryArchive):
     pass

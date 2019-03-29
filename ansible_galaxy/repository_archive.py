@@ -7,9 +7,8 @@ from ansible_galaxy import archive
 from ansible_galaxy import collection_members
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
-from ansible_galaxy.models import content
-from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo, CollectionRepositoryArchive
-from ansible_galaxy.models.repository_archive import CollectionRepositoryArtifactArchive, TraditionalRoleRepositoryArchive
+from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo
+from ansible_galaxy.models.repository_archive import CollectionRepositoryArtifactArchive
 from ansible_galaxy.models.repository_spec import FetchMethods
 from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.installation_results import InstallationResults
@@ -88,58 +87,11 @@ def extract(repository_spec,
     return all_installed_paths
 
 
-def detect_repository_archive_type(archive_path, file_names):
-    '''Try to determine if we are a role, multi-content, apb etc.
-
-    if there is a meta/main.yml ->  role
-
-    if there is any of the content types subdirs -> multi-content'''
-
-    # FIXME: just looking for the root dir...
-
-    top_dir = file_names[0]
-
-    # log.debug('top_dir of %s: %s', archive_path, top_dir)
-
-    meta_main_target = os.path.join(top_dir, 'meta/main.yml')
-    manifest_path = os.path.join(top_dir, 'MANIFEST.json')
-
-    type_dirs = content.CONTENT_TYPE_DIR_MAP.values()
-    # log.debug('type_dirs: %s', type_dirs)
-
-    type_dir_targets = set([os.path.join(top_dir, x) for x in type_dirs])
-    # log.debug('type_dir_targets: %s', type_dir_targets)
-
-    has_manifest = any([member for member in file_names if member == manifest_path])
-    log.debug('has_manifest: %s', has_manifest)
-
-    for member in file_names:
-        if member == meta_main_target:
-            return 'role'
-
-    for member in file_names:
-        if member in type_dir_targets:
-            if has_manifest:
-                return 'multi-content-artifact'
-            return 'multi-content'
-
-    # otherwise, assume it is a collection / multi-content repo archive
-    return 'multi-content'
-
-
 def build_archive_info(archive_path, file_names):
     archive_parent_dir = None
     archive_parent_dir = file_names[0]
 
-    archive_type = detect_repository_archive_type(archive_path, file_names)
-
-    # log.debug('archive_type of %s: %s', archive_path, archive_type)
-    # log.debug("archive_parent_dir of %s: %s", archive_path, archive_parent_dir)
-
-    # looks like we are a role, update the default content_type from all -> role
-    if archive_type == 'role':
-        log.debug('Found role metadata in the archive %s, so installing it as role content_type',
-                  archive_path)
+    archive_type = "multi-content-artifact"
 
     archive_info = RepositoryArchiveInfo(top_dir=archive_parent_dir,
                                          archive_type=archive_type,
@@ -193,21 +145,13 @@ def load_archive_info(archive_path, repository_spec=None):
 
 
 def load_archive(archive_path, repository_spec=None):
-    '''Load the archive file at archive_path and return a RepositoryArchive'''
+    '''Load the archive file at archive_path and return a CollectionRepositoryArtifactArchive'''
     # To avoid opening the archive file twice, and since we have to open/load it to
     # get the archive_info, we also return it from load_archive_info
     archive_info, tar_file = load_archive_info(archive_path, repository_spec)
 
-    # factory-ish
-    if archive_info.archive_type in ['role']:
-        repository_archive_ = TraditionalRoleRepositoryArchive(info=archive_info,
-                                                               tar_file=tar_file)
-    elif archive_info.archive_type == 'multi-content-artifact':
-        repository_archive_ = CollectionRepositoryArtifactArchive(info=archive_info,
-                                                                  tar_file=tar_file)
-    else:
-        repository_archive_ = CollectionRepositoryArchive(info=archive_info,
-                                                          tar_file=tar_file)
+    repository_archive_ = CollectionRepositoryArtifactArchive(info=archive_info,
+                                                              tar_file=tar_file)
 
     log.debug('repository archive_ for %s: %s', archive_path, repository_archive_)
 
