@@ -33,6 +33,7 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
     archive_path = repository_archive.info.archive_path
 
     # path_name = os.path.join(content_dir, namespace, name)
+    # TODO: for collections, the 'path_name' is now fixed and doesnt change, we can remove this
     path_name = repository_archive.info.top_dir
 
     manifest_filename = os.path.join(path_name, collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME)
@@ -114,6 +115,7 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
     return repository
 
 
+# TODO: simplify this, rename as part of Repository->Collection re-re-naming
 def load_from_dir(content_dir, namespace, name, installed=True):
     # TODO: or artifact
 

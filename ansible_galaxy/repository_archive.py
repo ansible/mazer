@@ -88,7 +88,6 @@ def extract(repository_spec,
 
 
 def build_archive_info(archive_path, file_names):
-    archive_parent_dir = None
     archive_parent_dir = file_names[0]
 
     archive_type = "multi-content-artifact"
