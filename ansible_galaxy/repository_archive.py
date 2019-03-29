@@ -151,7 +151,7 @@ def load_archive(archive_path, repository_spec=None):
     archive_info, tar_file = load_archive_info(archive_path, repository_spec)
 
     repository_archive_ = CollectionArtifactArchive(info=archive_info,
-                                                              tar_file=tar_file)
+                                                    tar_file=tar_file)
 
     log.debug('repository archive_ for %s: %s', archive_path, repository_archive_)
 

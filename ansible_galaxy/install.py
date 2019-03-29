@@ -158,8 +158,7 @@ def install(galaxy_context,
 
     # extract_archive_to_dir depends on the repo_archive type, so ask it
     extract_archive_to_dir = os.path.join(galaxy_context.content_path,
-                                          namespaced_repository_path,
-                                          repo_archive_.repository_dest_root_subpath(repository_spec.name))
+                                          namespaced_repository_path)
 
     editable = repository_spec.fetch_method == FetchMethods.EDITABLE
 

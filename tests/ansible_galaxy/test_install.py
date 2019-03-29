@@ -43,9 +43,9 @@ def test_install(galaxy_context, mocker):
     mock_fetcher = mocker.MagicMock(name='MockFetch')
     fetch_results = {'archive_path': '/dev/null/doesntexist'}
 
-    # Mock args for creating a Mock to replace repository_archive.load_archive that returns
-    # a Mock'ed RepositoryArchive with a mocked repository_dest_root_subpath() that returns ''
-    config = {'return_value': mocker.MagicMock(name='MockRepoArchive', **{'repository_dest_root_subpath.return_value': ''})}
+    # Mock args for creating a Mock to replace repository_archive.load_archive
+    # TODO: the 'config' constructor can be replaced with straight mocker.patch?
+    config = {'return_value': mocker.MagicMock(name='MockRepoArchive')}
 
     mocker.patch.object(install.repository_archive, 'load_archive', **config)
 
