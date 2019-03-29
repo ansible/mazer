@@ -41,5 +41,5 @@ class RepositoryArchive(object):
 
 
 @attr.s(frozen=True)
-class CollectionRepositoryArtifactArchive(RepositoryArchive):
+class CollectionArtifactArchive(RepositoryArchive):
     pass

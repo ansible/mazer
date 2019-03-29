@@ -8,7 +8,7 @@ from ansible_galaxy import collection_members
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
 from ansible_galaxy.models.collection_artifact_archive import RepositoryArchiveInfo
-from ansible_galaxy.models.collection_artifact_archive import CollectionRepositoryArtifactArchive
+from ansible_galaxy.models.collection_artifact_archive import CollectionArtifactArchive
 from ansible_galaxy.models.repository_spec import FetchMethods
 from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.installation_results import InstallationResults
@@ -150,7 +150,7 @@ def load_archive(archive_path, repository_spec=None):
     # get the archive_info, we also return it from load_archive_info
     archive_info, tar_file = load_archive_info(archive_path, repository_spec)
 
-    repository_archive_ = CollectionRepositoryArtifactArchive(info=archive_info,
+    repository_archive_ = CollectionArtifactArchive(info=archive_info,
                                                               tar_file=tar_file)
 
     log.debug('repository archive_ for %s: %s', archive_path, repository_archive_)
