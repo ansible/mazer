@@ -7,8 +7,8 @@ from ansible_galaxy import archive
 from ansible_galaxy import collection_members
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
-from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo
-from ansible_galaxy.models.repository_archive import CollectionRepositoryArtifactArchive
+from ansible_galaxy.models.collection_artifact_archive import RepositoryArchiveInfo
+from ansible_galaxy.models.collection_artifact_archive import CollectionRepositoryArtifactArchive
 from ansible_galaxy.models.repository_spec import FetchMethods
 from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.installation_results import InstallationResults

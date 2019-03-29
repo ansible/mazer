@@ -10,8 +10,8 @@ from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.install_destination import InstallDestinationInfo
 from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.installation_results import InstallationResults
-from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo
-from ansible_galaxy.models.repository_archive import CollectionRepositoryArtifactArchive
+from ansible_galaxy.models.collection_artifact_archive import RepositoryArchiveInfo
+from ansible_galaxy.models.collection_artifact_archive import CollectionRepositoryArtifactArchive
 from ansible_galaxy.actions import build
 from ansible_galaxy.models.build_context import BuildContext
 
