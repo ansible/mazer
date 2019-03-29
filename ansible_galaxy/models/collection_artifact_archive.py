@@ -4,7 +4,7 @@ import attr
 
 
 @attr.s(frozen=True)
-class RepositoryArchiveInfo(object):
+class CollectionArtifactArchiveInfo(object):
     requires_meta_main = False
 
     archive_type = attr.ib()
@@ -19,5 +19,5 @@ class RepositoryArchiveInfo(object):
 
 @attr.s(frozen=True)
 class CollectionArtifactArchive(object):
-    info = attr.ib(type=RepositoryArchiveInfo)
+    info = attr.ib(type=CollectionArtifactArchiveInfo)
     tar_file = attr.ib(type=tarfile.TarFile, default=None)

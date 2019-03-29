@@ -10,7 +10,7 @@ from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.install_destination import InstallDestinationInfo
 from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.installation_results import InstallationResults
-from ansible_galaxy.models.collection_artifact_archive import RepositoryArchiveInfo
+from ansible_galaxy.models.collection_artifact_archive import CollectionArtifactArchiveInfo
 from ansible_galaxy.models.collection_artifact_archive import CollectionArtifactArchive
 from ansible_galaxy.actions import build
 from ansible_galaxy.models.build_context import BuildContext
@@ -84,7 +84,7 @@ def test_load_from_archive(galaxy_context, tmpdir):
     log.debug('res: %s', res)
 
     assert isinstance(res, CollectionArtifactArchive)
-    assert isinstance(res.info, RepositoryArchiveInfo)
+    assert isinstance(res.info, CollectionArtifactArchiveInfo)
 
     # CollectionRepositoryArtifactArchive(info=RepositoryArchiveInfo(archive_type='multi-content-artifact', top_dir='greetings_namespace.hello-11.11.11'
     assert res.info.archive_type == 'multi-content-artifact'

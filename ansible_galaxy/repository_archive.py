@@ -7,7 +7,7 @@ from ansible_galaxy import archive
 from ansible_galaxy import collection_members
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
-from ansible_galaxy.models.collection_artifact_archive import RepositoryArchiveInfo
+from ansible_galaxy.models.collection_artifact_archive import CollectionArtifactArchiveInfo
 from ansible_galaxy.models.collection_artifact_archive import CollectionArtifactArchive
 from ansible_galaxy.models.repository_spec import FetchMethods
 from ansible_galaxy.models.install_info import InstallInfo
@@ -93,9 +93,9 @@ def build_archive_info(archive_path, file_names):
 
     archive_type = "multi-content-artifact"
 
-    archive_info = RepositoryArchiveInfo(top_dir=archive_parent_dir,
-                                         archive_type=archive_type,
-                                         archive_path=archive_path)
+    archive_info = CollectionArtifactArchiveInfo(top_dir=archive_parent_dir,
+                                                 archive_type=archive_type,
+                                                 archive_path=archive_path)
 
     return archive_info
 
