@@ -79,19 +79,3 @@ def from_dependencies_dict(dependencies_dict, namespace_override=None, editable=
         reqs.append(requirement)
 
     return reqs
-
-
-def from_requirement_spec_strings(requirement_spec_strings, namespace_override=None, editable=False, repository_spec=None):
-    reqs = []
-    for requirement_spec_string in requirement_spec_strings:
-        req_spec_data = spec_data_from_string(requirement_spec_string,
-                                              namespace_override=namespace_override,
-                                              editable=editable)
-
-        req_spec = RequirementSpec.from_dict(req_spec_data)
-
-        req = Requirement(repository_spec=repository_spec, op=RequirementOps.EQ, requirement_spec=req_spec)
-
-        reqs.append(req)
-
-    return reqs

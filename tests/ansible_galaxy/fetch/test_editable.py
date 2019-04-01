@@ -15,10 +15,9 @@ def test_editable_fetch_find(galaxy_context, mocker, tmpdir):
 
     tmp_path = tmpdir.mkdir(name)
 
-    more_reqs = requirements.from_requirement_spec_strings([tmp_path.strpath],
-                                                           namespace_override=namespace_override,
-                                                           editable=True)
-
+    more_reqs = requirements.from_dependencies_dict({tmp_path.strpath: '*'},
+                                                    namespace_override=namespace_override,
+                                                    editable=True)
     import pprint
     log.debug('more_reqs: %s', pprint.pformat(more_reqs))
 

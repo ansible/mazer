@@ -36,7 +36,7 @@ def test_install_repositories(galaxy_context, mocker):
     expected_repos = [Repository(repository_spec=repo_spec)]
 
     requirements_to_install = \
-        requirements.from_requirement_spec_strings(['some_namespace.this_requires_some_name'])
+        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
 
     mocker.patch('ansible_galaxy.actions.install.install_repository',
                  return_value=expected_repos)
