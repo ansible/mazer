@@ -70,7 +70,7 @@ def test_info():
 def test_run_info():
     cli = galaxy.GalaxyCLI(args=['info'])
     cli.parse()
-    with pytest.raises(cli_exceptions.CliOptionsError, match="you must specify a user/role name"):
+    with pytest.raises(cli_exceptions.CliOptionsError, match="you must specify a collection name"):
         cli.run()
 
 

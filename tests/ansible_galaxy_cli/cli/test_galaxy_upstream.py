@@ -87,15 +87,6 @@ class TestGalaxy(unittest.TestCase):
         cls.role_tar = './delete_me.tar.gz'
         cls.makeTar(cls.role_tar, cls.role_dir)
 
-        # creating a temp file with installation requirements
-        cls.role_req = './delete_me_requirements.yml'
-        dep_lines = ["- 'src': '%s'\n" % cls.role_tar,
-                     "  'name': '%s'\n" % cls.role_name,
-                     "  'path': '%s'\n" % cls.role_path]
-        with open(cls.role_req, 'w') as fd:
-            for dep_line in dep_lines:
-                fd.write(dep_line)
-
     @classmethod
     def makeTar(cls, output_file, source_dir):
         ''' used for making a tarfile from a role directory '''
@@ -114,8 +105,6 @@ class TestGalaxy(unittest.TestCase):
         # deleting the temp role directory
         if os.path.exists(cls.role_dir):
             shutil.rmtree(cls.role_dir)
-        if os.path.exists(cls.role_req):
-            os.remove(cls.role_req)
         if os.path.exists(cls.role_tar):
             os.remove(cls.role_tar)
         if os.path.isdir(cls.role_path):
@@ -140,9 +129,8 @@ class TestGalaxy(unittest.TestCase):
     def test_execute_remove(self):
         # installing role
         log.debug('self.role_path: %s', self.role_path)
-        log.debug('self.role_req: %s', self.role_req)
 
-        gc = GalaxyCLI(args=["ansible-galaxy", "install", "--content-path", self.role_path, "-r", self.role_req, '--force'])
+        gc = GalaxyCLI(args=["ansible-galaxy", "install", "--content-path", self.role_path, '--force', self.role_name])
         gc.parse()
         gc.run()
 
@@ -150,6 +138,7 @@ class TestGalaxy(unittest.TestCase):
         # location where the role was installed
         role_file = os.path.join(self.role_path, self.role_name)
 
+        # self.assertTrue(os.path.exists(role_file))
         log.debug('role_file: %s', role_file)
 
         # removing role
@@ -223,7 +212,6 @@ class TestGalaxy(unittest.TestCase):
         self.run_parse_common(gc, "install")
         self.assertEqual(gc.options.ignore_errors, False)
         self.assertEqual(gc.options.no_deps, False)
-        self.assertEqual(gc.options.role_file, None)
         self.assertEqual(gc.options.force, False)
 
     def test_parse_list(self):

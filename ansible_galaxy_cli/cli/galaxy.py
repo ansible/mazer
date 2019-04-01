@@ -115,7 +115,6 @@ class GalaxyCLI(cli.CLI):
                                    help='Ignore errors and continue with the next specified repo.')
             self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False,
                                    help='Don\'t download collections listed as dependencies')
-            self.parser.add_option('-r', '--role-file', dest='role_file', help='A file containing a list of roles to be imported')
             self.parser.add_option('--namespace', dest='namespace', default=None,
                                    help='The namespace to use when installing content (required for installs from local scm repo or archives)')
         elif self.action == "remove":
