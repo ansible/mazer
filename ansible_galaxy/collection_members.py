@@ -23,13 +23,6 @@ def file_is_excluded(filename, exclude_patterns):
 
 
 @attr.s
-class CollectionMember(object):
-    '''The info need to add a file to a archive (orig path, dest path, etc)'''
-    src_full_path = attr.ib()
-    dest_relative_path = attr.ib()
-
-
-@attr.s
 class FileWalker(object):
     collection_path = attr.ib()
     file_errors = attr.ib(factory=list)
@@ -48,34 +41,22 @@ class FileWalker(object):
             # NOTE: This modifies dirnames while it is being walked over
             for dirname in dirnames:
                 if dirname in self.ignore_dirs:
-                    # log.debug('ignoring dir: %s', dirname)
                     dirnames.remove(dirname)
                 else:
                     dir_full_path = os.path.join(dirpath, dirname)
-                    # log.debug('yield dir_full_path: %s', dir_full_path)
                     yield dir_full_path
 
             for filename in filenames:
-                # log.debug('fn dirpath: %s filename: %s', dirpath, filename)
 
                 full_path = os.path.join(dirpath, filename)
-                # log.debug('full_path: %s', full_path)
-
-                # collection_relative_path = os.path.relpath(full_path, self.collection_path)
-
-                # log.debug('collection_relative_path: %s', collection_relative_path)
 
                 if file_is_excluded(full_path, self.exclude_patterns):
                     continue
 
-                # log.debug('yield (fn full_path)%s', full_path)
                 yield full_path
-                # yield collection_relative_path
-                # yield CollectionMember(src_full_path=full_path, dest_relative_path=collection_relative_path)
 
     def relative_walk(self):
         for full_path in self.walk():
-            # rel_path = collection_member.dest_relative_path
             relative_path = os.path.relpath(full_path, self.collection_path)
 
             yield relative_path
