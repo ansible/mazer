@@ -23,26 +23,6 @@ def test_file_walker_cwd():
         assert '__pycache__' not in file_name, '__pycache__ found in path %s, but __pycache__ dirs should be ignored by default' % (file_name)
 
 
-def test_file_walker_rel_path():
-
-    file_walker = collection_members.FileWalker(hello_path,
-                                                exclude_patterns=collection_members.DEFAULT_IGNORE_PATTERNS+['*.json'])
-    rel_paths = file_walker.relative_walk()
-
-    paths = []
-    for rel_path in rel_paths:
-
-        assert rel_path != 'some_json_file.json', \
-            'Found some_json_file.json in relative_walk() results and it should be exclude'
-
-        assert not rel_path.startswith(hello_path), 'rel_path (%s) starts with %s' % (rel_path, hello_path)
-
-        assert not rel_path.startswith('releases'), 'releases subdir should be ignore but was found in %s' % rel_path
-        paths.append(rel_path)
-
-    log.debug(pf(sorted(paths)))
-
-
 def test_collection_members_init():
     # gather files from mazer src dir, not really a role
     collection_path = os.path.join(os.getcwd())

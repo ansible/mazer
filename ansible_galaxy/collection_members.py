@@ -55,12 +55,6 @@ class FileWalker(object):
 
                 yield full_path
 
-    def relative_walk(self):
-        for full_path in self.walk():
-            relative_path = os.path.relpath(full_path, self.collection_path)
-
-            yield relative_path
-
     def on_walk_error(self, walk_error):
         log.warning('walk error on %s: %s', walk_error.filename, walk_error)
         self.file_errors.append(walk_error)
