@@ -97,8 +97,6 @@ class Requirement(object):
     repository_spec = attr.ib(default=None, type=RepositorySpec,
                               validator=attr.validators.optional(attr.validators.instance_of(RepositorySpec)))
 
-    # do we need to resolve the dep at install time ('requirements') or
-    # could we defer until runtime (like role dependencies)
     scope = attr.ib(default=RequirementScopes.INSTALL)
 
     def __str__(self):

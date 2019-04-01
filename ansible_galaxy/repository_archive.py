@@ -33,7 +33,7 @@ def extract(repository_spec,
     # TODO: move to content info validate step in install states?
     if not repository_spec.namespace:
         # TODO: better error
-        raise exceptions.GalaxyError('While installing a role , no namespace was found. Try providing one with --namespace')
+        raise exceptions.GalaxyError('While installing a collection , no namespace was found. Try providing one with --namespace')
 
     log.debug('About to extract "%s" to %s', repository_spec.label, content_path)
 
@@ -114,8 +114,6 @@ def load_tarfile_archive_info(archive_path, repository_spec):
 
     members = repository_tar_file.getmembers()
     archive_info = build_archive_info(archive_path, [m.name for m in members])
-
-    # log.debug('role archive_info for %s: %s', archive_path, archive_info)
 
     return archive_info, repository_tar_file
 
