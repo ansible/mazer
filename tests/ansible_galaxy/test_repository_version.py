@@ -214,27 +214,6 @@ def test_get_content_version_latest(latest_ver_data):
     assert res == latest_ver_data['exp']
 
 
-def test_get_latest_version():
-    vers = ['1.0.0', '2.0.0', '2.0.1', '2.2.0', '3.1.4']
-    res = repository_version.get_latest_version(vers,
-                                                content_data={})
-
-    assert res == '3.1.4'
-
-
-def test_get_latest_version_invalid_semver():
-    vers = ['1.0.0', '2.0.0', '2.0.1', '2.2.0', '3.1.4', '4.2']
-    try:
-        repository_version.get_latest_version(vers,
-                                              content_data={})
-    except exceptions.GalaxyClientError as e:
-        assert 'Unable to compare' in '%s' % e
-        assert "Invalid version string: '4.2'" in '%s' % e
-        return
-
-    assert False, 'Expected a GalaxyClientError about invalid versions here, but that did not happen.'
-
-
 def test_get_latest_in_content_versions_1_0_0_v_and_no_v():
     req_spec_data = {'namespace': 'some_namespace',
                      'name': 'some_name',

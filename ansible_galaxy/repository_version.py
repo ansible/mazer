@@ -17,33 +17,6 @@ def sort_versions(versions):
     return [v[1] for v in semver_versions]
 
 
-# TODO: somewhere we need to have a code path for the ordered version list returned from server
-#       and another for the versions we got elsewhere.
-def get_latest_version(available_normalized_versions, content_data):
-    # and sort them to get the latest version. If there
-    # are no versions in the list, we'll grab the head
-    # of the master branch
-    if available_normalized_versions:
-        try:
-            sorted_versions = sort_versions(available_normalized_versions)
-        except (TypeError, ValueError) as e:
-            log.exception(e)
-            raise exceptions.GalaxyClientError(
-                'Unable to compare content versions (%s) to determine the most recent version due to incompatible version formats. '
-                'Please contact the content author to resolve versioning conflicts, or specify an explicit content version to install. '
-                'The version error was: "%s"' % (', '.join(available_normalized_versions), e)
-            )
-
-        content_version = sorted_versions[-1]
-    # FIXME: follow 'repository' branch and it's ['import_branch'] ?
-    elif content_data.get('github_branch', None):
-        content_version = content_data['github_branch']
-    else:
-        content_version = 'master'
-
-    return content_version
-
-
 def normalize_versions(content_versions):
     # a list of tuples of (normalized_version, original_version) for building
     # map of normalized version to original version
