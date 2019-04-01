@@ -20,8 +20,8 @@ def null_display_callback(*args, **kwargs):
     log.debug('display_callback: %s', args)
 
 
+# TODO: extract_archive_to_dir may not be needed now (was for roles)
 def extract(repository_spec,
-            repository_archive_info,
             content_path,
             extract_archive_to_dir,
             tar_file,
@@ -35,19 +35,9 @@ def extract(repository_spec,
         # TODO: better error
         raise exceptions.GalaxyError('While installing a role , no namespace was found. Try providing one with --namespace')
 
-    # label = "%s.%s" % (repository_namespace, repository_name)
-
-    # 'extract_to_path' is for ex, ~/.ansible/content
-    log.debug('About to extract %s "%s" to %s', repository_archive_info.archive_type,
-              repository_spec.label, content_path)
-    # display_callback('- extracting %s repository from "%s"' % (repository_archive_info.archive_type,
-    #                                                           repository_spec.label))
+    log.debug('About to extract "%s" to %s', repository_spec.label, content_path)
 
     tar_members = tar_file.members
-
-    # self.log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
-
-    # self.log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
 
     # TODO: need to support deleting all content in the dirs we are targetting
     #       first (and/or delete the top dir) so that we clean up any files not
@@ -59,9 +49,6 @@ def extract(repository_spec,
         rel_path = member.name
 
         extract_to_filename_path = os.path.join(extract_archive_to_dir, rel_path)
-
-        # self.log.debug('content_dest_root_path: %s', content_dest_root_path)
-        # self.log.debug('content_dest_root_rel_path: %s', content_dest_root_rel_path)
 
         files_to_extract.append({
             'archive_member': member,
@@ -77,9 +64,8 @@ def extract(repository_spec,
 
     all_installed_paths.extend(installed_paths)
 
-    log.debug('Extracted %s files from %s %s to %s',
+    log.debug('Extracted %s files from %s to %s',
               len(all_installed_paths),
-              repository_archive_info.archive_type,
               repository_spec.label,
               extract_archive_to_dir)
 
@@ -165,7 +151,6 @@ def install(repository_archive, repository_spec, destination_info, display_callb
         all_installed_files = []
     else:
         all_installed_files = extract(repository_spec,
-                                      repository_archive.info,
                                       content_path=destination_info.destination_root_dir,
                                       extract_archive_to_dir=destination_info.extract_archive_to_dir,
                                       tar_file=repository_archive.tar_file,
