@@ -32,11 +32,7 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
     repo_tarfile = repository_archive.tar_file
     archive_path = repository_archive.info.archive_path
 
-    # path_name = os.path.join(content_dir, namespace, name)
-    # TODO: for collections, the 'path_name' is now fixed and doesnt change, we can remove this
-    path_name = repository_archive.info.top_dir
-
-    manifest_filename = os.path.join(path_name, collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME)
+    manifest_filename = os.path.join(collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME)
     manifest_data = None
 
     log.debug('Trying to extract %s from %s', manifest_filename, archive_path)
@@ -150,6 +146,8 @@ def load_from_dir(content_dir, namespace, name, installed=True):
             if gfd:
                 collection_info_data = collection_info.load(gfd)
     except EnvironmentError:
+        # for the case of collections that are not from or intended for galaxy, they do not
+        # need to provide a galaxy.yml or MANIFEST.json, so an error here is exceptable.
         # log.debug('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
         pass
 
