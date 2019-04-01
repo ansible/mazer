@@ -52,19 +52,6 @@ from ansible_galaxy_cli import exceptions as cli_exceptions
 log = logging.getLogger(__name__)
 
 
-def exit_without_ignore(ignore_errors, msg=None, rc=1):
-    """
-    Exits with the specified return code unless the
-    option --ignore-errors was specified
-    """
-    ignore_error_blurb = '- you can use --ignore-errors to skip failed content items and finish processing the list.'
-    if not ignore_errors:
-        message = ignore_error_blurb
-        if msg:
-            message = '%s:\n%s' % (msg, ignore_error_blurb)
-        raise cli_exceptions.GalaxyCliError(message)
-
-
 def get_config_path_from_env():
     for env_var in ('MAZER_CONFIG', 'ANSIBLE_GALAXY_CONFIG'):
         raw_config_file_path = os.environ.get(env_var, None)
