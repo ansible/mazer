@@ -10,10 +10,6 @@ from ansible_galaxy import exceptions
 
 log = logging.getLogger(__name__)
 
-# pass in list of tarinfo of paths to extract
-# pass in a map of tar member paths -> dest paths, built separately?
-#  (based on content_type and content.CONTENT_TYPE_DIR_MAP etc)
-
 
 def extract_file(tar_file, file_to_extract):
     # TODO: should just be a object? ContentArchiveMember? ContentArchiveExtractData ?
