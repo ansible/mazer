@@ -8,6 +8,7 @@ from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy import repository_spec
+from ansible_galaxy import repository_spec_parse
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.repository_spec import FetchMethods
 from ansible_galaxy.models.requirement import Requirement, RequirementOps
@@ -106,8 +107,8 @@ def install_repository_specs_loop(galaxy_context,
 
     for repository_spec_string in repository_spec_strings:
         fetch_method = \
-            repository_spec.choose_repository_fetch_method(repository_spec_string,
-                                                           editable=editable)
+            repository_spec_parse.choose_repository_fetch_method(repository_spec_string,
+                                                                 editable=editable)
         log.debug('fetch_method: %s', fetch_method)
 
         if fetch_method == FetchMethods.LOCAL_FILE:
@@ -117,9 +118,9 @@ def install_repository_specs_loop(galaxy_context,
             spec_data = collection_artifact.load_data_from_collection_artifact(repository_spec_string)
             spec_data['fetch_method'] = fetch_method
         else:
-            spec_data = repository_spec.spec_data_from_string(repository_spec_string,
-                                                              namespace_override=namespace_override,
-                                                              editable=editable)
+            spec_data = repository_spec_parse.spec_data_from_string(repository_spec_string,
+                                                                    namespace_override=namespace_override,
+                                                                    editable=editable)
 
             spec_data['fetch_method'] = fetch_method
 

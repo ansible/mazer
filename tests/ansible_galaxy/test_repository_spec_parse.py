@@ -133,9 +133,8 @@ def assert_keys(repository_spec, name=None, version=None,
         'repository_spec src=%s does not match expected src=%s' % (repository_spec['src'], src)
 
 
-def parse_repository_spec(repository_spec_string, resolver=None):
-    result = repository_spec_parse.spec_data_from_string(repository_spec_string,
-                                                         resolver=resolver)
+def parse_repository_spec(repository_spec_string):
+    result = repository_spec_parse.spec_data_from_string(repository_spec_string)
     log.debug('result: %s', result)
     return result
 
@@ -148,15 +147,6 @@ def assert_just_keys(parse_result):
 
     for result_key in parse_result.keys():
         assert result_key in valid_keys, 'the results had unexpected key="%s"' % result_key
-
-
-def test_parse_repository_spec_src_no_namespace_required():
-    spec_text = 'some_content'
-    result = parse_repository_spec(spec_text,
-                                   resolver=repository_spec_parse.resolve)
-
-    assert_just_keys(result)
-    assert_keys(result, name='some_content', version=None, scm=None, src='some_content')
 
 
 def test_parse_repository_spec_src():

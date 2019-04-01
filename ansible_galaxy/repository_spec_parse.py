@@ -95,8 +95,12 @@ def is_scm(repository_spec_string):
     return False
 
 
-def chose_repository_fetch_method(repository_spec_string):
-    # log.debug('repository_spec_string: %s', repository_spec_string)
+# TODO: There are really two levels of 'fetch_method' that are kind of blurred.
+#       The first is to give us some hints on how to parse the repo spec.
+#       The second is the final fetch_method that will determine where we
+#       look for the content.
+def choose_repository_fetch_method(repository_spec_string, editable=False):
+    log.debug('repository_spec_string: %s', repository_spec_string)
 
     if is_scm(repository_spec_string):
         # create tar file from scm url
@@ -104,15 +108,33 @@ def chose_repository_fetch_method(repository_spec_string):
 
     comma_parts = repository_spec_string.split(',', 1)
     potential_filename = comma_parts[0]
-    if os.path.isfile(potential_filename):
+    fetch_method = None
+    if editable and os.path.isdir(potential_filename):
+        fetch_method = FetchMethods.EDITABLE
+    elif os.path.isfile(potential_filename):
         # installing a local tar.gz
-        return FetchMethods.LOCAL_FILE
+        fetch_method = FetchMethods.LOCAL_FILE
+    elif '://' in repository_spec_string:
+        fetch_method = FetchMethods.REMOTE_URL
+    elif '.' in repository_spec_string and len(repository_spec_string.split('.', 1)) == 2:
+        fetch_method = FetchMethods.GALAXY_URL
+    else:
+        msg = ('Failed to determine fetch method for content spec %s. '
+               'Expecting a Galaxy name, SCM path, remote URL, path to a local '
+               'archive file, or -e option and a directory path' % repository_spec_string)
+        raise exceptions.GalaxyError(msg)
+    return fetch_method
 
-    if '://' in repository_spec_string:
-        return FetchMethods.REMOTE_URL
 
-    # if it doesnt look like anything else, assume it's galaxy
-    return FetchMethods.GALAXY_URL
+def editable_resolve(data):
+    log.debug('data: %s', data)
+
+    src = data['src']
+    if src.startswith('/'):
+        dir_name = os.path.basename(os.path.normpath(src))
+        log.debug('dir_name: %s', dir_name)
+        data['name'] = dir_name
+    return data
 
 
 def resolve(data):
@@ -142,29 +164,36 @@ def resolve(data):
     return data
 
 
-def spec_data_from_string(repository_spec_string, resolver=None):
-    fetch_method = chose_repository_fetch_method(repository_spec_string)
-
-    # log.debug('fetch_method: %s', fetch_method)
+def spec_data_from_string(repository_spec_string, namespace_override=None, fetch_method=None, editable=False):
+    fetch_method = choose_repository_fetch_method(repository_spec_string, editable=editable)
 
     spec_data = parse_string(repository_spec_string)
     spec_data['fetch_method'] = fetch_method
 
-    # log.debug('spec_data: %s', spec_data)
+    log.debug('spec_data: %s', spec_data)
 
-    # use passed in resolver if provided, otherwise assume 'resolve' is correct
-    # but override if it looks like a galaxy requests
-    if resolver is None:
-        resolver = resolve
-        if fetch_method == FetchMethods.GALAXY_URL:
-            resolver = galaxy_repository_spec.resolve
+    resolved_data = {}
 
-    # log.debug('resolver: %s', resolver)
+    if fetch_method == FetchMethods.GALAXY_URL:
+        resolved_data = galaxy_repository_spec.resolve(spec_data)
+    elif fetch_method == FetchMethods.EDITABLE:
+        resolved_data = editable_resolve(spec_data)
+    else:
+        resolved_data = resolve(spec_data)
 
-    resolved_name = resolver(spec_data)
+    log.debug('resolved_data: %s', resolved_data)
+    spec_data.update(resolved_data)
 
-    # log.debug('resolved_name: %s', resolved_name)
+    if namespace_override:
+        if spec_data.get('namespace'):
+            log.debug('using --namespace provided namespace "%s" to override detected namespace "%s"',
+                      namespace_override,
+                      spec_data['namespace'])
+        else:
+            log.debug('using --namespace provided namespace "%s" to since there was no namespace in "%s"',
+                      namespace_override,
+                      repository_spec_string)
 
-    spec_data.update(resolved_name)
+        spec_data['namespace'] = namespace_override
 
     return spec_data

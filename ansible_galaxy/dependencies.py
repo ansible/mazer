@@ -2,7 +2,7 @@ import logging
 
 from ansible_galaxy.models.requirement import Requirement, RequirementOps, RequirementScopes
 from ansible_galaxy.models.requirement_spec import RequirementSpec
-from ansible_galaxy.repository_spec import spec_data_from_string
+from ansible_galaxy.repository_spec_parse import spec_data_from_string
 
 log = logging.getLogger(__name__)
 
