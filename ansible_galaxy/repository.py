@@ -51,41 +51,14 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
     except KeyError as e:
         log.warning('No %s found in archive: %s (Error: %s)', manifest_filename, archive_path, e)
 
-    # load galaxy.yml
-    galaxy_filename = os.path.join(path_name, collection_info.COLLECTION_INFO_FILENAME)
+    if not manifest_data:
+        raise exceptions.GalaxyArchiveError('No collection manifest (%s) found in %s' % (collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME,
+                                                                                         archive_path),
+                                            archive_path=archive_path)
 
-    collection_info_data = None
-
-    try:
-        gfd = repo_tarfile.extractfile(galaxy_filename)
-        if gfd:
-            collection_info_data = collection_info.load(gfd)
-    except KeyError as e:
-        log.warning('No %s found in archive: %s - %s', galaxy_filename, archive_path, e)
-        # log.debug('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
-
-    # TODO/FIXME: what takes precedence?
-    #           - the dir name in the archive that a collection lives in ~/.ansible/content/my_ns/my_name
-    #           - Or the namespace/name from galaxy.yml?
-    # log.debug('collection_info_data: %s', collection_info_data)
-
-    col_info = None
-    if manifest_data:
-        col_info = manifest_data.collection_info
-        log.debug('md.col_info: %s', col_info)
-    elif collection_info_data:
-        col_info = collection_info_data
-    else:
-        raise exceptions.GalaxyArchiveError('No galaxy collection info or manifest found in %s', archive_path)
+    col_info = manifest_data.collection_info
 
     log.debug('col_info: %s', col_info)
-
-    # FIXME: change collectionInfo to have separate name/namespace so we dont have to 'parse' the name
-    # repo_spec = repository_spec.repository_spec_from_string(col_info.name, namespace_override=namespace)
-    # spec_data = repository_spec_parse.parse_string(col_info.name)
-
-    # log.debug('spec_data: %s', spec_data)
-    # log.debug('repo_spec: %s', repo_spec)
 
     # Build a repository_spec of the repo now so we can pass it things like requirements.load()
     # that need to know what requires something
@@ -99,7 +72,6 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
 
     log.debug('repo spec from %s: %r', archive_path, repo_spec)
 
-    requirements_list = []
     requirements_list = requirements.from_requirement_spec_strings(col_info.dependencies,
                                                                    repository_spec=repo_spec)
 
@@ -107,7 +79,6 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
                             path=None,
                             installed=installed,
                             requirements=requirements_list,
-                            # Assuming this is a collection artifact, FIXME if we support role artifacts
                             dependencies=[])
 
     log.debug('repository: %s', repository)
