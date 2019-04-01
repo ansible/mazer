@@ -64,10 +64,6 @@ server:
 content_path: ~/.ansible/some_collections_path/ansible_collections
 global_content_path: /usr/local/share/collections/ansible_collections
 options:
-  role_skeleton_ignore:
-    - ^.git$
-    - ^.*/.git_keep$
-  role_skeleton_path: ~/.some_skeleton
   verbosity: 0
 version: 1
 '''
@@ -91,7 +87,6 @@ def test_load_valid_yaml():
     assert config_data['server']['ignore_certs'] is True
     assert config_data['content_path'] == '~/.ansible/some_collections_path/ansible_collections'
     assert config_data['global_content_path'] == '/usr/local/share/collections/ansible_collections'
-    assert config_data['options']['role_skeleton_path'] == '~/.some_skeleton'
 
 
 def test_save_empty_config():

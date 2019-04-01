@@ -26,8 +26,10 @@ DEFAULTS = [
 
     # runtime options
     ('options',
-     {'role_skeleton_path': None,
-      'role_skeleton_ignore': ["^.git$", "^.*/.git_keep$"]}
+     {
+         # TODO: no other options, rm 'options'
+     }
+
      ),
     ('version', 1),
 ]

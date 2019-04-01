@@ -3,10 +3,4 @@ server:
   ignore_certs: false
   url: http://localhost:8000
 content_path: ~/.ansible/collections/ansible_collections
-options:
-  role_skeleton_ignore:
-    - ^.git$
-    - ^.*/.git_keep$
-  role_skeleton_path: null
-  verbosity: 0
 version: 1

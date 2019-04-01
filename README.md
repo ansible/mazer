@@ -162,22 +162,6 @@ global_content_path: /usr/share/ansible/collections/ansible_collections
 #
 content_path: ~/.ansible/collections/ansible_collections
 
-options:
-  # A list of file glob patterns to ignore when
-  # 'init' creates a role from a role skeleton.
-  role_skeleton_ignore:
-    - ^.git$
-    - ^.*/.git_keep$
-
-  # role_skeleton_path is a path to a directory of
-  # custom role skeletons to use instead of the built
-  # in skeletons.
-  #
-  # default: Relative to mazers installation, for example:
-  #          ~/.local/lib/python2.7/site-packages/mazer-0.1.0-py3.6.egg/ansible_galaxy_cli/data/role_skeleton/
-  #
-  role_skeleton_path: null
-
 # The version of the config file format.
 # This should never need to be changed manually.
 version: 1
