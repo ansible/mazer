@@ -58,35 +58,24 @@ def fetch(fetcher, repository_spec, find_results):
 
     return fetch_results
 
-#
-# The caller of install() may be the best place to figure out things like where to
-# extract the content too. Can likely handle figuring out if artifact is a collection_artifact
-# or a trad_role_artifact and call different things. Or better, create an approriate
-# ArchiveArtifact and just call it's extract()/install() etc.
-#
-# def install(fetch_results, enough_info_to_figure_out_where_to_extract_etc,
-#            probably_a_progress_display_callback, maybe_an_error_callback):
-#    pass
-
-    # return install_time? an InstallInfo? list of InstalledCollection?
-
 
 def repository_spec_from_find_results(find_results,
                                       requirement_spec):
     '''Create a new RepositorySpec with updated info from fetch_results.
 
     Evolves repository_spec to match fetch results.'''
+
     # TODO: do we still need to check the fetched version against the spec version?
     #       We do, since the unspecific version is None, so fetched versions wont match
     #       so we need a new repository_spec for install.
     # TODO: this is more or less a verify/validate step or state transition
     content_data = find_results.get('content', {})
     resolved_version = content_data.get('version')
+
     log.debug('version_spec "%s" for %s was requested and was resolved to version "%s"',
               requirement_spec.version_spec, requirement_spec.label,
               resolved_version)
 
-    # repository_spec = attr.evolve(repository_spec, version=content_data['fetched_version'])
     # In theory, a fetch can return a different namespace/name than the one request. This
     # is for things like server side aliases.
     resolved_name = content_data.get('fetched_name', requirement_spec.name)
@@ -131,8 +120,6 @@ def install(galaxy_context,
 
     log.debug("installing from %s", archive_path)
 
-    # TODO: this is figuring out the archive type (multi-content collection or a trad role)
-    #       could potentially pull this up a layer
     repo_archive_ = repository_archive.load_archive(archive_path, repository_spec)
 
     log.debug('repo_archive_: %s', repo_archive_)

@@ -7,7 +7,6 @@ from ansible_galaxy import exceptions
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
-# from ansible_galaxy import requirements
 from ansible_galaxy import repository_spec
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.repository_spec import FetchMethods
