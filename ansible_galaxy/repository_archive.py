@@ -16,10 +16,6 @@ from ansible_galaxy.models.installation_results import InstallationResults
 log = logging.getLogger(__name__)
 
 
-def null_display_callback(*args, **kwargs):
-    log.debug('display_callback: %s', args)
-
-
 # TODO: extract_archive_to_dir may not be needed now (was for roles)
 def extract(repository_spec,
             content_path,
