@@ -113,7 +113,8 @@ class GalaxyCLI(cli.CLI):
                                    help='Link a local directory into the content path for development and testing')
             self.parser.add_option('-i', '--ignore-errors', dest='ignore_errors', action='store_true', default=False,
                                    help='Ignore errors and continue with the next specified repo.')
-            self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False, help='Don\'t download roles listed as dependencies')
+            self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False,
+                                   help='Don\'t download collections listed as dependencies')
             self.parser.add_option('-r', '--role-file', dest='role_file', help='A file containing a list of roles to be imported')
             self.parser.add_option('--namespace', dest='namespace', default=None,
                                    help='The namespace to use when installing content (required for installs from local scm repo or archives)')
@@ -260,8 +261,8 @@ class GalaxyCLI(cli.CLI):
         """
 
         if len(self.args) == 0:
-            # the user needs to specify a role
-            raise cli_exceptions.CliOptionsError("- you must specify a user/role name")
+            # the user needs to specify a collection
+            raise cli_exceptions.CliOptionsError("- you must specify a collection name")
 
         log.debug('args=%s', self.args)
 
@@ -313,11 +314,11 @@ class GalaxyCLI(cli.CLI):
 
     def execute_remove(self):
         """
-        Remove a list of repository from the local system.
+        Remove a list of collections from the local system.
         """
 
         if len(self.args) == 0:
-            raise cli_exceptions.CliOptionsError('- you must specify at least one role to remove.')
+            raise cli_exceptions.CliOptionsError('- you must specify at least one collection to remove.')
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
@@ -330,7 +331,7 @@ class GalaxyCLI(cli.CLI):
 
     def execute_list(self):
         """
-        List repositories, roles, and collections installed on the local file system.
+        List collections installed on the local file system.
         """
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)

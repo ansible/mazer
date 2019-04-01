@@ -3,12 +3,10 @@ import tarfile
 import attr
 
 
-# FIXME: I think we may be able to get rid of this class entirely
-#        archive_type, top_dir, requires_meta_main at least are unused
+# TODO: I think we may be able to get rid of this class entirely
+#       archive_type, top_dir, requires_meta_main at least are unused
 @attr.s(frozen=True)
 class CollectionArtifactArchiveInfo(object):
-    requires_meta_main = False
-
     archive_type = attr.ib()
     top_dir = attr.ib()
     archive_path = attr.ib(default=None)
