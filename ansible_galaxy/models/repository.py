@@ -19,9 +19,6 @@ class Repository(object):
     # ie, a collection or role-as-collections-requirement.yml
     requirements = attr.ib(factory=tuple)
 
-    # The data normally found in meta/main.yml for roles
-    # meta_main = attr.ib(default=None, type=RoleMetadata)
-
     @property
     def label(self):
         return self.repository_spec.label

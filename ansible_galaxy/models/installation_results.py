@@ -4,7 +4,6 @@ import logging
 import attr
 
 from ansible_galaxy.models.install_info import InstallInfo
-from ansible_galaxy.models.role_metadata import RoleMetadata
 
 log = logging.getLogger(__name__)
 
@@ -18,5 +17,3 @@ class InstallationResults(object):
     installed_datetime = attr.ib(type=datetime.datetime)
 
     installed_files = attr.ib(factory=list)
-
-    meta_main = attr.ib(type=RoleMetadata, default=None)
