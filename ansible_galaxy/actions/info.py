@@ -4,7 +4,7 @@ import logging
 from ansible_galaxy import display
 from ansible_galaxy import matchers
 from ansible_galaxy import installed_repository_db
-from ansible_galaxy.utils.repository_name import parse_repository_name
+from ansible_galaxy import repository_spec
 from ansible_galaxy.utils.text import to_text
 
 log = logging.getLogger(__name__)
@@ -126,18 +126,17 @@ def info_repository_specs(galaxy_context,
 
     all_labels_to_match = []
     for repository_spec_string in repository_spec_strings:
-        galaxy_namespace, repository_name, content_name = parse_repository_name(repository_spec_string)
+        repo_spec = repository_spec.repository_spec_from_string(repository_spec_string)
 
         log.debug('showing info for repository spec: %s', repository_spec_string)
 
-        repository_name = repository_name or content_name
-
         if online:
-            remote_data = api.lookup_repo_by_name(galaxy_namespace, repository_name)
+            remote_data = api.lookup_repo_by_name(repo_spec.namespace, repo_spec.name)
             if remote_data:
                 display_callback(_repr_remote_repo(remote_data))
 
-        label_to_match = '%s.%s' % (galaxy_namespace, repository_name)
+        label_to_match = repo_spec.label
+
         all_labels_to_match.append(label_to_match)
 
         labels_to_match.append(label_to_match)
