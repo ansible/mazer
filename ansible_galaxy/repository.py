@@ -55,9 +55,7 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
 
     log.debug('col_info: %s', col_info)
 
-    # Build a repository_spec of the repo now so we can pass it things like requirements.load()
-    # that need to know what requires something
-    # if we specify a namespace, use it otherwise use the info from galaxy.yml
+    # if we specify a namespace, use it otherwise use the info from the manifest col_info
     repo_spec = RepositorySpec(namespace=namespace or col_info.namespace,
                                name=col_info.name,
                                version=col_info.version,
@@ -164,8 +162,8 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     # log.debug('collection_info_data: %s', collection_info_data)
 
-    # Build a repository_spec of the repo now so we can pass it things like requirements.load()
-    # that need to know what requires something
+    # Build a repository_spec of the repo now so we can pass it things like
+    # requirements.from_dependencies_dict that need to know what requires something.
     repository_spec = RepositorySpec(namespace=namespace,
                                      name=name,
                                      version=installed_version)
