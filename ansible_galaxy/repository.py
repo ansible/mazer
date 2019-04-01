@@ -156,22 +156,12 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     #        have a galaxy.yml, that's indistinguishable from a role-as-collection
     # FIXME: But in theory, if there is more than one role in roles/, we should skip this
 
-    role_dir_path = os.path.join(path_name, 'roles')
-    role_name = '%s.%s' % (namespace, name)
-
-    role_meta_main = role_metadata.load_from_dir(dirname=role_dir_path,
-                                                 role_name=role_name)
-
-    log.debug('role_meta_main: %s', role_meta_main)
-
     # Prefer version from install_info, but for a editable installed, there may be only galaxy version
     installed_version = install_info_version
     if manifest_data:
         installed_version = manifest_data.collection_info.version
     elif collection_info_data:
         installed_version = collection_info_data.version
-    # if role_meta_main:
-    #    installed_version = installed_version or role_meta_main.version
 
     # TODO/FIXME: what takes precedence?
     #           - the dir names a collection lives in ~/.ansible/content/my_ns/my_name
@@ -199,6 +189,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     requirements_filename = os.path.join(path_name, 'requirements.yml')
 
+    # TODO/FIXME: remove requirements.yml support
     try:
         with open(requirements_filename, 'r') as rfd:
             requirements_list.extend(requirements.load(rfd, repository_spec=repository_spec))
@@ -211,15 +202,11 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     # TODO/FIXME: load deps from MANIFEST.json if it exists (and prefer it over galaxy.yml)
 
-    role_dependency_specs = []
-    if role_meta_main:
-        role_dependency_specs = role_meta_main.dependencies
-
     repository = Repository(repository_spec=repository_spec,
                             path=path_name,
                             installed=installed,
                             requirements=requirements_list,
-                            dependencies=role_dependency_specs)
+                            dependencies=tuple())
 
     log.debug('Repository %s loaded from %s', repository.repository_spec.label, path_name)
 

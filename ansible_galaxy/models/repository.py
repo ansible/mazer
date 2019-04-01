@@ -13,9 +13,11 @@ class Repository(object):
     path = attr.ib(default=None)
     installed = attr.ib(default=False, type=bool, cmp=False)
 
+    # FIXME: get rid, not needed for collections only
     # ie, a role-as-collections-meta-main-deps
     dependencies = attr.ib(factory=tuple)
 
+    # FIXME: get rid
     # ie, a collection or role-as-collections-requirement.yml
     requirements = attr.ib(factory=tuple)
 
