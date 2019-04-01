@@ -7,7 +7,6 @@ from ansible_galaxy import exceptions
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
-from ansible_galaxy import repository_spec
 from ansible_galaxy import repository_spec_parse
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.repository_spec import FetchMethods
@@ -180,16 +179,14 @@ def find_new_deps_from_installed(galaxy_context, installed_repos, no_deps=False)
     # Remove dupes. Note, can/will change ordering.
     # installed_repos = list(set(installed_repos))
 
-    # install dependencies, if we want them
+    # install requirements ("dependcies" in collection info), if we want them
     for installed_repository in installed_repos:
         # log.debug('just_installed_repository: %s', installed_repository)
 
         # convert deps/reqs to sets. Losing any ordering, but avoids dupes
         reqs_set = set(installed_repository.requirements)
 
-        deps_set = set(installed_repository.dependencies)
-
-        deps_and_reqs_set.update(deps_set, reqs_set)
+        deps_and_reqs_set.update(reqs_set)
 
         # for dep_req in sorted(deps_and_reqs_set):
         #    log.debug('deps_and_reqs_set_item: %s', dep_req)

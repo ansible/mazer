@@ -71,8 +71,7 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
     repository = Repository(repository_spec=repo_spec,
                             path=None,
                             installed=installed,
-                            requirements=requirements_list,
-                            dependencies=[])
+                            requirements=requirements_list,)
 
     log.debug('repository: %s', repository)
 
@@ -178,8 +177,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     repository = Repository(repository_spec=repository_spec,
                             path=path_name,
                             installed=installed,
-                            requirements=requirements_list,
-                            dependencies=tuple())
+                            requirements=requirements_list,)
 
     log.debug('Repository %s loaded from %s', repository.repository_spec.label, path_name)
 

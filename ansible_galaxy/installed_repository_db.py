@@ -41,7 +41,7 @@ def installed_repository_iterator(galaxy_context,
 
     installed_namespace_db = installed_namespaces_db.InstalledNamespaceDatabase(galaxy_context)
 
-    # TODO: iterate/filter per namespace, then per repository, then per collection/role/etc
+    # TODO: iterate/filter per namespace, then per collection
     for namespace in installed_namespace_db.select(namespace_match_filter=namespace_match_filter):
         log.debug('Looking for repos in namespace "%s"', namespace.namespace)
 
