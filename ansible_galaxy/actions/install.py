@@ -17,12 +17,14 @@ from ansible_galaxy.models.requirement_spec import RequirementSpec
 log = logging.getLogger(__name__)
 
 
+# TODO: revisit this since we don't have to emulate the 'ansible-galaxy install'
+#       support for roles now, and could used different error handling
 def raise_without_ignore(ignore_errors, msg=None, rc=1):
     """
     Exits with the specified return code unless the
     option --ignore-errors was specified
     """
-    ignore_error_blurb = '- you can use --ignore-errors to skip failed roles and finish processing the list.'
+    ignore_error_blurb = '- you can use --ignore-errors to skip failed collections and finish processing the list.'
     if not ignore_errors:
         # Note: msg may actually be an exception instance or a text string
 
@@ -239,8 +241,6 @@ def install_repositories(galaxy_context,
 
     # dep_requirements = []
     most_installed_repositories = []
-
-    # FIXME - Need to handle role files here for backwards compat
 
     # TODO: this should be adding the content/self.args/content_left to
     #       a list of needed deps
