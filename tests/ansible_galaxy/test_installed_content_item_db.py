@@ -52,7 +52,7 @@ def test_installed_content_item_iterator_empty(galaxy_context, mocker):
     mocker.patch('ansible_galaxy.installed_repository_db.get_repository_paths',
                  return_value=iter(['bar', 'baz']))
 
-    mocker.patch('ansible_galaxy.installed_content_item_db.glob_content_path_iterator',
+    mocker.patch('ansible_galaxy.installed_content_item_db.python_content_path_iterator',
                  return_value=iter(['/dev/null/content/foo/bar/roles/role-1',
                                     '/dev/null/content/blip/baz/roles/role-2']))
 

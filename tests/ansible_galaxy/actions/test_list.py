@@ -23,7 +23,7 @@ def test__list(galaxy_context, mocker):
     mocker.patch('ansible_galaxy.repository.os.path.isdir',
                  return_value=True)
 
-    mocker.patch('ansible_galaxy.installed_content_item_db.glob_content_path_iterator',
+    mocker.patch('ansible_galaxy.installed_content_item_db.python_content_path_iterator',
                  return_value=iter(['/dev/null/content/ns_foo/n_bar/roles/role-1',
                                     '/dev/null/content/ns_blip/n_bar/roles/role-3',
                                     '/dev/null/content/ns_blip/n_baz/roles/role-2']))

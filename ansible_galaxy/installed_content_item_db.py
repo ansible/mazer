@@ -10,24 +10,29 @@ from ansible_galaxy.models.content_item import ContentItem
 log = logging.getLogger(__name__)
 
 
+def is_plugin_file(path):
+    if path.endswith('__init__.py'):
+        return False
+
+    if path.endswith('__pycache__'):
+        return False
+
+    return True
+
+
 def python_content_path_iterator(repository, content_item_sub_dir):
     '''For paths where python plugins live, filters out __init__.py'''
 
-    return (x for x in glob.iglob('%s/%s/*' % (repository.path, content_item_sub_dir)) if not x.endswith('__init__.py'))
-
-
-def glob_content_path_iterator(repository, content_item_sub_dir):
-    '''For paths content_item_sub_dir/*, like modules'''
-    return glob.iglob('%s/%s/*' % (repository.path, content_item_sub_dir))
+    return (x for x in glob.iglob('%s/%s/*' % (repository.path, content_item_sub_dir)) if is_plugin_file(x))
 
 
 def is_plugin_dir(plugin_dir_path):
     '''Check plugins/ items to see if a potential plugin dir is a dir
 
     No other checks are used to determine if plugin_dir_path is actually a plugin dir'''
-    log.debug('plugin_dir_path: %s', plugin_dir_path)
-
     if os.path.isdir(plugin_dir_path):
+        if plugin_dir_path.endswith('__pycache__'):
+            return False
         return True
 
     return False
@@ -40,7 +45,6 @@ def plugin_content_item_types(repository):
     plugins_dir = os.path.join(repository.path, 'plugins')
     try:
         res = [x for x in os.listdir(plugins_dir) if is_plugin_dir(os.path.join(plugins_dir, x))]
-        # log.debug('plugin_content_item_types: %s', res)
         return res
     except (OSError, IOError):
         # log.warning(e)
@@ -73,13 +77,7 @@ def all_content_item_types_iterator(repository):
     all_content_iterators = [
         repository_content_iterator(repository,
                                     'roles',
-                                    glob_content_path_iterator(repository, 'roles')),
-        repository_content_iterator(repository,
-                                    'modules',
-                                    glob_content_path_iterator(repository, 'modules')),
-        repository_content_iterator(repository,
-                                    'module_utils',
-                                    python_content_path_iterator(repository, 'module_utils')),
+                                    python_content_path_iterator(repository, 'roles')),
     ]
 
     for plugin_content_item_type in plugin_content_item_types(repository):
