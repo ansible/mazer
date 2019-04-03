@@ -3,6 +3,7 @@ import pprint
 
 from ansible_galaxy import collection_artifact
 from ansible_galaxy import display
+from ansible_galaxy import download
 from ansible_galaxy import exceptions
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
@@ -111,11 +112,26 @@ def install_repository_specs_loop(galaxy_context,
         log.debug('fetch_method: %s', fetch_method)
 
         if fetch_method == FetchMethods.LOCAL_FILE:
-            # Since only know this is a local file we vaguely recognize, we have to
+            # Since we only know this is a local file we vaguely recognize, we have to
             # open it up to get any more details. We _could_ attempt to parse the file
-            # name, but that rarely ends well...
+            # name, but that rarely ends well. Filename could also be arbitrary for downloads
+            # from remote urls ('mazer install http://myci.example.com/somebuildjob/latest' etc)
             spec_data = collection_artifact.load_data_from_collection_artifact(repository_spec_string)
             spec_data['fetch_method'] = fetch_method
+        elif fetch_method == FetchMethods.REMOTE_URL:
+            # download the url
+            # hope it is a collection artifact and use load_data_from_collection_artifact() for the
+            # rest of the repo_spec data
+            log.debug('repository_spec_string: %s', repository_spec_string)
+
+            tmp_downloaded_path = download.fetch_url(repository_spec_string,
+                                                     # Note: ignore_certs is meant for galaxy server,
+                                                     # overloaded to apply for arbitrary http[s] downloads here
+                                                     validate_certs=not galaxy_context.server['ignore_certs'])
+            spec_data = collection_artifact.load_data_from_collection_artifact(tmp_downloaded_path)
+
+            # pretend like this is a local_file install now
+            spec_data['fetch_method'] = FetchMethods.LOCAL_FILE
         else:
             spec_data = repository_spec_parse.spec_data_from_string(repository_spec_string,
                                                                     namespace_override=namespace_override,
