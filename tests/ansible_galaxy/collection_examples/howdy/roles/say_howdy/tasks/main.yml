@@ -1,3 +1,0 @@
-- name: Say Howdy Task
-  debug:
-    msg: "Howdy World!"
