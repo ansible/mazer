@@ -18,7 +18,7 @@ def test_installed_content_db(galaxy_context):
 def test_installed_content_db_match_names(galaxy_context):
     icd = installed_content_item_db.InstalledContentItemDatabase(galaxy_context)
 
-    match_filter = matchers.MatchNames(['foo.bar'])
+    match_filter = matchers.MatchLabels(['foo.bar'])
     for x in icd.select(content_match_filter=match_filter):
         log.debug('x: %s', x)
 

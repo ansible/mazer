@@ -19,6 +19,6 @@ def test_installed_repository_db(galaxy_context):
 def test_installed_repository_db_match_names(galaxy_context):
     icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    match_filter = matchers.MatchNames(['foo.bar'])
+    match_filter = matchers.MatchLabels(['foo.bar'])
     for x in icdb.select(match_filter):
         log.debug('x: %s', x)

@@ -26,14 +26,6 @@ class MatchNone(Match):
         return False
 
 
-class MatchNames(Match):
-    def __init__(self, names):
-        self.names = names
-
-    def match(self, other):
-        return other.repository_spec.name in self.names
-
-
 class MatchLabels(Match):
     def __init__(self, labels):
         self.labels = labels
@@ -76,30 +68,6 @@ class MatchRepositorySpecNamespaceName(Match):
         ns_n_match_res = other_ns_n in self.namespaces_names
 
         return ns_n_match_res
-
-
-class MatchRepositorySpecNamespaceNameVersion(Match):
-    def __init__(self, repository_specs):
-        self.namespaces_names_versions = [(x.namespace, x.name, x.version) for x in repository_specs] or []
-        self.namespaces_names = [(x.namespace, x.name) for x in repository_specs] or []
-
-    def match(self, other):
-        ns_n_v_match_res = False
-
-        other_ns_n_v = (other.repository_spec.namespace, other.repository_spec.name, other.repository_spec.version)
-
-        ns_n_v_match_res = other_ns_n_v in self.namespaces_names_versions
-
-        return ns_n_v_match_res
-
-
-class MatchNamespace(Match):
-    def __init__(self, namespaces_to_match):
-        self.namespaces_to_match = namespaces_to_match or []
-
-    def match(self, other):
-        res = other.namespace in self.namespaces_to_match
-        return res
 
 
 class MatchNamespacesOrLabels(Match):

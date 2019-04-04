@@ -19,8 +19,6 @@ def CR(namespace=None, name=None):
     (matchers.MatchAll, tuple(), [1], True),
     (matchers.MatchAll, tuple(), ['a', 'b', 3],  True),
     (matchers.MatchNone, tuple(), ['a', 'b', 3],  False),
-    (matchers.MatchNames, (['name1', 'name2'], ), [CR(name='name1')], True),
-    (matchers.MatchNames, (['name1', 'name2'], ), [CR(name='blargh')], False),
     (matchers.MatchLabels,
      (['ns1.name1'], ),
      [CR(namespace='ns1', name='name1')],
