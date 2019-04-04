@@ -51,19 +51,3 @@ def test_repr_remote_repo():
     log.debug('res: %s', res)
 
     assert 'Description of some remote repo'in res
-
-
-def test_repr_role_info():
-    data = {'name': 'some_role',
-            'description': 'Description of some_role',
-            'some_other_info': 'foo bar',
-            'some_dict': {'polarity': 'negative',
-                          'description': 'another description?',
-                          'coolness': 'not at all'},
-            }
-    res = info._repr_role_info(data)
-
-    log.debug('res: %s', res)
-
-    assert 'some_role' in res
-    assert 'Description of some_role' in res

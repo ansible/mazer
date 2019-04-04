@@ -5,7 +5,6 @@ from ansible_galaxy import display
 from ansible_galaxy import matchers
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import repository_spec
-from ansible_galaxy.utils.text import to_text
 
 log = logging.getLogger(__name__)
 
@@ -83,29 +82,6 @@ def _repr_installed_repository(installed_repository):
 
 def _repr_unmatched_label(unmatched_label):
     return '{0}'.format(unmatched_label)
-
-
-# TODO: move to a repr for Role?
-def _repr_role_info(role_info):
-
-    text = [u"", u"Role: %s" % to_text(role_info['name'])]
-    text.append(u"\tdescription: %s" % role_info.get('description', ''))
-
-    for k in sorted(role_info.keys()):
-
-        if k in SKIP_INFO_KEYS:
-            continue
-
-        if isinstance(role_info[k], dict):
-            text.append(u"\t%s:" % (k))
-            for key in sorted(role_info[k].keys()):
-                if key in SKIP_INFO_KEYS:
-                    continue
-                text.append(u"\t\t%s: %s" % (key, role_info[k][key]))
-        else:
-            text.append(u"\t%s: %s" % (k, role_info[k]))
-
-    return u'\n'.join(text)
 
 
 def info_repository_specs(galaxy_context,
