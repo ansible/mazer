@@ -1,9 +1,11 @@
 import logging
+import os
 
 import pytest
 
 from ansible_galaxy import repository_spec_parse
 from ansible_galaxy import exceptions
+from ansible_galaxy.models.repository_spec import FetchMethods
 
 log = logging.getLogger(__name__)
 
@@ -205,9 +207,73 @@ def test_parse_repository_spec_src_version_name_key_value():
 
 def test_parse_repository_spec_src_version_name_something_invalid_key_value():
     spec_text = 'some_content,1.0.0,name=some_name,foo=bar,some_garbage'
-    try:
+    match_re = '.*%s.*' % spec_text
+    with pytest.raises(exceptions.GalaxyError, match=match_re):
         parse_repository_spec(spec_text)
-    except exceptions.GalaxyClientError:
-        return
 
-    assert False, 'spec_text="%s" should have caused a GalaxyClientError' % spec_text
+
+# For the cases where getting real repo_spec data means having an artifact and splitting it open, easier to
+# test some variants just for choose_fetch_method
+choose_fetch_method_cases = \
+    [
+        {'spec': 'geerlingguy.apache',
+         'expected': FetchMethods.GALAXY_URL},
+        {'spec': 'geerlingguy.apache,2.1.1',
+         'expected': FetchMethods.GALAXY_URL},
+        {'spec': 'testing.ansible-testing-content',
+         'expected': FetchMethods.GALAXY_URL},
+        {'spec': 'testing.ansible-testing-content,1.2.3,name=testing-content',
+         'expected': FetchMethods.GALAXY_URL},
+        {'spec': 'testing.ansible-testing-content,1.2.3,also-testing-content,stuff',
+         'expected': FetchMethods.GALAXY_URL},
+        {'spec': 'git+https://github.com/geerlingguy/ansible-role-apache.git,version=2.0.0',
+         'expected': FetchMethods.SCM_URL},
+        {'spec': 'git+https://mazertestuser@github.com/geerlingguy/ansible-role-apache.git,version=2.0.0',
+         'expected': FetchMethods.SCM_URL},
+
+        # This is odd, use the source LICENSE in mazer as an example file name instead of mocking os.path.isfile()
+        {'spec': '%s,name=the_license' % os.path.normpath(os.path.join(os.path.dirname(__file__), '../../LICENSE')),
+         'expected': FetchMethods.LOCAL_FILE},
+        {'spec': 'https://someserver.example.com/collections/some_ns-some_name-1.2.3.tar.gz',
+         'expected': FetchMethods.REMOTE_URL},
+        {'spec': 'https://docs.ansible.com,name=the_docs',
+         'expected': FetchMethods.REMOTE_URL},
+    ]
+
+
+@pytest.fixture(scope='module',
+                params=choose_fetch_method_cases,
+                ids=[x['spec'] for x in choose_fetch_method_cases])
+def choose_fetch_method_case(request):
+    yield request.param
+
+
+def test_choose_fetch_method_urls(choose_fetch_method_case):
+    log.debug('spec=%s expected=%s', choose_fetch_method_case['spec'], choose_fetch_method_case['expected'])
+    res = repository_spec_parse.choose_repository_fetch_method(choose_fetch_method_case['spec'])
+
+    log.debug('spec=%s expected=%s result=%s', choose_fetch_method_case['spec'], choose_fetch_method_case['expected'], res)
+    assert res == choose_fetch_method_case['expected']
+
+
+choose_fetch_method_invalid_cases = \
+    [
+        {'spec': 'foo'},
+        {'spec': 'foo,1.2.3'},
+        {'spec': 'notarealscheme://blippy.foo'},
+        {'spec': 'ldap://somehost.example.com'},
+    ]
+
+
+@pytest.fixture(scope='module',
+                params=choose_fetch_method_invalid_cases,
+                ids=[x['spec'] for x in choose_fetch_method_invalid_cases])
+def choose_fetch_method_invalid_case(request):
+    yield request.param
+
+
+def test_choose_fetch_method_invalid(choose_fetch_method_invalid_case):
+    log.debug('spec=%s', choose_fetch_method_invalid_case['spec'])
+    with pytest.raises(exceptions.GalaxyError):
+        res = repository_spec_parse.choose_repository_fetch_method(choose_fetch_method_invalid_case['spec'])
+        log.debug('res: %s', res)

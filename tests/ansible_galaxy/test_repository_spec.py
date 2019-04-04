@@ -11,27 +11,30 @@ log = logging.getLogger(__name__)
 
 repo_spec_from_string_cases = \
     [
-        # {'spec': 'geerlingguy.apache',
-        # 'expected': RepositorySpec(name='apache', namespace='geerlingguy')},
+        {'spec': 'geerlingguy.apache',
+         'expected': RepositorySpec(name='apache', namespace='geerlingguy',
+                                    version=None, fetch_method=FetchMethods.GALAXY_URL)},
         {'spec': 'geerlingguy.apache,2.1.1',
-         'expected': RepositorySpec(name='apache', namespace='geerlingguy', version='2.1.1')},
-        # {'spec': 'geerlingguy.apache',
-        # 'expected': RepositorySpec(name='apache', namespace='geerlingguy', version=None)},
-        # {'spec': 'testing.ansible-testing-content',
-        # 'expected': RepositorySpec(name='ansible-testing-content', namespace='testing')},
+         'expected': RepositorySpec(name='apache', namespace='geerlingguy',
+                                    version='2.1.1', fetch_method=FetchMethods.GALAXY_URL)},
+        {'spec': 'testing.ansible-testing-content',
+         'expected': RepositorySpec(name='ansible-testing-content', namespace='testing',
+                                    version=None, fetch_method=FetchMethods.GALAXY_URL)},
         # {'spec': 'testing.ansible-testing-content,name=testing-content',
         # 'expected': RepositorySpec(name='testing-content', namespace='testing')},
         # {'spec': 'alikins.awx',
         # 'expected': RepositorySpec(name='awx', namespace='alikins')},
         {'spec': 'testing.ansible-testing-content,1.2.3,name=testing-content',
-         'expected': RepositorySpec(name='testing-content', namespace='testing', version='1.2.3')},
+         'expected': RepositorySpec(name='testing-content', namespace='testing',
+                                    version='1.2.3', fetch_method=FetchMethods.GALAXY_URL)},
         {'spec': 'testing.ansible-testing-content,1.2.3,also-testing-content,stuff',
-         'expected': RepositorySpec(name='also-testing-content', namespace='testing', version='1.2.3')},
+         'expected': RepositorySpec(name='also-testing-content', namespace='testing',
+                                    version='1.2.3', fetch_method=FetchMethods.GALAXY_URL)},
         # for git/tar/url, we dont try to guess the namespace, so the expected result is namespace=None
         # here. cli adds a namespace from --namespace here.
         {'spec': 'git+https://github.com/geerlingguy/ansible-role-apache.git,version=2.0.0',
          'expected': RepositorySpec(name='ansible-role-apache', namespace=None, version='2.0.0',
-                                    scm='git')},
+                                    scm='git', fetch_method=FetchMethods.SCM_URL)},
         {'spec': 'git+https://mazertestuser@github.com/geerlingguy/ansible-role-apache.git,version=2.0.0',
          'expected': RepositorySpec(name='ansible-role-apache', namespace=None, version='2.0.0',
                                     scm='git', fetch_method=FetchMethods.SCM_URL)},
@@ -39,19 +42,9 @@ repo_spec_from_string_cases = \
         # so specify a ',name=' to provide a predictable name (otherwise it would be the full path)
         # TODO: local file will attempt to load the contents now, so this test case doesn't make sense without mocking
         #       out something to exist at the path
-        # {'spec': '%s,name=the_license' % os.path.normpath(os.path.join(os.path.dirname(__file__), '../../LICENSE')),
-        # 'expected': RepositorySpec(name='the_license', namespace=None,
-        #                            fetch_method=FetchMethods.LOCAL_FILE)},
-        # {'spec': 'https://docs.ansible.com,name=the_docs',
-        # 'expected': RepositorySpec(name='the_docs', namespace=None,
-        #                            scm=None, fetch_method=FetchMethods.REMOTE_URL)},
-        # 'foo',
-        # 'foo,1.2.3',
-        # 'foo,version=1.2.3',
-        # 'foo,1.2.3,somename',
-        # 'foo,1.2.3,name=somename',
-        # 'foo,1.2.3,somename,somescm',
-        # 'foo,1.2.3,somename,somescm,someextra'
+        # {'spec': '%s,name=the_license' % os.path.normpath(os.path.join(os.path.dirname(__file__), '../../NOTLICENSE')),
+        #  'expected': RepositorySpec(name='the_license', namespace=None,
+        #                             version=None, fetch_method=FetchMethods.LOCAL_FILE)},
     ]
 
 

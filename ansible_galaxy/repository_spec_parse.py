@@ -1,11 +1,17 @@
 import logging
 import os
+import re
+
+from six.moves.urllib.parse import urlparse
 
 from ansible_galaxy import exceptions
 from ansible_galaxy import galaxy_repository_spec
+from ansible_galaxy.flat_rest_api.urls import generic_urlparse
 from ansible_galaxy.models.repository_spec import FetchMethods
 
 log = logging.getLogger(__name__)
+
+GIT_LIKE_URL_RE = re.compile(r'^git@.*\.git$')
 
 
 def repo_url_to_repo_name(repo_url):
@@ -88,11 +94,55 @@ def parse_string(repository_spec_text, valid_keywords=None):
     return data
 
 
-def is_scm(repository_spec_string):
-    if '://' in repository_spec_string or '@' in repository_spec_string:
+# TODO: maybe use something like https://github.com/nephila/giturlparse?
+# FIXME: would like to remove this, since collection artifact install
+#        from a scm doesn't seem useful.
+def is_scm(parsed_url):
+
+    if parsed_url['scheme'] in ('git+http', 'git+https'):
         return True
 
+    # For github style 'git@github.com:/ansible/mazer.git' style urls
+    path = parsed_url['path']
+    git_like_url_matches = GIT_LIKE_URL_RE.match(path)
+
+    if git_like_url_matches:
+        return True
+
+    # FIXME:
     return False
+
+
+def strip_comma_fields(path_string):
+    # for cases like '/tmp/ns-blip-1.2.3.tar.gz,version=2.9.9' where the
+    # url 'path' is a file path plus other trailing junk
+    comma_parts = path_string.split(',', 1)
+    potential_path = comma_parts[0]
+    return potential_path
+
+
+def is_local_file(path_string):
+    potential_path = strip_comma_fields(path_string)
+    return os.path.isfile(potential_path)
+
+
+def is_local_dir(path_string):
+    # for cases like:
+    #  --editable /home/some_user/src/some_collection
+    # --editable dir_rel_to_cwd
+    # --editable dir_rel_to_cwd,version=1.0.0,namespace=myns
+    potential_path = strip_comma_fields(path_string)
+    return os.path.isdir(potential_path)
+
+
+def parse_as_url(repository_spec_string):
+    parsed_result = urlparse(repository_spec_string)
+
+    log.debug('parsed_result: %s', parsed_result)
+
+    parsed_result_dict = generic_urlparse(parsed_result)
+
+    return parsed_result_dict
 
 
 # TODO: There are really two levels of 'fetch_method' that are kind of blurred.
@@ -102,28 +152,35 @@ def is_scm(repository_spec_string):
 def choose_repository_fetch_method(repository_spec_string, editable=False):
     log.debug('repository_spec_string: %s', repository_spec_string)
 
-    if is_scm(repository_spec_string):
+    parsed_url = parse_as_url(repository_spec_string)
+    log.debug('parsed_url: %s', parsed_url)
+
+    # TODO: figure out of SCM_URL makes any sense for installing artifacts
+    if is_scm(parsed_url):
         # create tar file from scm url
         return FetchMethods.SCM_URL
 
-    comma_parts = repository_spec_string.split(',', 1)
-    potential_filename = comma_parts[0]
-    fetch_method = None
-    if editable and os.path.isdir(potential_filename):
-        fetch_method = FetchMethods.EDITABLE
-    elif os.path.isfile(potential_filename):
-        # installing a local tar.gz
-        fetch_method = FetchMethods.LOCAL_FILE
-    elif '://' in repository_spec_string:
-        fetch_method = FetchMethods.REMOTE_URL
-    elif '.' in repository_spec_string and len(repository_spec_string.split('.', 1)) == 2:
-        fetch_method = FetchMethods.GALAXY_URL
-    else:
-        msg = ('Failed to determine fetch method for content spec %s. '
-               'Expecting a Galaxy name, SCM path, remote URL, path to a local '
-               'archive file, or -e option and a directory path' % repository_spec_string)
-        raise exceptions.GalaxyError(msg)
-    return fetch_method
+    if parsed_url['scheme'] in ('http', 'https', 'ftp'):
+        return FetchMethods.REMOTE_URL
+
+    # for cases like:
+    #   '/tmp/ns-name-1.2.3.tar.gz'
+    #   'file://home/someuser/Downloads/ns-name-1.2.3.tar.gz(2)'
+    #   'file_in_cwd,version=2.111.22'
+    if parsed_url['scheme'] == 'file' or is_local_file(parsed_url['path']):
+        return FetchMethods.LOCAL_FILE
+
+    if editable and is_local_dir(parsed_url['path']):
+        return FetchMethods.EDITABLE
+
+    url_before_comma = strip_comma_fields(parsed_url['path'])
+    if '.' in url_before_comma and len(url_before_comma.split('.', 1)) == 2:
+        return FetchMethods.GALAXY_URL
+
+    msg = ('Failed to determine fetch method for content spec: %s. '
+           'Expecting a Galaxy name, SCM path, remote URL, path to a local '
+           'archive file, or -e option and a directory path' % repository_spec_string)
+    raise exceptions.GalaxyError(msg)
 
 
 def editable_resolve(data):
