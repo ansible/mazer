@@ -76,7 +76,7 @@ to ~/.ansible/collections/ansible_collections/testing/ansible_testing_content/
 $ mazer install --content-path ~/my-ansible-content alikins.collection_inspect
 ```
 
-This will install the alikins.collection_inspect role to ~/my-ansible-content/alikins/collection_inspect
+This will install the alikins.collection_inspect collection to ~/my-ansible-content/alikins/collection_inspect
 
 ### Installing collections in 'editable' mode for development
 
@@ -155,7 +155,7 @@ server:
 #
 global_content_path: /usr/share/ansible/collections/ansible_collections
 
-# When installing content like ansible roles, mazer will install into
+# When installing content like ansible collections, mazer will install into
 # sub directories of this path.
 #
 # default: ~/.ansible/collections/ansible_collections
