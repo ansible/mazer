@@ -8,7 +8,6 @@ from ansible_galaxy import exceptions
 
 log = logging.getLogger(__name__)
 
-# DEFAULT_FILENAME = "collection_info.yml"
 COLLECTION_INFO_FILENAME = "galaxy.yml"
 
 
