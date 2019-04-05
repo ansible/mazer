@@ -1,10 +1,13 @@
 import os
 
+MAZER_HOME = os.environ.get('MAZER_HOME', None) or '~/.ansible'
+DEFAULT_CONFIG_FILE = '~/.ansible/mazer.yml'
+
 
 def get_config_path():
     paths = [
         'mazer.yml',
-        '~/.ansible/mazer.yml',
+        os.path.join(MAZER_HOME, 'mazer.yml'),
         '/etc/ansible/mazer.yml'
     ]
     for path in paths:
@@ -21,7 +24,7 @@ DEFAULTS = [
      ),
 
     # In order of priority
-    ('content_path', '~/.ansible/collections/ansible_collections'),
+    ('content_path', os.path.join(MAZER_HOME, 'collections/ansible_collections')),
     ('global_content_path', '/usr/share/ansible/collections/ansible_collections'),
 
     # runtime options

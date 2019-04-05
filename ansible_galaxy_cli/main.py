@@ -3,7 +3,7 @@ import os
 import sys
 
 from ansible_galaxy import exceptions
-from ansible_galaxy_cli.logger.setup import setup_default
+from ansible_galaxy_cli.logger.setup import setup_default, setup_custom
 from ansible_galaxy_cli.cli import galaxy
 from ansible_galaxy_cli import exceptions as cli_exceptions
 
@@ -13,6 +13,7 @@ stderr_log = logging.getLogger('%s.(stderr)' % __package__)
 
 def main(args=None):
     setup_default()
+    setup_custom()
 
     args = args or sys.argv[:]
 

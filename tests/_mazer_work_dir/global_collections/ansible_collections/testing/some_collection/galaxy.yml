@@ -1,0 +1,19 @@
+namespace: testing
+name: some_collection
+version: 11.11.11
+license:
+  - MIT
+description: Some collecting used for unit testing mazer
+repository:
+documentation:
+homepage:
+issues:
+authors:
+  - testing
+tags:
+  - testing
+  - faux
+  - bogus
+  - mock
+readme: "README.md"
+dependencies: {}

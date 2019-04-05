@@ -21,8 +21,8 @@ authors:
 '''
 
 
-def test_build_no_args():
-    cli = galaxy.GalaxyCLI(args=['build'])
+def test_build_no_args(mazer_args_for_test):
+    cli = galaxy.GalaxyCLI(args=mazer_args_for_test + ['build'])
     cli.parse()
 
     log.debug('cli.options: %s', cli.options)
@@ -31,17 +31,17 @@ def test_build_no_args():
     assert cli.args == []
 
 
-def test_build_run_no_args():
-    cli = galaxy.GalaxyCLI(args=['build'])
-    cli.parse()
-    log.debug('cli.options: %s', cli.options)
+# def test_build_run_no_args():
+#     cli = galaxy.GalaxyCLI(args=['mazer', 'build', 'fooo'])
+#     cli.parse()
+#     log.debug('cli.options: %s', cli.options)
 
-    rc = cli.run()
+#     rc = cli.run()
 
-    assert rc == os.EX_SOFTWARE
+#     assert rc == os.EX_SOFTWARE
 
 
-def test_build_run_tmp_collection_path(tmpdir):
+def test_build_run_tmp_collection_path(tmpdir, mazer_args_for_test):
     temp_dir = tmpdir.mkdir('mazer_cli_built_run_tmp_output_path_unit_test')
     log.debug('temp_dir: %s', temp_dir.strpath)
 
@@ -53,10 +53,9 @@ def test_build_run_tmp_collection_path(tmpdir):
     info_fd.write(COLLECTION_INFO1)
     info_fd.close()
 
-    cli = galaxy.GalaxyCLI(args=['mazer',
-                                 'build',
-                                 '--collection-path', collection_path,
-                                 '--output-path', output_path])
+    cli = galaxy.GalaxyCLI(args=mazer_args_for_test +
+                           ['build', '--collection-path', collection_path,
+                            '--output-path', output_path])
     cli.parse()
 
     log.debug('cli.options: %s', cli.options)
@@ -72,22 +71,31 @@ def test_build_run_tmp_collection_path(tmpdir):
     assert tarfile.is_tarfile(expected_artifact_path)
 
 
-def test_info():
-    cli = galaxy.GalaxyCLI(args=['info'])
+def test_info(mazer_args_for_test):
+    cli = galaxy.GalaxyCLI(args=mazer_args_for_test + ['info'])
     cli.parse()
 
     log.debug('cli.options: %s', cli.options)
 
 
-def test_run_info():
-    cli = galaxy.GalaxyCLI(args=['info'])
+def test_run_info(mazer_args_for_test):
+    cli = galaxy.GalaxyCLI(args=mazer_args_for_test + ['info'])
     cli.parse()
     with pytest.raises(cli_exceptions.CliOptionsError, match="you must specify a collection name"):
         cli.run()
 
 
-def test_publish_no_args():
-    cli = galaxy.GalaxyCLI(args=['publish'])
+def test_run_list(mazer_args_for_test):
+    cli = galaxy.GalaxyCLI(args=mazer_args_for_test + ['list'])
+    cli.parse()
+    res = cli.run()
+
+    log.debug('mat: %s', mazer_args_for_test)
+    log.debug('res: %s', res)
+
+
+def test_publish_no_args(mazer_args_for_test):
+    cli = galaxy.GalaxyCLI(args=mazer_args_for_test + ['publish'])
     cli.parse()
     with pytest.raises(cli_exceptions.CliOptionsError, match="you must specify a path"):
         cli.run()

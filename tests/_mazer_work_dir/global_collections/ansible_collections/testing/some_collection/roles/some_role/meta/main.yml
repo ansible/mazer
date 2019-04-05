@@ -1,0 +1,23 @@
+collections:
+  - ansible.builtin
+  - testns.coll_in_sys
+  - bogus.fromrolemeta
+
+galaxy_info:
+  author: A. Testing Account
+  description: Some role used for unit testing mazer
+  license: MIT
+  min_ansible_version: 2.4
+  galaxy_tags:
+    - mazer
+    - rhymewithrole
+
+  platforms:
+    - name: Fedora
+      versions:
+        - all
+    - name: EL
+      versions:
+        - all
+
+dependencies: []

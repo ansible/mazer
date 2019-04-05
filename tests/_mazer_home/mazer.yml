@@ -1,0 +1,8 @@
+server:
+  ignore_certs: false
+  url: http://localhost:8000
+
+content_path: user_collections/ansible_collections
+global_content_path: global_collections/ansible_collections
+
+version: 1

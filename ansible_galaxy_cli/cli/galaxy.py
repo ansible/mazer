@@ -155,7 +155,7 @@ class GalaxyCLI(cli.CLI):
         self.parser.add_option('-c', '--ignore-certs', action='store_true', dest='ignore_certs', default=None,
                                help='Ignore SSL certificate validation errors.')
         self.parser.add_option('--config', dest='cli_config_file', default=None,
-                               help='path to a mazer config file (default: %s)' % defaults.CONFIG_FILE)
+                               help='path to a mazer config file (default: %s)' % defaults.DEFAULT_CONFIG_FILE)
         self.set_action()
 
         super(GalaxyCLI, self).parse()
@@ -192,7 +192,7 @@ class GalaxyCLI(cli.CLI):
 
     def run(self):
 
-        raw_config_file_path = get_config_path_from_env() or self.options.cli_config_file or defaults.CONFIG_FILE
+        raw_config_file_path = get_config_path_from_env() or self.options.cli_config_file or defaults.get_config_path()
 
         self.config_file_path = os.path.abspath(os.path.expanduser(raw_config_file_path))
 

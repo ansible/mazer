@@ -5,13 +5,13 @@ import logging.config
 import os
 import yaml
 
-LOG_FILE = os.path.expandvars(os.path.expanduser('~/.ansible/mazer.log'))
+from ansible_galaxy.config import defaults
 
 DEFAULT_CONSOLE_LEVEL = os.getenv('MAZER_LOG_LEVEL', 'WARNING').upper()
 DEFAULT_LEVEL = 'DEBUG'
 
 DEFAULT_LOGGING_CONFIG_YAML = os.path.join(os.path.dirname(__file__), 'default-mazer-logging.yml')
-LOGGING_CONFIG_YAML = os.path.expandvars(os.path.expanduser('~/.ansible/mazer-logging.yml'))
+
 
 FALLBACK_LOGGING_CONFIG = {
     'version': 1,
@@ -70,8 +70,6 @@ def load_config_yaml(config_file_path):
 
 
 def setup_default():
-    logging_config = None
-
     # fallback is basically no setup, null handler, etc
     # builtin, doesn't depend on yaml config
     setup(FALLBACK_LOGGING_CONFIG)
@@ -81,11 +79,15 @@ def setup_default():
     if default_logging_config:
         setup(default_logging_config)
 
+
+def setup_custom():
+    logging_config = None
+
+    # ~/.ansible/mazer-logging.yml
+    LOGGING_CONFIG_YAML = os.path.join(os.path.expanduser(defaults.MAZER_HOME), 'mazer-logging.yml')
+
     # load custom logging config
     logging_config = load_config_yaml(LOGGING_CONFIG_YAML)
 
     if logging_config:
         setup(logging_config)
-
-    # import logging_tree
-    # logging_tree.printout()
