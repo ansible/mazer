@@ -70,7 +70,6 @@ class GalaxyCLI(cli.CLI):
     VALID_ACTION_ALIASES = {'content-install': 'install'}
 
     def __init__(self, args):
-        self.api = None
         super(GalaxyCLI, self).__init__(args)
 
     def set_action(self):
@@ -155,6 +154,8 @@ class GalaxyCLI(cli.CLI):
 
         self.parser.add_option('-c', '--ignore-certs', action='store_true', dest='ignore_certs', default=None,
                                help='Ignore SSL certificate validation errors.')
+        self.parser.add_option('--config', dest='cli_config_file', default=None,
+                               help='path to a mazer config file (default: %s)' % defaults.CONFIG_FILE)
         self.set_action()
 
         super(GalaxyCLI, self).parse()
@@ -173,7 +174,8 @@ class GalaxyCLI(cli.CLI):
         if hasattr(options, 'global_install') and options.global_install:
             raw_content_path = config.global_content_path
 
-        content_path = os.path.expanduser(raw_content_path)
+        # content_path = os.path.expanduser(raw_content_path)
+        content_path = os.path.abspath(os.path.expanduser(raw_content_path))
 
         server = config.server.copy()
 
@@ -190,7 +192,7 @@ class GalaxyCLI(cli.CLI):
 
     def run(self):
 
-        raw_config_file_path = get_config_path_from_env() or defaults.CONFIG_FILE
+        raw_config_file_path = get_config_path_from_env() or self.options.cli_config_file or defaults.CONFIG_FILE
 
         self.config_file_path = os.path.abspath(os.path.expanduser(raw_config_file_path))
 
@@ -208,8 +210,6 @@ class GalaxyCLI(cli.CLI):
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
         log.debug('galaxy context: %s', galaxy_context)
-
-        self.api = rest_api.GalaxyAPI(galaxy_context)
 
         log.debug('execute action: %s', self.action)
         log.debug('execute action with options: %s', self.options)
@@ -256,8 +256,10 @@ class GalaxyCLI(cli.CLI):
 
         repository_spec_strings = self.args
 
+        api = rest_api.GalaxyAPI(galaxy_context)
+
         # FIXME: rc?
-        return info.info_repository_specs(galaxy_context, self.api, repository_spec_strings,
+        return info.info_repository_specs(galaxy_context, api, repository_spec_strings,
                                           display_callback=self.display,
                                           offline=self.options.offline)
 
