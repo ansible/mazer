@@ -6,7 +6,6 @@ from six.moves.urllib.parse import urlparse
 
 from ansible_galaxy import exceptions
 from ansible_galaxy import galaxy_repository_spec
-from ansible_galaxy.flat_rest_api.urls import generic_urlparse
 from ansible_galaxy.models.repository_spec import FetchMethods
 
 log = logging.getLogger(__name__)
@@ -99,12 +98,11 @@ def parse_string(repository_spec_text, valid_keywords=None):
 #        from a scm doesn't seem useful.
 def is_scm(parsed_url):
 
-    if parsed_url['scheme'] in ('git+http', 'git+https'):
+    if parsed_url.scheme in ('git+http', 'git+https'):
         return True
 
     # For github style 'git@github.com:/ansible/mazer.git' style urls
-    path = parsed_url['path']
-    git_like_url_matches = GIT_LIKE_URL_RE.match(path)
+    git_like_url_matches = GIT_LIKE_URL_RE.match(parsed_url.path)
 
     if git_like_url_matches:
         return True
@@ -140,9 +138,7 @@ def parse_as_url(repository_spec_string):
 
     log.debug('parsed_result: %s', parsed_result)
 
-    parsed_result_dict = generic_urlparse(parsed_result)
-
-    return parsed_result_dict
+    return parsed_result
 
 
 # TODO: There are really two levels of 'fetch_method' that are kind of blurred.
@@ -160,20 +156,20 @@ def choose_repository_fetch_method(repository_spec_string, editable=False):
         # create tar file from scm url
         return FetchMethods.SCM_URL
 
-    if parsed_url['scheme'] in ('http', 'https', 'ftp'):
+    if parsed_url.scheme in ('http', 'https', 'ftp'):
         return FetchMethods.REMOTE_URL
 
     # for cases like:
     #   '/tmp/ns-name-1.2.3.tar.gz'
     #   'file://home/someuser/Downloads/ns-name-1.2.3.tar.gz(2)'
     #   'file_in_cwd,version=2.111.22'
-    if parsed_url['scheme'] == 'file' or is_local_file(parsed_url['path']):
+    if parsed_url.scheme == 'file' or is_local_file(parsed_url.path):
         return FetchMethods.LOCAL_FILE
 
-    if editable and is_local_dir(parsed_url['path']):
+    if editable and is_local_dir(parsed_url.path):
         return FetchMethods.EDITABLE
 
-    url_before_comma = strip_comma_fields(parsed_url['path'])
+    url_before_comma = strip_comma_fields(parsed_url.path)
     if '.' in url_before_comma and len(url_before_comma.split('.', 1)) == 2:
         return FetchMethods.GALAXY_URL
 

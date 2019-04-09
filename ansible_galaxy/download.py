@@ -1,8 +1,9 @@
 import logging
 import tempfile
 
+import requests
+
 from ansible_galaxy import exceptions
-from ansible_galaxy.flat_rest_api.urls import open_url
 
 log = logging.getLogger(__name__)
 
@@ -18,16 +19,17 @@ def fetch_url(archive_url, validate_certs=True):
     #       (ie, any TLS cert setup, proxy config, auth options, etc)
     # WHEN: if we change the underlying http client impl at least
     try:
-        url_file = open_url(archive_url, validate_certs=validate_certs)
+        resp = requests.get(archive_url, verify=validate_certs, stream=True)
+        # url_file = open_url(archive_url, validate_certs=validate_certs)
 
         temp_file = tempfile.NamedTemporaryFile(delete=False,
                                                 prefix='tmp-ansible-galaxy-content-archive-',
                                                 suffix='.tar.gz')
 
-        data = url_file.read()
-        while data:
-            temp_file.write(data)
-            data = url_file.read()
+        # TODO: test for short reads
+        for chunk in resp.iter_content(chunk_size=None):
+            temp_file.write(chunk)
+
         temp_file.close()
         return temp_file.name
     except Exception as e:
