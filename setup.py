@@ -16,6 +16,7 @@ requirements = ['six',
                 'jinja2',
                 'semantic_version',
                 'yamlloader',
+                'requests',
                 # used for data classes
                 # 18.1.0 introduces the 'factory' keyword
                 'attrs>=18.1.0',
