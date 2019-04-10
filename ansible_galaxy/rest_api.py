@@ -312,10 +312,6 @@ class GalaxyAPI(object):
 
         r = http.getresponse()
 
-        log.debug('code: %s', r.getcode())
-        log.debug('info: %s', r.info())
-        log.debug('reason: %s', r.reason)
-
         response_body = r.read()
         log.debug('response_body: %s', response_body)
 
