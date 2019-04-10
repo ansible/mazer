@@ -5,6 +5,8 @@ import logging
 import os
 import tarfile
 
+from six.moves.urllib.parse import urljoin
+
 from ansible_galaxy.rest_api import GalaxyAPI
 from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy import exceptions
@@ -87,10 +89,11 @@ def publish(galaxy_context, archive_path, publish_api_key, display_callback):
 
     if results['success']:
         if results['response_data'].get('task', None):
-            display_callback('Publish task for %s created at %s/%s' %
+            display_callback('Publish task for %s created at %s' %
                              (archive_path,
-                              galaxy_context.server['url'],
-                              results['response_data']['task']))
+                              urljoin(galaxy_context.server['url'],
+                                      results['response_data']['task']),
+                              ))
         return os.EX_OK  # 0
 
     return os.EX_SOFTWARE  # 70
