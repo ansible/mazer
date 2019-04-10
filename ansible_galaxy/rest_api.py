@@ -283,11 +283,15 @@ class GalaxyAPI(object):
 
         log.debug('url: %s', url)
 
-        _, netloc, url, _, _, _ = urlparse(url)
+        scheme, netloc, url, _, _, _ = urlparse(url)
 
         try:
             form_buffer = form.get_binary().getvalue()
-            http = http_client.HTTPConnection(netloc)
+            if scheme == 'http':
+                http = http_client.HTTPConnection(netloc)
+            else:
+                http = http_client.HTTPSConnection(netloc)
+
             http.connect()
             http.putrequest("POST", url)
             http.putheader('Content-type', form.get_content_type())
