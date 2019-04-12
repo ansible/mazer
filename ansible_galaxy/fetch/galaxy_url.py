@@ -1,6 +1,7 @@
 
 import logging
 
+import semantic_version
 
 # mv details of this here
 from ansible_galaxy import exceptions
@@ -8,30 +9,8 @@ from ansible_galaxy import download
 from ansible_galaxy.fetch import base
 # from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.rest_api import GalaxyAPI
-from ansible_galaxy import repository_version
 
 log = logging.getLogger(__name__)
-
-
-def get_download_url(repo_data=None, external_url=None, repoversion=None):
-    repo_data = repo_data or {}
-
-    # If we want a specific version, provide an exact match repoversion.
-    # if provided an exact match repoversion, use its download_url
-    if 'download_url' in repoversion:
-        return repoversion['download_url']
-
-    # but then try whatever the Repository suggests for download_url
-    # This should be the case if we dont specify a version and the galaxy Repository
-    # has no versions associated to it, so this will likely reference the latest in
-    # the default branch
-    if 'download_url' in repo_data:
-        return repo_data['download_url']
-
-    # server response didn't suggest a download_url, take a guess and make one up
-    if external_url and repoversion:
-        archive_url = '%s/archive/%s.tar.gz' % (external_url, repoversion['version'])
-        return archive_url
 
 
 def select_repository_version(repoversions, version):
@@ -74,54 +53,108 @@ class GalaxyUrlFetch(base.BaseFetch):
         log.debug('requirement_spec: %s', requirement_spec)
         # log.debug('Validate TLS certificates: %s', self.validate_certs)
 
+    def build_full_download_url(self, rel_download_url):
+        api_server = self.galaxy_context.server['url']
+        full_download_url = '{api_server}{rel_download_url}'.format(api_server=api_server, rel_download_url=rel_download_url)
+        return full_download_url
+
     def find(self):
+        '''Find a collection
+
+        This method does 3 things:
+
+            1. Determine if the requested collection exists (GET /api/v2/collections/{namespace}/{name})
+            2. Get the available versions (CollectionVersion) of the collection and
+               select the "best" one. (GET /api/v2/collections/{namespace}/{name}/versions/)
+            3. Get the details of the CollectionVersion including 'download_url' (GET /api/v2/collections/{namespace}/{names}/versions/{version}/,
+               available as the 'href' in each CollectionVersion)
+
+        It then returns the info about the Collection and CollectionVersion including download_url to be used by fetch()'''
+
         api = GalaxyAPI(self.galaxy_context)
 
         namespace = self.requirement_spec.namespace
-        repo_name = self.requirement_spec.name
+        collection_name = self.requirement_spec.name
 
-        log.debug('Querying %s for namespace=%s, name=%s', self.galaxy_context.server['url'], namespace, repo_name)
+        log.debug('Querying %s for namespace=%s, name=%s', self.galaxy_context.server['url'], namespace, collection_name)
 
         # TODO: extract parsing of cli content sorta-url thing and add better tests
 
-        # FIXME: exception handling
-        repo_data = api.lookup_repo_by_name(namespace, repo_name)
+        # FIXME: Remove? We kind of need the actual Collection detail yet (ever?)
+        # collection_detail_data = api.get_collection_detail(namespace, collection_name)
 
-        if not repo_data:
-            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.requirement_spec.label,
-                                                                                     api.api_server))
+        # if not collection_detail_data:
+        #     raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.requirement_spec.label,
+        #                                                                              api.api_server))
 
-        # FIXME - Need to update our API calls once Galaxy has them implemented
-        related = repo_data.get('related', {})
+        # TODO: if versions ends up with a 'related' we could follow it instead of specific
+        #       get_collection_version_list()
+        # example results
+        # [{
+        #   "version": "2.4.5",
+        #   "href": "/api/v2/collections/ansible/k8s/versions/2.4.5/",
+        #  },
+        #  {
+        #   "version": "1.2.3",
+        #   "href": "/api/v2/collections/ansible/k8s/versions/1.2.3/",
+        #  }]
+        log.debug('Getting collectionversions for %s.%s', namespace, collection_name)
+        collection_version_list_data = api.get_collection_version_list(namespace, collection_name)
+        if not collection_version_list_data:
+            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." %
+                                               (self.requirement_spec.label,
+                                                api.api_server))
 
-        repo_versions_url = related.get('versions', None)
+        log.debug('collectionvertlist data:\n%s', collection_version_list_data)
 
-        # FIXME: exception handling
-        repoversions = api.fetch_content_related(repo_versions_url)
+        collection_version_strings = [a.get('version') for a in collection_version_list_data if a.get('version', None)]
 
-        content_repo_versions = [a.get('version') for a in repoversions if a.get('version', None)]
+        # a Version() component of the CollectionVersion
+        collection_versions_versions = [semantic_version.Version(ver) for ver in collection_version_strings]
 
-        repo_version_best = repository_version.get_repository_version(repo_data,
-                                                                      requirement_spec=self.requirement_spec,
-                                                                      repository_versions=content_repo_versions)
+        # No match returns None
+        best_version = self.requirement_spec.version_spec.select(collection_versions_versions)
 
-        # get the RepositoryVersion obj (or its data anyway)
-        _repoversion = select_repository_version(repoversions, repo_version_best)
+        # Find the rest of the info for the collectionversion that is the best version
+        # linear search
+        best_collectionversion = next(
+            (cv for cv in collection_version_list_data
+             # build a Version of both to for full semver matching
+             if semantic_version.Version(cv['version']) == best_version),
+            {})
 
-        # Note: download_url can point anywhere...
-        external_url = repo_data.get('external_url', None)
+        log.debug('best_collectionversion: %s', best_collectionversion)
 
-        if not external_url:
+        # We did not find a collection that meets this spec
+        if not best_collectionversion:
+            log.debug('Unable to find a collection that matches the spec: %s from available versions: %s',
+                      self.requirement_spec,
+                      [ver['version'] for ver in collection_version_list_data])
+            raise exceptions.GalaxyCouldNotFindAnswerForRequirement('Unable to find a collection that matches the spec: %s' %
+                                                                    self.requirement_spec.label,
+                                                                    requirement_spec=self.requirement_spec)
+
+        best_collectionversion_detail_data = api.get_href(href=best_collectionversion.get('href', None))
+        rel_download_url = best_collectionversion_detail_data.get('download_url', None)
+
+        log.debug('rel_download_url for %s.%s: %s', namespace, collection_name, rel_download_url)
+
+        full_download_url = self.build_full_download_url(rel_download_url)
+
+        log.debug('full_download_url for %s.%s: %s', namespace, collection_name, full_download_url)
+
+        if not full_download_url:
             raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % self.requirement_spec.label)
 
+        # collectionversion_metadata = best_collectionversion_detail_data.get('metadata', None)
+        # log.debug('collectionversion_metadata: %s', collectionversion_metadata)
+
+        # TODO: raise exceptions if API requests are empty
+
         results = {'content': {'galaxy_namespace': namespace,
-                               'repo_name': repo_name,
-                               'version': _repoversion.get('version')},
-                   'requirement_spec_version_spec': self.requirement_spec.version_spec,
-                   'custom': {'external_url': external_url,
-                              'repo_data': repo_data,
-                              'repoversion': _repoversion,
-                              },
+                               'repo_name': collection_name,
+                               'version': best_version},
+                   'custom': {'download_url': full_download_url},
                    }
 
         return results
@@ -131,9 +164,7 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         results = {}
 
-        download_url = get_download_url(repo_data=find_results['custom']['repo_data'],
-                                        external_url=find_results['custom']['external_url'],
-                                        repoversion=find_results['custom']['repoversion'])
+        download_url = find_results['custom']['download_url']
 
         # download_url = _build_download_url(external_url=external_url, version=_content_version)
         # TODO: error handling if there is no download_url
@@ -159,11 +190,12 @@ class GalaxyUrlFetch(base.BaseFetch):
         #       Ie, more of a RepositoryRepository (aiee) (RepositorySource? RepositoryChannel? RepositoryProvider?)
         #       that is a remote 'channel' with info and content itself.
         results = {'archive_path': repository_archive_path,
-                   'download_url': download_url,
                    'fetch_method': self.fetch_method}
 
-        results['custom'] = {}
+        # So fetch_results has the download url, if we follow redirects
+        # we could also add a 'final_download_url' or 'downloaded_url' so
+        # we know the original and the final url after redirects
+        results['custom'] = find_results['custom']
         results['content'] = find_results['content']
-        results['content']['fetched_version'] = find_results['custom']['repoversion'].get('version')
 
         return results

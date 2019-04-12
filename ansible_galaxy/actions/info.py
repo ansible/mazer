@@ -107,7 +107,7 @@ def info_repository_specs(galaxy_context,
         log.debug('showing info for repository spec: %s', repository_spec_string)
 
         if online:
-            remote_data = api.lookup_repo_by_name(repo_spec.namespace, repo_spec.name)
+            remote_data = api.get_collection_detail(repo_spec.namespace, repo_spec.name)
             if remote_data:
                 display_callback(_repr_remote_repo(remote_data))
 

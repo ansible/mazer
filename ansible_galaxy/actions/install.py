@@ -355,6 +355,7 @@ def install_repository(galaxy_context,
     try:
         find_results = install.find(fetcher)
     except exceptions.GalaxyError as e:
+        log.debug('requirement_to_install %s failed to be met: %s', requirement_to_install, e)
         log.warning('Unable to find metadata for %s: %s', requirement_spec_to_install.label, e)
         # FIXME: raise dep error exception?
         raise_without_ignore(ignore_errors, e)

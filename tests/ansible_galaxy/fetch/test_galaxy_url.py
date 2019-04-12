@@ -59,13 +59,25 @@ def galaxy_url_fetch(galaxy_context):
 def test_galaxy_url_fetch_find(galaxy_url_fetch, mocker):
     MockedGalaxyAPI = mocker.patch('ansible_galaxy.fetch.galaxy_url.GalaxyAPI', autospec=True)
 
-    external_url = 'http://example.invalid/invalid/whatever'
+    download_url = '/some/path/some_ns/some_name/versions/9.3.245/artifact'
 
     instance = MockedGalaxyAPI.return_value
-    instance.lookup_repo_by_name.return_value = {'related': {'versions': 'http://example.invalid/foo'},
-                                                 'external_url': external_url}
-    instance.fetch_content_related.return_value = [{'version': '1.2.3'}, {'version': '9.3.245'}]
+    instance._api_server = mocker.Mock(return_value='http://example.invalid/')
+    instance.get_collection_detail.return_value = {'related': {'versions': 'http://example.invalid/foo'},
+                                                   'download_url': download_url}
+    instance.get_collection_version_list.return_value = [{'version': '1.2.3',
+                                                          'href': 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/1.2.3/'},
+                                                         {'version': '9.3.245',
+                                                          'href': 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/9.3.245/'}]
 
+    # The request to get the CollectionVersion detail via href from CollectionVersion list
+    instance.get_href.return_value = {'download_url': download_url,
+                                      'metadata': '',
+                                      'version': '1.2.3'}
+
+    # FIXME: Remove this when we get download_url from CollectionVersion detail instead of building it from server url
+    # mocker.patch('ansible_galaxy.fetch.galaxy_url.GalaxyUrlFetch.galaxy_context.server',
+    #             return_value={'url': 'http://example.invalid/'})
     res = galaxy_url_fetch.find()
 
     log.debug('res:%s', res)
@@ -73,19 +85,21 @@ def test_galaxy_url_fetch_find(galaxy_url_fetch, mocker):
     assert res['content']['galaxy_namespace'] == 'some_namespace'
     assert res['content']['repo_name'] == 'some_name'
 
-    assert res['custom']['external_url'] == external_url
+    assert res['custom']['download_url'] == "http://localhost:8000%s" % download_url
 
 
 def test_galaxy_url_fetch_find_no_repo_data(galaxy_url_fetch, mocker):
     MockedGalaxyAPI = mocker.patch('ansible_galaxy.fetch.galaxy_url.GalaxyAPI', autospec=True)
 
     instance = MockedGalaxyAPI.return_value
-    instance.lookup_repo_by_name.return_value = {}
+    instance.get_collection_detail.return_value = {}
+    instance.get_collection_version_list.return_value = []
 
     faux_server_url = 'http://galaxy.invalid/'
     instance.api_server = faux_server_url
-
-    with pytest.raises(exceptions.GalaxyClientError, match='- sorry, some_namespace.some_name was not found on %s' % faux_server_url) as exc_info:
+    # - sorry, some_namespace.some_name (version_spec: ==9.3.245) was not found on http://galaxy.invalid/.
+    with pytest.raises(exceptions.GalaxyClientError,
+                       match='- sorry, some_namespace.some_name.*version_spec.*was not found on %s' % faux_server_url) as exc_info:
         galaxy_url_fetch.find()
 
     log.debug('exc_info:%s', exc_info)
@@ -97,10 +111,11 @@ def test_galaxy_url_fetch_fetch(galaxy_url_fetch, mocker):
     mocked_download_fetch_url = mocker.patch('ansible_galaxy.fetch.galaxy_url.download.fetch_url', autospec=True)
     mocked_download_fetch_url.return_value = collection_path
 
+    download_url = 'http://example.invalid/invalid/whatever'
     find_results = {'content': {'galaxy_namespace': 'some_namespace',
                                 'repo_name': 'some_name'},
                     'custom': {'repo_data': {},
-                               'external_url': 'http://example.invalid/invalid/whatever',
+                               'download_url': download_url,
                                'repoversion': {'version': '9.3.245'}
                                },
                     }
@@ -111,10 +126,9 @@ def test_galaxy_url_fetch_fetch(galaxy_url_fetch, mocker):
 
     assert isinstance(res, dict)
     assert res['archive_path'] == collection_path
-    assert res['download_url'] == 'http://example.invalid/invalid/whatever/archive/9.3.245.tar.gz'
+    assert res['custom']['download_url'] == download_url
     assert res['fetch_method'] == 'galaxy_url'
     assert isinstance(res['content'], dict)
-    assert res['content']['fetched_version'] == '9.3.245'
 
 
 # Note that select_collection_version just gets the full version object
@@ -178,52 +192,3 @@ def test_select_collection_version_empty_repoversions():
 
     assert isinstance(res, dict)
     assert res == {}
-
-
-# def test_get_download_url_no_data():
-#    res = galaxy_url.get_download_url()
-
-#    log.debug('res: %s', res)
-
-
-def test_get_download_url_empty_data():
-    repo_data = {}
-    external_url = ""
-    repoversion = []
-    res = galaxy_url.get_download_url(repo_data=repo_data, external_url=external_url, repoversion=repoversion)
-
-    log.debug('res: %s', res)
-    assert res is None
-
-
-def test_get_download_url_download_url_in_repo_data():
-    download_url = 'https://github.com/alikins/collection_reqs_test/archive/0.0.13.tar.gz'
-    repo_data = {'download_url': download_url}
-    external_url = 'https://github.com/alikins/collection_reqs_test'
-    repoversion = []
-    res = galaxy_url.get_download_url(repo_data=repo_data, external_url=external_url, repoversion=repoversion)
-
-    log.debug('res: %s', res)
-    assert res == download_url
-
-
-def test_get_download_url_download_url_in_repo_version():
-    repo_data = {}
-    external_url = 'https://github.com/alikins/collection_reqs_test'
-    repoversion = EXAMPLE_REPO_VERSIONS_LIST[0]
-    res = galaxy_url.get_download_url(repo_data=repo_data, external_url=external_url, repoversion=repoversion)
-
-    log.debug('res: %s', res)
-    assert res == EXAMPLE_REPO_VERSIONS_LIST[0]['download_url']
-
-
-def test_get_download_url_no_download_url_in_repodata_or_repoversion():
-    repo_data = {}
-    external_url = 'https://github.com/alikins/collection_reqs_test'
-    repoversion = EXAMPLE_REPO_VERSIONS_LIST[0].copy()
-    del repoversion['download_url']
-
-    res = galaxy_url.get_download_url(repo_data=repo_data, external_url=external_url, repoversion=repoversion)
-
-    log.debug('res: %s', res)
-    assert res == 'https://github.com/alikins/collection_reqs_test/archive/1.0.6.tar.gz'

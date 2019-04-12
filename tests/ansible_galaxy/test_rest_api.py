@@ -23,7 +23,7 @@ def test_galaxy_api_init():
     api = rest_api.GalaxyAPI(gc)
 
     assert isinstance(api, rest_api.GalaxyAPI)
-    assert api.galaxy == gc
+    assert api.galaxy_context == gc
 
 
 class FauxUrlOpenResponse(object):
@@ -36,8 +36,8 @@ class FauxUrlOpenResponse(object):
             self.body = body or ''
         self.url = url
         self._info = info
-        self.redirect_url = redirect_url
-        self.request = requests.Request(method='GET', url=url)
+        self.redirect_url = redirect_url or url
+        self.request = requests.Request(method='GET', url=self.redirect_url)
         self.reason = 'Some Reason'
         self.headers = {}
         self.history = []
@@ -69,7 +69,7 @@ class FauxUrlResponder(object):
         next_response = self.responses.pop(0)
 
         # set the response url to the same as the request url
-        url = args[0]
+        url = args[1]
 
         next_response.url = url
 
@@ -80,15 +80,17 @@ class FauxUrlResponder(object):
         return next_response
 
     def __repr__(self):
-        return '%s(responses=%s)' % (self.__class__.__name__, self.responses)
+        return '%s(responses=%s, calls=%s)' % (self.__class__.__name__,
+                                               self.responses,
+                                               self.calls)
 
 
-default_server_dict = {'url': 'https://galaxy-qa.ansible.com',
+default_server_dict = {'url': 'http://bogus.invalid:9553',
                        'ignore_certs': False}
 
 
 def test_galaxy_api_get_server_api_version(mocker):
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.get',
+    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
                  new=FauxUrlResponder(
                      [
                          FauxUrlOpenResponse(data={'current_version': 'v1'}),
@@ -106,7 +108,7 @@ def test_galaxy_api_get_server_api_version(mocker):
 
 
 def test_galaxy_api_get_server_api_version_not_supported_version(mocker):
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.get',
+    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
                  new=FauxUrlResponder(
                      [
                          FauxUrlOpenResponse(data={'current_version': 'v11.22.13beta4.preRC-16.0.0.0.42.42.37.1final'}),
@@ -122,7 +124,7 @@ def test_galaxy_api_get_server_api_version_not_supported_version(mocker):
     # expected to raise a client error about the server version not being supported in client
     # TODO: should be the server deciding if the client version is sufficient
     try:
-        api.lookup_repo_by_name('test-namespace', 'test-repo')
+        api.get_collection_detail('test-namespace', 'test-repo')
     except exceptions.GalaxyClientError as e:
         log.exception(e)
         assert 'Unsupported Galaxy server API' in '%s' % e
@@ -134,7 +136,7 @@ def test_galaxy_api_get_server_api_version_not_supported_version(mocker):
 def test_galaxy_api_get_server_api_version_HTTPError_500(mocker):
     data = {"detail": "Stuff broke, 500 error but server response has valid json include the detail key"}
 
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.get',
+    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
                  new=FauxUrlResponder(
                      [
                          FauxUrlOpenResponse(status=500, data=data),
@@ -155,7 +157,7 @@ def test_galaxy_api_get_server_api_version_HTTPError_500(mocker):
 
 
 def test_galaxy_api_get_server_api_version_HTTPError_not_json(mocker):
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.get',
+    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
                  new=FauxUrlResponder(
                      [
                          FauxUrlOpenResponse(status=500, body='{stuff-that-is-not-valid-json'),
@@ -177,7 +179,7 @@ def test_galaxy_api_get_server_api_version_HTTPError_not_json(mocker):
 
 
 def test_galaxy_api_get_server_api_version_no_current_version(mocker):
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.get',
+    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
                  new=FauxUrlResponder(
                      [
                          FauxUrlOpenResponse(status=200, data={'some_key': 'some_value',
@@ -225,7 +227,7 @@ def galaxy_api(request):
     api = rest_api.GalaxyAPI(gc)
 
     # do a call so that we run g_connect and _get_server_api_versions by side effect now
-    api.lookup_repo_by_name('test-namespace', 'test-repo')
+    api.get_collection_detail('test-namespace', 'test-repo')
 
     # now unpatch
     patcher.stop()
@@ -237,47 +239,61 @@ def test_galaxy_api_properties(galaxy_api):
     log.debug('api_server: %s', galaxy_api.api_server)
     log.debug('validate_certs: %s', galaxy_api.validate_certs)
 
-    assert galaxy_api.api_server == 'https://galaxy-qa.ansible.com'
+    assert galaxy_api.api_server == default_server_dict['url']
     assert galaxy_api.validate_certs is True
 
 
-def test_galaxy_api_lookup_repo_by_name(mocker, galaxy_api):
+def test_galaxy_api_get_collection_detail(mocker, galaxy_api):
+    data_dict = {
+        "id": 24,
+        "href": "/api/v2/collections/ansible/k8s/",
+        "name": "k8s",
+        "namespace": {
+            "id": 12,
+            "href": "/api/v2/namespaces/ansible/",
+            "name": "ansible",
+        },
+        "highest_version": {
+            "version": "4.2.0",
+            "href": "/api/v2/collections/ansible/k8s/versions/4.2.0",
+        },
+        "deprecated": "false",
+        "created": "2019-03-15T10:05:11.589728-04:00",
+        "modified": "2019-03-22T10:05:11.589728-04:00",
+    }
     mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
                  new=FauxUrlResponder(
                      [
-                         FauxUrlOpenResponse(data={'stuff': [1, 2, 3],
-                                                   'results': [{'foo1': 11, 'foo2': 12},
-                                                               {'other_stuff': 'blip'}]
-                                                   },
+                         FauxUrlOpenResponse(data=data_dict,
                                              url='blippyblopfakeurl'),
                      ]
                  ))
 
-    namespace = 'alikins'
-    name = 'role-awx'
-    res = galaxy_api.lookup_repo_by_name(namespace, name)
+    namespace = 'ansible'
+    name = 'k8s'
+    res = galaxy_api.get_collection_detail(namespace, name)
 
     log.debug('res: %s', res)
 
     # FIXME: lookup_content_by_name only returns the first result
     assert isinstance(res, dict)
-    assert 'foo1' in res
+    assert res['id'] == 24
+    assert 'highest_version' in res
+    assert res['href'] == "/api/v2/collections/ansible/k8s/"
 
 
-def test_galaxy_api_lookup_repo_by_name_empty_results(mocker, galaxy_api):
+def test_galaxy_api_get_collection_detail_empty_results(mocker, galaxy_api):
     mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
                  new=FauxUrlResponder(
                      [
-                         FauxUrlOpenResponse(data={'stuff': [1, 2, 3],
-                                                   'results': [],
-                                                   },
+                         FauxUrlOpenResponse(data={},
                                              url='blippyblopfakeurl'),
                      ]
                  ))
 
     namespace = 'alikins'
     name = 'role-awx'
-    res = galaxy_api.lookup_repo_by_name(namespace, name)
+    res = galaxy_api.get_collection_detail(namespace, name)
 
     log.debug('res: %s', res)
 
@@ -287,31 +303,37 @@ def test_galaxy_api_lookup_repo_by_name_empty_results(mocker, galaxy_api):
     assert res == {}
 
 
-def test_galaxy_api_lookup_repo_by_name_redirect_url(mocker, galaxy_api):
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(data={'stuff': [1, 2, 3],
-                                                   'results': [],
-                                                   },
-                                             url='blippyblopfakeurl',
-                                             redirect_url='https://redirectedtothisurl/foo/blorp'),
-                     ]
-                 ))
+def test_galaxy_api_get_collection_detail_redirect_url(mocker, galaxy_api):
+    data_dict = {
+        "href": "/api/v2/collections/ansible/k8s/",
+    }
+
+    orig_url = 'http://notreal.invalid:11111'
+    redirect_url = 'https://redirectedtothisurl/foo/blorp'
+
+    blip = mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
+                        new=FauxUrlResponder(
+                            [
+                                FauxUrlOpenResponse(data=data_dict,
+                                                    url=orig_url,
+                                                    redirect_url=redirect_url),
+                            ]
+                        ))
 
     namespace = 'alikins'
-    name = 'role-awx'
-    res = galaxy_api.lookup_repo_by_name(namespace, name)
+    name = 'some_collection_that_doesnt_exist'
+    res = galaxy_api.get_collection_detail(namespace, name)
 
     log.debug('res: %s', res)
-
     # If there are no results, we expect to get back an empty dict.
     # FIXME: should probably return the full list and let the app care what that means
     assert isinstance(res, dict)
-    assert res == {}
+    assert blip.calls[0]['args'] == ('GET',
+                                     'http://bogus.invalid:9553/api/v2/collections/alikins/some_collection_that_doesnt_exist')
+    # assert res == {}
 
 # # FIXME:use mocked requests.Response, set status. requests wont raise an exception so side_effect is wrong
-# def test_galaxy_api_lookup_repo_by_name_500_json_not_dict(mocker, galaxy_api):
+# def test_galaxy_api_get_collection_detail_500_json_not_dict(mocker, galaxy_api):
 #     mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
 #                  side_effect=HTTPError(url='http://whatever',
 #                                        code=500,
@@ -320,7 +342,7 @@ def test_galaxy_api_lookup_repo_by_name_redirect_url(mocker, galaxy_api):
 #                                        fp=io.StringIO(initial_value=u'[]')))
 
 #     try:
-#         galaxy_api.lookup_repo_by_name('some-test-namespace', 'some-test-name')
+#         galaxy_api.get_collection_detail('some-test-namespace', 'some-test-name')
 #     except exceptions.GalaxyClientError as e:
 #         log.exception(e)
 #         log.debug(e)
@@ -330,7 +352,7 @@ def test_galaxy_api_lookup_repo_by_name_redirect_url(mocker, galaxy_api):
 
 
 # FIXME: return mocked requests.Response, rm side_effect
-# def test_galaxy_api_lookup_repo_by_name_500_json(mocker, galaxy_api):
+# def test_galaxy_api_get_collection_detail_500_json(mocker, galaxy_api):
 #     error_body_text = u'{"detail": "Stuff broke, 500 error but server response has valid json include the detail key"}'
 
 #     mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
@@ -341,7 +363,7 @@ def test_galaxy_api_lookup_repo_by_name_redirect_url(mocker, galaxy_api):
 #                                        fp=io.StringIO(initial_value=error_body_text)))
 
 #     try:
-#         galaxy_api.lookup_repo_by_name('some-test-namespace', 'some-test-name')
+#         galaxy_api.get_collection_detail('some-test-namespace', 'some-test-name')
 #     except exceptions.GalaxyClientError as e:
 #         log.exception(e)
 #         log.debug(e)
@@ -350,12 +372,12 @@ def test_galaxy_api_lookup_repo_by_name_redirect_url(mocker, galaxy_api):
 #     assert False, 'Excepted to get a GalaxyClientError here but did not.'
 
 
-def test_galaxy_api_lookup_repo_by_name_SSLError(mocker, galaxy_api):
+def test_galaxy_api_get_collection_detail_SSLError(mocker, galaxy_api):
     mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
                  side_effect=ssl.SSLError('ssl stuff broke... good luck and godspeed.'))
 
     try:
-        galaxy_api.lookup_repo_by_name('some-test-namespace', 'some-test-name')
+        galaxy_api.get_collection_detail('some-test-namespace', 'some-test-name')
     except exceptions.GalaxyClientAPIConnectionError as e:
         log.exception(e)
         log.debug(e)
@@ -363,97 +385,6 @@ def test_galaxy_api_lookup_repo_by_name_SSLError(mocker, galaxy_api):
         return
 
     assert False, 'Excepted to get a GalaxyClientAPIConnectionError here but did not.'
-
-
-# FIXME: return mocked requests.Response, rm side_effect
-# def test_galaxy_api_fetch_content_related_500(mocker, galaxy_api):
-#     error_detail_text = u'{"detail": "Stuff broke, 500 error but server response has valid json include the detail key"}'
-#     mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-#                  side_effect=HTTPError(url='http://whatever',
-#                                        code=500,
-#                                        msg='Stuff broke.',
-#                                        hdrs={},
-#                                        fp=io.StringIO(initial_value=error_detail_text)))
-
-#     # FIXME: fetch_content_related has a catch-all exception handle that returns None for any exception (including http errors etc)
-#     try:
-#         res = galaxy_api.fetch_content_related('/api/v1/repositories/56683/content/')
-#         log.debug('res: %s', res)
-#     except exceptions.GalaxyClientError:
-#         return
-
-#     assert False, 'Excepted to get a GalaxyClientError here but did not.'
-
-
-def test_galaxy_api_fetch_content_related(mocker, galaxy_api):
-    url = '/api/v1/repositories/56683/content/'
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(data={'next_link': '%s?page=2' % url,
-                                                   'results': ['foo1', 'foo2']
-                                                   },
-                                             url='blippyblopfakeurl'),
-                         FauxUrlOpenResponse(data={'results': ['foo3', 'foo4']
-                                                   },
-                                             url='blippyblopfakeurl'),
-                     ]
-                 ))
-
-    res = galaxy_api.fetch_content_related('/api/v1/repositories/56683/content/')
-
-    log.debug('res: %s', res)
-
-    # TODO: use real-ish response data and verify it doesnt get munged
-    assert isinstance(res, list)
-    assert len(res) == 4
-    assert 'foo1' in res
-    assert 'foo4' in res
-    assert all([isinstance(x, text_type) for x in res])
-
-
-def test_galaxy_api_fetch_content_related_empty_results(mocker, galaxy_api):
-    url = '/api/v1/repositories/56683/content/'
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(data={'next_link': '%s?page=2' % url,
-                                                   'results': []
-                                                   },
-                                             url='blippyblopfakeurl'),
-                         FauxUrlOpenResponse(data={'results': [],
-                                                   },
-                                             url='blippyblopfakeurl'),
-                     ]
-                 ))
-
-    res = galaxy_api.fetch_content_related('/api/v1/repositories/56683/content/')
-
-    log.debug('res: %s', res)
-
-    assert isinstance(res, list)
-    assert len(res) == 0
-
-
-def test_galaxy_api_fetch_content_related_no_results(mocker, galaxy_api):
-    url = '/api/v1/repositories/56683/content/'
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(data={'next_link': '%s?page=2' % url,
-                                                   },
-                                             url='blippyblopfakeurl'),
-                         FauxUrlOpenResponse(data={},
-                                             url='blippyblopfakeurl'),
-                     ]
-                 ))
-
-    res = galaxy_api.fetch_content_related('/api/v1/repositories/56683/content/')
-
-    log.debug('res: %s', res)
-
-    assert isinstance(res, list)
-    assert len(res) == 0
 
 
 def test_user_agent():

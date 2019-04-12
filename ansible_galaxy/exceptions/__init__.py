@@ -46,6 +46,14 @@ class GalaxyRepositorySpecError(GalaxyClientError):
         self.repository_spec = repository_spec
 
 
+class GalaxyCouldNotFindAnswerForRequirement(GalaxyClientError):
+    '''Raised if a fetch.find() can not find a collection that meets the requirement spec'''
+    def __init__(self, *args, **kwargs):
+        requirement_spec = kwargs.pop('requirement_spec', None)
+        super(GalaxyCouldNotFindAnswerForRequirement, self).__init__(*args, **kwargs)
+        self.requirement_spec = requirement_spec
+
+
 class GalaxyClientAPIConnectionError(GalaxyClientError):
     '''Raised if there were errors connecting to the Galaxy REST API'''
     pass

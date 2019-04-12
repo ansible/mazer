@@ -34,6 +34,7 @@ import uuid
 import requests
 
 from six.moves.urllib.parse import quote as urlquote
+from six.moves.urllib.parse import urlencode
 
 from ansible_galaxy import __version__ as mazer_version
 from ansible_galaxy import exceptions
@@ -80,18 +81,18 @@ class GalaxyAPI(object):
     SUPPORTED_VERSIONS = ['v1', 'v2']
 
     # FIXME: just pass in server_url
-    def __init__(self, galaxy):
-        self.galaxy = galaxy
+    def __init__(self, galaxy_context):
+        self.galaxy_context = galaxy_context
 
-        # log.debug('galaxy: %s', galaxy)
-        log.debug('Using galaxy server URL %s with ignore_certs=%s', galaxy.server['url'], galaxy.server['ignore_certs'])
+        log.debug('Using galaxy server URL %s with ignore_certs=%s', galaxy_context.server['url'], galaxy_context.server['ignore_certs'])
 
-        self._validate_certs = not galaxy.server['ignore_certs']
+        self._validate_certs = not galaxy_context.server['ignore_certs']
         self.initialized = False
+
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
         # set the API server
-        self._api_server = galaxy.server['url']
+        self._api_server = galaxy_context.server['url']
 
         # self.log.debug('Validate TLS certificates for %s: %s', self._api_server, self._validate_certs)
 
@@ -131,33 +132,30 @@ class GalaxyAPI(object):
             log.debug('resp.request: %s', resp.request)
             log.debug('resp.request.headers: %s', resp.request.headers)
 
-            # resp = open_url(url, data=args, validate_certs=self._validate_certs,
-            #                 headers=headers, method=http_method,
-            #                 http_agent=self.user_agent,
-            #                 timeout=20)
-
-            # response_log.info('%s http_status=%s', request_slug, resp.getcode())
             response_log.info('%s http_status=%s', request_slug, resp.status_code)
             response_log.debug('%s reason=%s', request_slug, resp.reason)
             response_log.debug('%s headers=%s', request_slug, resp.headers)
             response_log.debug('%s history=%s', request_slug, resp.history)
 
-            final_url = resp.url
-            if final_url != url:
-                request_log.debug('%s Redirected to: %s', request_slug, final_url)
+            if resp.history:
+                for redirect in resp.history:
+                    log.debug('%s Redirected. %s is redirected to %s',
+                              request_slug, redirect.url, redirect.headers['Location'])
 
-            # resp_info = resp.info()
             response_log.debug('%s resp repr:\n%r', request_slug, resp)
 
             # FIXME: making the request and loading the response should be sep try/except blocks
-            # response_body = to_text(resp.text, errors='surrogate_or_strict')
             response_body = resp.text
 
             # debug log the raw response body
             response_log.debug('%s response body:\n%s', request_slug, response_body)
 
-            # data = json.loads(response_body)
-            data = resp.json()
+            # TODO/FIXME: Move the loading/parsing of json up a layer, since we don't always need it
+            try:
+                data = resp.json()
+            except ValueError as e:
+                log.exception(e)
+                data = {}
 
             # debug log a json version of the data that was created from the response
             response_log.debug('%s data:\n%s', request_slug, json.dumps(data, indent=2))
@@ -180,11 +178,11 @@ class GalaxyAPI(object):
                     self.log.warning('Unable to parse error detail from response for request: %s response:  %s', request_slug, detail_parse_exc)
 
             # TODO: great place to be able to use 'raise from'
-            # FIXME: this needs to be tweaked so the
             raise exceptions.GalaxyClientError(http_exc)
         except (ssl.SSLError, socket.error) as e:
             self.log.debug('Connection error to Galaxy API for request %s: %s', request_slug, e)
             self.log.exception("%s: %s", request_slug, e)
+
             raise exceptions.GalaxyClientAPIConnectionError('Connection error to Galaxy API for request %s: %s' % (request_slug, e))
 
         return data
@@ -229,28 +227,21 @@ class GalaxyAPI(object):
             raise exceptions.GalaxyClientError("missing required 'current_version' from server response (%s)" % url)
 
         self.log.debug('Server API version of URL %s is "%s"', url, data['current_version'])
+
         return data['current_version']
 
     @g_connect
-    def lookup_repo_by_name(self, namespace, name):
-        namespace = urlquote(namespace)
-        name = urlquote(name)
-        url = '%s/v1/repositories/?name=%s&provider_namespace__namespace__name=%s' % (self.base_api_url, name, namespace)
-        data = self.__call_galaxy(url, http_method='GET')
-        if data["results"]:
-            return data["results"][0]
-        return {}
-
-    @g_connect
-    def fetch_content_related(self, related_url):
+    def _get_paginated_list(self, list_url, page_size=None):
         """
         Fetch the list of related items for the given role.
         The url comes from the 'related' field of the role.
         """
-        self.log.debug('related_url=%s', related_url)
+        self.log.debug('related_url=%s', list_url)
 
-        # try:
-        url = '%s%s?page_size=50' % (self._api_server, related_url)
+        page_size = page_size or 50
+        params = urlencode({'page_size': 50})
+        url = '%s?%s' % (list_url, params)
+        log.debug('url: %s params: %s', url, params)
 
         # can raise a GalaxyClientError
         data = self.__call_galaxy(url, http_method='GET')
@@ -258,8 +249,6 @@ class GalaxyAPI(object):
         # empty list for return value if there are no results
         results = data.get('results', [])
 
-        # TODO: generalize the pagination support
-        # check for paginated results
         done = (data.get('next_link', None) is None)
 
         while not done:
@@ -274,18 +263,37 @@ class GalaxyAPI(object):
         return results
 
     @g_connect
-    def fetch_namespace(self, namespace):
+    def get_collection_detail(self, namespace, name):
         namespace = urlquote(namespace)
-        url = '%s/v1/namespaces/?name=%s' % (self.base_api_url, namespace)
+        name = urlquote(name)
+        url = "%s%s" % (self.base_api_url,
+                        '/v2/collections/{namespace}/{name}'.format(namespace=namespace, name=name))
+
         data = self.__call_galaxy(url, http_method='GET')
-        if data["results"]:
-            return data["results"][0]
-        return {}
+        return data
+
+    @g_connect
+    def get_collection_version_list(self, namespace, name):
+        namespace = urlquote(namespace)
+        name = urlquote(name)
+        # TODO: in theory, this url isn't fixed, but based on the 'versions' field of CollectionDetail
+        url = "%s%s" % (self.base_api_url,
+                        '/v2/collections/{namespace}/{name}/versions/'.format(namespace=namespace, name=name))
+
+        data = self._get_paginated_list(url)
+        return data
+
+    @g_connect
+    def get_href(self, href=None):
+        # hrefs start from '/api/...'
+        url = "%s%s" % (self.api_server, href)
+
+        data = self.__call_galaxy(url, http_method='GET')
+        return data
 
     @g_connect
     def publish_file(self, data, archive_path, publish_api_key):
         form = MultiPartForm()
-        log.debug('form data:\n%s', data)
 
         for key in data:
             form.add_field(key, data[key])
@@ -299,12 +307,6 @@ class GalaxyAPI(object):
         #       Maybe just hardcode api ver in calls?
         collection_url_ver = 'v2'
         url = '%s/%s/collections/' % (self.base_api_url, collection_url_ver)
-
-        log.debug('url: %s', url)
-
-        # scheme, netloc, url, _, _, _ = urlparse(url)
-
-        log.debug('form:\n%s', form)
 
         request_headers = {}
 
@@ -327,11 +329,9 @@ class GalaxyAPI(object):
             log.exception(exc)
             raise exceptions.GalaxyPublishError(
                 'Network error while transferring file "%s" to Galaxy server (%s): %s' %
-                (archive_path, self.galaxy.server['url'], str(exc)),
+                (archive_path, self.galaxy_context.server['url'], str(exc)),
                 archive_path=archive_path
             )
-
-        log.debug('resp.text: %s', resp.text)
 
         # 202 'Accepted'
         if resp.status_code == 202:
@@ -340,6 +340,6 @@ class GalaxyAPI(object):
         else:
             raise exceptions.GalaxyPublishError(
                 'Error transferring file "%s" to Galaxy server (%s): %s - %s' %
-                (archive_path, self.galaxy.server['url'], resp.status_code, resp.reason),
+                (archive_path, self.galaxy_context.server['url'], resp.status_code, resp.reason),
                 archive_path=archive_path
             )
