@@ -3,13 +3,10 @@ import hashlib
 import json
 import logging
 import os
-import tarfile
 
 from six.moves.urllib.parse import urljoin
 
 from ansible_galaxy.rest_api import GalaxyAPI
-from ansible_galaxy import collection_artifact_manifest
-from ansible_galaxy import exceptions
 from ansible_galaxy.utils.text import to_text
 
 log = logging.getLogger(__name__)
@@ -33,40 +30,17 @@ def _publish(galaxy_context,
         'success': True
     }
 
-    archive = tarfile.open(archive_path, 'r')
-    top_dir = os.path.commonprefix(archive.getnames())
-    manifest_path = os.path.join(top_dir,
-                                 collection_artifact_manifest.COLLECTION_MANIFEST_FILENAME)
-    try:
-        manifest_file = archive.extractfile(manifest_path)
-    except tarfile.TarError as exc:
-        raise exceptions.GalaxyPublishError(str(exc), archive_path=archive_path)
-
-    try:
-        manifest = collection_artifact_manifest.load(manifest_file)
-    except Exception as exc:
-        raise exceptions.GalaxyPublishError(str(exc), archive_path=archive_path)
-
-    # display_callback('Creating publish task for %s from artifact archive %s' %
-    #                 (manifest.collection_info.label, archive_path))
-    # display_callback(json.dumps(attr.asdict(manifest.collection_info)))
-
     api = GalaxyAPI(galaxy_context)
-
-    collection_name = manifest.collection_info.name
 
     data = {
         'sha256': _get_file_checksum(archive_path),
-        'name': collection_name,
-        'version': manifest.collection_info.version
     }
 
     log.debug("Publishing file %s with data: %s" % (archive_path, json.dumps(data)))
 
+    # TODO: get a requests.Response here and use it's status/.json()
     b_response_body = api.publish_file(data, archive_path, publish_api_key)
     response_body = to_text(b_response_body, errors='surrogate_or_strict')
-
-    # TODO: try/except on json error but let bubble up for now
 
     response_data = json.loads(response_body)
     results['response_data'] = response_data
