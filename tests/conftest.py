@@ -17,12 +17,4 @@ def inject_mazer_home(monkeypatch):
 
     monkeypatch.setattr("ansible_galaxy.config.defaults.MAZER_HOME",
                         _mazer_home)
-    log.debug('monkeypatched MAZER_HOME to %s', _mazer_home)
-
-
-@pytest.fixture(autouse=True)
-def use_mazer_work_dir():
-    _mazer_work_dir = os.path.join(os.path.dirname(__file__), '_mazer_work_dir')
-
-    log.debug('Chaning dir from %s to %s', os.getcwd(), _mazer_work_dir)
-    os.chdir(_mazer_work_dir)
+    # log.debug('monkeypatched MAZER_HOME to %s', _mazer_home)
