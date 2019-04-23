@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """The setup script."""
+import codecs
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with codecs.open('README.rst', encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
-with open('CHANGELOG.rst') as changelog_file:
+with codecs.open('CHANGELOG.rst', encoding='utf-8') as changelog_file:
     changelog = changelog_file.read()
 
 requirements = ['six',
