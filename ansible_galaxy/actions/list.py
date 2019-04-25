@@ -86,14 +86,14 @@ def _list(galaxy_context,
         return repo_list
 
     for repo_item in repo_list:
-        repo_msg = "repo={installed_repository.repository_spec.label}, type=repository, version={installed_repository.repository_spec.version}"
+        repo_msg = "collection={installed_repository.repository_spec.label}, type=collection, version={installed_repository.repository_spec.version}"
         display_callback(repo_msg.format(**repo_item))
 
         if not list_content:
             continue
 
         for content_item_type_key, content_items_data in repo_item['content_items'].items():
-            content_msg = "repo={installed_repository.repository_spec.label}, type={type}, name={name}, " + \
+            content_msg = "collection={installed_repository.repository_spec.label}, type={type}, name={name}, " + \
                 "version={installed_repository.repository_spec.version}"
             # content_msg = "    type={type}, name={name}, " + \
             #    "version={installed_repository.repository_spec.version}"
