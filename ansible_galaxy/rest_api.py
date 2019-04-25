@@ -239,8 +239,12 @@ class GalaxyAPI(object):
         self.log.debug('related_url=%s', list_url)
 
         page_size = page_size or 50
-        params = urlencode({'page_size': 50})
-        url = '%s?%s' % (list_url, params)
+        # param_dict = {'page_size': 50}
+        param_dict = {}
+        params = urlencode(param_dict)
+        url = list_url
+        if params:
+            url = '%s?%s' % (list_url, params)
         log.debug('url: %s params: %s', url, params)
 
         # can raise a GalaxyClientError
@@ -273,20 +277,10 @@ class GalaxyAPI(object):
         return data
 
     @g_connect
-    def get_collection_version_list(self, namespace, name):
-        namespace = urlquote(namespace)
-        name = urlquote(name)
-        # TODO: in theory, this url isn't fixed, but based on the 'versions' field of CollectionDetail
-        url = "%s%s" % (self.base_api_url,
-                        '/v2/collections/{namespace}/{name}/versions/'.format(namespace=namespace, name=name))
-
-        data = self._get_paginated_list(url)
-        return data
-
-    @g_connect
-    def get_href(self, href=None):
-        # hrefs start from '/api/...'
-        url = "%s%s" % (self.api_server, href)
+    def get_object(self, href=None):
+        '''Get a full url and return deserialized results'''
+        url = href
+        # url = "%s%s" % (self.api_server, href)
 
         data = self.__call_galaxy(url, http_method='GET')
         return data

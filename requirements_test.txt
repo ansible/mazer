@@ -7,6 +7,7 @@ pytest-django>=3.4.2
 pytest-cov
 pytest-runner
 pytest-mock
+requests-mock
 tox
 # until test_galaxy_upstream tests are ported to pytest
 unittest2 ; python_version < '2.7'

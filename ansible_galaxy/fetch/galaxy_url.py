@@ -1,7 +1,7 @@
-
 import logging
 
 import semantic_version
+from six.moves.urllib.parse import quote as urlquote
 
 # mv details of this here
 from ansible_galaxy import exceptions
@@ -53,11 +53,6 @@ class GalaxyUrlFetch(base.BaseFetch):
         log.debug('requirement_spec: %s', requirement_spec)
         # log.debug('Validate TLS certificates: %s', self.validate_certs)
 
-    def build_full_download_url(self, rel_download_url):
-        api_server = self.galaxy_context.server['url']
-        full_download_url = '{api_server}{rel_download_url}'.format(api_server=api_server, rel_download_url=rel_download_url)
-        return full_download_url
-
     def find(self):
         '''Find a collection
 
@@ -81,11 +76,19 @@ class GalaxyUrlFetch(base.BaseFetch):
         # TODO: extract parsing of cli content sorta-url thing and add better tests
 
         # FIXME: Remove? We kind of need the actual Collection detail yet (ever?)
-        # collection_detail_data = api.get_collection_detail(namespace, collection_name)
+        collection_detail_url = '{base_api_url}/v2/collections/{namespace}/{name}'.format(base_api_url=api.base_api_url,
+                                                                                          namespace=urlquote(namespace),
+                                                                                          name=urlquote(collection_name))
 
-        # if not collection_detail_data:
-        #     raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.requirement_spec.label,
-        #                                                                              api.api_server))
+        log.debug('collection_detail_url: %s', collection_detail_url)
+
+        collection_detail_data = api.get_object(href=collection_detail_url)
+
+        if not collection_detail_data:
+            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.requirement_spec.label,
+                                                                                     api.api_server))
+
+        versions_url = collection_detail_data.get('versions_url', None)
 
         # TODO: if versions ends up with a 'related' we could follow it instead of specific
         #       get_collection_version_list()
@@ -98,14 +101,17 @@ class GalaxyUrlFetch(base.BaseFetch):
         #   "version": "1.2.3",
         #   "href": "/api/v2/collections/ansible/k8s/versions/1.2.3/",
         #  }]
-        log.debug('Getting collectionversions for %s.%s', namespace, collection_name)
-        collection_version_list_data = api.get_collection_version_list(namespace, collection_name)
+        log.debug('Getting collectionversions for %s.%s from %s',
+                  namespace, collection_name, versions_url)
+
+        collection_version_list_data = api._get_paginated_list(versions_url)
+
+        log.debug('collectionvertlist data:\n%s', collection_version_list_data)
+
         if not collection_version_list_data:
             raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." %
                                                (self.requirement_spec.label,
                                                 api.api_server))
-
-        log.debug('collectionvertlist data:\n%s', collection_version_list_data)
 
         collection_version_strings = [a.get('version') for a in collection_version_list_data if a.get('version', None)]
 
@@ -134,16 +140,13 @@ class GalaxyUrlFetch(base.BaseFetch):
                                                                     self.requirement_spec.label,
                                                                     requirement_spec=self.requirement_spec)
 
-        best_collectionversion_detail_data = api.get_href(href=best_collectionversion.get('href', None))
-        rel_download_url = best_collectionversion_detail_data.get('download_url', None)
+        best_collectionversion_detail_data = api.get_object(href=best_collectionversion.get('href', None))
 
-        log.debug('rel_download_url for %s.%s: %s', namespace, collection_name, rel_download_url)
+        download_url = best_collectionversion_detail_data.get('download_url', None)
 
-        full_download_url = self.build_full_download_url(rel_download_url)
+        log.debug('download_url for %s.%s: %s', namespace, collection_name, download_url)
 
-        log.debug('full_download_url for %s.%s: %s', namespace, collection_name, full_download_url)
-
-        if not full_download_url:
+        if not download_url:
             raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % self.requirement_spec.label)
 
         # collectionversion_metadata = best_collectionversion_detail_data.get('metadata', None)
@@ -154,7 +157,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         results = {'content': {'galaxy_namespace': namespace,
                                'repo_name': collection_name,
                                'version': best_version},
-                   'custom': {'download_url': full_download_url},
+                   'custom': {'download_url': download_url},
                    }
 
         return results
