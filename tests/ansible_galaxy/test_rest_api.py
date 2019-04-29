@@ -12,6 +12,7 @@ import ansible_galaxy
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy import rest_api
+from ansible_galaxy.utils.text import to_text
 
 log = logging.getLogger(__name__)
 
@@ -101,7 +102,7 @@ def test_galaxy_api_get_server_api_version_HTTPError_500(galaxy_context_example_
     except exceptions.GalaxyClientError as e:
         log.exception(e)
         # fragile, but currently return same exception so look for the right msg in args
-        assert 'Failed to get data from the API server' in '%s' % e
+        assert 'Failed to get data from the API server' in to_text(e)
         return
 
     assert False, 'Expected a GalaxyClientError here but that did not happen'
@@ -147,10 +148,10 @@ def test_galaxy_api_get_server_api_version_no_current_version(galaxy_context_exa
 
 def test_galaxy_api_properties(galaxy_api):
     log.debug('api_server: %s', galaxy_api.api_server)
-    log.debug('validate_certs: %s', galaxy_api.validate_certs)
+    log.debug('validate_certs: %s', galaxy_api.rest_client.validate_certs)
 
     assert galaxy_api.api_server == default_server_dict['url']
-    assert galaxy_api.validate_certs is True
+    assert galaxy_api.rest_client.validate_certs is True
 
 
 @pytest.fixture
