@@ -285,6 +285,14 @@ class GalaxyAPI(object):
         data = self.__call_galaxy(url, http_method='GET')
         return data
 
+    # FIXME: update publish_file to be easier to test/mock
+    # This is so unit test can mock args to form.add_file()
+    def _form_add_file_args(self, archive_path):
+        return ('file',
+                os.path.basename(archive_path),
+                codecs.open(archive_path, "rb"),
+                'application/octet-stream')
+
     @g_connect
     def publish_file(self, data, archive_path, publish_api_key):
         form = MultiPartForm()
@@ -292,10 +300,14 @@ class GalaxyAPI(object):
         for key in data:
             form.add_field(key, data[key])
 
-        form.add_file('file', os.path.basename(archive_path),
-                      fileHandle=codecs.open(archive_path, "rb"),
-                      mimetype='application/octet-stream')
+        file_args = self._form_add_file_args(archive_path)
+        form.add_file(*file_args)
+        # form.add_file('file', os.path.basename(archive_path),
+        #               fileHandle=codecs.open(archive_path, "rb"),
+        #               mimetype='application/octet-stream')
 
+        log.debug('form: %s', form)
+#         log.debug('form.files: %s', form.files)
         # TODO: figure out how to track API versions finer grained? Ideally
         #       simple enough to not end up with adhoc HATEAOS imp
         #       Maybe just hardcode api ver in calls?
@@ -327,11 +339,15 @@ class GalaxyAPI(object):
                 archive_path=archive_path
             )
 
+        log.debug('resp.headers:\n%s', resp.headers)
+        log.debug('resp body:\n%s', resp.text)
+
         # 202 'Accepted'
         if resp.status_code == 202:
             # FIXME: return the data instead of the text, ie return resp.json()
             return resp.text
         else:
+            log.debug('error response json:\n%s', resp.json())
             raise exceptions.GalaxyPublishError(
                 'Error transferring file "%s" to Galaxy server (%s): %s - %s' %
                 (archive_path, self.galaxy_context.server['url'], resp.status_code, resp.reason),
