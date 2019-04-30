@@ -90,7 +90,7 @@ def test_galaxy_url_fetch_find(galaxy_url_fetch, requests_mock):
                             'version': '9.3.245'})
 
     # The Collection detail
-    requests_mock.get('http://example.invalid/api/v2/collections/some_namespace/some_name',
+    requests_mock.get('http://example.invalid/api/v2/collections/some_namespace/some_name/',
                       json={'versions_url': 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/'})
 
     res = galaxy_url_fetch.find()
@@ -106,7 +106,7 @@ def test_galaxy_url_fetch_find(galaxy_url_fetch, requests_mock):
 def test_galaxy_url_fetch_find_no_repo_data(galaxy_url_fetch, galaxy_context, requests_mock):
     requests_mock.get('http://example.invalid/api/',
                       json={'current_version': 'v2'})
-    requests_mock.get('http://example.invalid/api/v2/collections/some_namespace/some_name',
+    requests_mock.get('http://example.invalid/api/v2/collections/some_namespace/some_name/',
                       json={})
 
     # galaxy_url_fetch = galaxy_url.GalaxyUrlFetch(requirement_spec=req_spec, galaxy_context=context)

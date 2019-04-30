@@ -76,9 +76,9 @@ class GalaxyUrlFetch(base.BaseFetch):
         # TODO: extract parsing of cli content sorta-url thing and add better tests
 
         # FIXME: Remove? We kind of need the actual Collection detail yet (ever?)
-        collection_detail_url = '{base_api_url}/v2/collections/{namespace}/{name}'.format(base_api_url=api.base_api_url,
-                                                                                          namespace=urlquote(namespace),
-                                                                                          name=urlquote(collection_name))
+        collection_detail_url = '{base_api_url}/v2/collections/{namespace}/{name}/'.format(base_api_url=api.base_api_url,
+                                                                                           namespace=urlquote(namespace),
+                                                                                           name=urlquote(collection_name))
 
         log.debug('collection_detail_url: %s', collection_detail_url)
 
