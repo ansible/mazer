@@ -267,6 +267,134 @@ def test_galaxy_api_get_collection_detail_404(mocker, galaxy_api, requests_mock)
     assert isinstance(res, dict)
     assert res['code'] == 'not_found'
 
+
+def test_get_object(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v3/unicorns/sparkleland/magestic/versions/1.0.0/'
+
+    requests_mock.get(url,
+                      status_code=200,
+                      json={'stuff': [3, 4, 5]})
+
+    data = galaxy_api_mocked.get_object(href=url)
+
+    assert data['stuff'] == [3, 4, 5]
+
+
+def test_get_object_403(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v3/invisible_unicorns/narnia/aurora/versions/51.51.51/'
+
+    requests_mock.get(url,
+                      status_code=403,
+                      json={'code': 'permission_denied',
+                            'message': 'You do not have permission to see this invisble unicorn.'})
+
+    data = galaxy_api_mocked.get_object(href=url)
+
+    log.debug('data: %s', data)
+    assert data['code'] == 'permission_denied'
+
+
+def test_get_object_400_validation_error(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v3/apples/'
+
+    response_data = \
+        {'code': 'invalid',
+         'message': 'Invalid input.',
+         'errors': [
+             {
+                 'code': 'conflict',
+                 'message': 'First bar message.',
+                 'field': 'bar',
+             },
+             {
+                 'code': 'invalid',
+                 'message': 'Foo error message.',
+                 'field': 'foo'
+             },
+             {
+                 'code': 'invalid',
+                 'message': 'Other message.'
+             },
+             {
+                 'code': 'invalid',
+                 'message': 'Second bar message.',
+                 'field': 'bar'
+             },
+         ]
+         }
+
+    requests_mock.get(url,
+                      status_code=400,
+                      json=response_data)
+
+    data = galaxy_api_mocked.get_object(href=url)
+
+    log.debug('data: %s', data)
+    assert data['code'] == 'invalid'
+    assert isinstance(data['errors'], list)
+    assert data['errors'][0]['message'] == 'First bar message.'
+
+
+def test_get_object_500_with_body(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v22/answers/?question=why'
+    response_data = {
+        'code': 'error',
+        'message': 'A server error occurred.',
+        'errors': [
+            {'code': 'error', 'message': 'Error message 1.'},
+            {'code': 'error', 'message': 'DOES NOT COMPUTE!'},
+        ]
+    }
+
+    requests_mock.get(url,
+                      status_code=500,
+                      json=response_data)
+
+    data = galaxy_api_mocked.get_object(href=url)
+
+    log.debug('data: %s', data)
+    assert data['code'] == 'error'
+    assert isinstance(data['errors'], list)
+
+
+def test_get_object_500_with_junk(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v22/rhymes/purple/'
+
+    # partial json
+    response_text = r'''{"code": "error", ['''
+
+    requests_mock.get(url,
+                      status_code=500,
+                      text=response_text)
+
+    data = galaxy_api_mocked.get_object(href=url)
+
+    log.debug('data: %s', data)
+
+    # TODO: for now, a 500 with bogus json body will return an empty dict,
+    #       but should be updated to raise an exception?
+    assert data == {}
+
+
+def test_get_object_500_with_html(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v24/rhymes/orange/'
+
+    # despite asking for json, the 500 response is html
+    response_text = r'''<h1>Server Error (500)</h1>'''
+    requests_mock.get(url,
+                      status_code=500,
+                      headers={'content-type': 'text/html; charset=UTF-8'},
+                      text=response_text)
+
+    data = galaxy_api_mocked.get_object(href=url)
+
+    log.debug('data: %s', data)
+
+    # TODO: for now, a 500 with bogus json body will return an empty dict,
+    #       but should be updated to raise an exception?
+    assert data == {}
+
+
 # # FIXME:use mocked requests.Response, set status. requests wont raise an exception so side_effect is wrong
 # def test_galaxy_api_get_collection_detail_500_json_not_dict(mocker, galaxy_api):
 #     mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
