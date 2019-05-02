@@ -12,7 +12,6 @@ import ansible_galaxy
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy import rest_api
-from ansible_galaxy.utils.text import to_text
 
 log = logging.getLogger(__name__)
 
@@ -90,41 +89,71 @@ def test_galaxy_api_get_server_api_version_not_supported_version(galaxy_context_
 
 
 def test_galaxy_api_get_server_api_version_HTTPError_500(galaxy_context_example_invalid, requests_mock):
-    data = {"detail": "Stuff broke, 500 error but server response has valid json include the detail key"}
-    requests_mock.get('http://bogus.invalid:9443/api/',
-                      json=data,
+    url = 'http://bogus.invalid:9443/api/'
+
+    response_data = {
+        'code': 'error',
+        'message': 'A server error occurred.',
+        'errors': [
+            {'code': 'error', 'message': 'Error message 1.'},
+            {'code': 'error', 'message': 'Stuff broke, 500 error but server response has valid json include the detail key'},
+        ]
+    }
+
+    requests_mock.get(url,
+                      json=response_data,
+                      reason='Internal Server Ooopsie',
                       status_code=500)
 
     api = rest_api.GalaxyAPI(galaxy_context_example_invalid)
 
-    try:
-        api._get_server_api_version()
-    except exceptions.GalaxyClientError as e:
-        log.exception(e)
-        # fragile, but currently return same exception so look for the right msg in args
-        assert 'Failed to get data from the API server' in to_text(e)
-        return
+    with pytest.raises(exceptions.GalaxyRestAPIError,
+                       match='.*500 Server Error: Internal Server Ooopsie for url.*bogus.invalid:9443.*') as exc_info:
 
-    assert False, 'Expected a GalaxyClientError here but that did not happen'
+        api._get_server_api_version()
+
+    log.debug('exc_info: %s', exc_info)
+
+    exc = exc_info.value
+
+    log.debug('exc.response: %s', exc.response)
+    log.debug('exc.request: %s', exc.request)
+
+    assert exc.code == 'error'
+    assert exc.message == 'A server error occurred.'
+    assert isinstance(exc.errors, list)
+
+    assert exc.request.url == url
+    assert exc.response.status_code == 500
+    assert exc.response.reason == 'Internal Server Ooopsie'
+    assert exc.response.json()['code'] == 'error'
+    assert exc.response.json()['errors'][0]['message'] == 'Error message 1.'
 
 
 def test_galaxy_api_get_server_api_version_HTTPError_not_json(galaxy_context_example_invalid, requests_mock):
-    requests_mock.get('http://bogus.invalid:9443/api/',
+    url = 'http://bogus.invalid:9443/api/'
+    requests_mock.get(url,
                       text='{stuff-that-is-not-valid-json',
+                      reason='Internal Server Ooopsie',
                       status_code=500)
 
     api = rest_api.GalaxyAPI(galaxy_context_example_invalid)
 
-    try:
+    with pytest.raises(exceptions.GalaxyRestServerError,
+                       match='.*500 Server Error: Internal Server Ooopsie for url.*bogus.invalid:9443.*') as exc_info:
+
         api._get_server_api_version()
-    except exceptions.GalaxyClientError as e:
-        log.exception(e)
-        # fragile, but currently return same exception so look for the right msg in args
-        assert 'Could not process data from the API server' in '%s' % e
 
-        return
+    log.debug('exc_info: %s', exc_info)
 
-    assert False, 'Expected a GalaxyClientError here but that did not happen'
+    exc = exc_info.value
+
+    log.debug('exc.response: %s', exc.response)
+    log.debug('exc.request: %s', exc.request)
+
+    assert exc.request.url == url
+    assert exc.response.status_code == 500
+    assert exc.response.reason == 'Internal Server Ooopsie'
 
 
 def test_galaxy_api_get_server_api_version_no_current_version(galaxy_context_example_invalid, requests_mock):
@@ -134,16 +163,12 @@ def test_galaxy_api_get_server_api_version_no_current_version(galaxy_context_exa
                       status_code=200)
 
     api = rest_api.GalaxyAPI(galaxy_context_example_invalid)
-    try:
+
+    with pytest.raises(exceptions.GalaxyClientError,
+                       match="The Galaxy API version could not be determined. The required 'current_version' field is missing.*") as exc_info:
         api._get_server_api_version()
-    except exceptions.GalaxyClientError as e:
-        log.exception(e)
-        # fragile, but currently return same exception so look for the right msg in args
-        assert "missing required 'current_version'" in '%s' % e
 
-        return
-
-    assert False, 'Expected a GalaxyClientError here but that did not happen'
+    log.debug('exc_info: %s', exc_info)
 
 
 def test_galaxy_api_properties(galaxy_api):
@@ -253,20 +278,31 @@ def test_galaxy_api_get_collection_detail_empty_results(mocker, galaxy_api, requ
 
 
 def test_galaxy_api_get_collection_detail_404(mocker, galaxy_api, requests_mock):
-
-    requests_mock.get('http://bogus.invalid:9443/api/v2/collections/alikins/some_collection_that_doesnt_exist',
+    url = 'http://bogus.invalid:9443/api/v2/collections/alikins/some_collection_that_doesnt_exist'
+    requests_mock.get(url,
                       status_code=404,
+                      reason='Not Found',
                       json={'code': 'not_found',
                             'message': 'Not found.'})
 
     namespace = 'alikins'
     name = 'some_collection_that_doesnt_exist'
-    res = galaxy_api.get_collection_detail(namespace, name)
 
-    log.debug('res: %s', res)
+    with pytest.raises(exceptions.GalaxyRestAPIError) as exc_info:
+        galaxy_api.get_collection_detail(namespace, name)
 
-    assert isinstance(res, dict)
-    assert res['code'] == 'not_found'
+    log.debug('exc_info: %s', exc_info)
+
+    exc = exc_info.value
+
+    assert exc.code == 'not_found'
+    assert exc.message == 'Not found.'
+    assert isinstance(exc.errors, list)
+
+    assert exc.request.url == url
+    assert exc.response.status_code == 404
+    assert exc.response.reason == 'Not Found'
+    assert exc.response.json()['code'] == 'not_found'
 
 
 def test_get_object(galaxy_api_mocked, requests_mock):
@@ -274,6 +310,7 @@ def test_get_object(galaxy_api_mocked, requests_mock):
 
     requests_mock.get(url,
                       status_code=200,
+                      reason='OK',
                       json={'stuff': [3, 4, 5]})
 
     data = galaxy_api_mocked.get_object(href=url)
@@ -284,15 +321,32 @@ def test_get_object(galaxy_api_mocked, requests_mock):
 def test_get_object_403(galaxy_api_mocked, requests_mock):
     url = 'http://bogus.invalid:9443/api/v3/invisible_unicorns/narnia/aurora/versions/51.51.51/'
 
+    error_dict = {'code': 'permission_denied',
+                  'message': 'You do not have permission to see this invisble unicorn.'}
     requests_mock.get(url,
                       status_code=403,
-                      json={'code': 'permission_denied',
-                            'message': 'You do not have permission to see this invisble unicorn.'})
+                      reason='Permission denied',
+                      json=error_dict,)
 
-    data = galaxy_api_mocked.get_object(href=url)
+    with pytest.raises(exceptions.GalaxyRestAPIError) as exc_info:
+        galaxy_api_mocked.get_object(href=url)
 
-    log.debug('data: %s', data)
-    assert data['code'] == 'permission_denied'
+    log.debug('exc_info: %s', exc_info)
+
+    exc = exc_info.value
+
+    assert exc.code == 'permission_denied'
+    assert exc.message == 'You do not have permission to see this invisble unicorn.'
+    assert isinstance(exc.errors, list)
+    assert exc.errors == []
+
+    log.debug('exc.response: %s', exc.response)
+    log.debug('exc.request: %s', exc.request)
+
+    assert exc.request.url == url
+    assert exc.response.status_code == 403
+    assert exc.response.reason == 'Permission denied'
+    assert exc.response.json() == error_dict
 
 
 def test_get_object_400_validation_error(galaxy_api_mocked, requests_mock):
@@ -326,14 +380,25 @@ def test_get_object_400_validation_error(galaxy_api_mocked, requests_mock):
 
     requests_mock.get(url,
                       status_code=400,
+                      reason='Bad Request',
                       json=response_data)
 
-    data = galaxy_api_mocked.get_object(href=url)
+    with pytest.raises(exceptions.GalaxyRestAPIError) as exc_info:
+        galaxy_api_mocked.get_object(href=url)
 
-    log.debug('data: %s', data)
-    assert data['code'] == 'invalid'
-    assert isinstance(data['errors'], list)
-    assert data['errors'][0]['message'] == 'First bar message.'
+    log.debug('exc_info: %s', exc_info)
+
+    exc = exc_info.value
+
+    assert exc.code == 'invalid'
+    assert exc.message == 'Invalid input.'
+    assert isinstance(exc.errors, list)
+    assert exc.errors[0]['message'] == 'First bar message.'
+
+    assert exc.request.url == url
+    assert exc.response.status_code == 400
+    assert exc.response.reason == 'Bad Request'
+    assert exc.response.json()['code'] == 'invalid'
 
 
 def test_get_object_500_with_body(galaxy_api_mocked, requests_mock):
@@ -349,13 +414,21 @@ def test_get_object_500_with_body(galaxy_api_mocked, requests_mock):
 
     requests_mock.get(url,
                       status_code=500,
+                      reason='Internal Server Ooopsie',
                       json=response_data)
 
-    data = galaxy_api_mocked.get_object(href=url)
+    with pytest.raises(exceptions.GalaxyRestAPIError) as exc_info:
+        galaxy_api_mocked.get_object(href=url)
 
-    log.debug('data: %s', data)
-    assert data['code'] == 'error'
-    assert isinstance(data['errors'], list)
+    log.debug('exc_info: %s', exc_info)
+
+    exc = exc_info.value
+
+    assert exc.code == 'error'
+    assert exc.message == 'A server error occurred.'
+    assert isinstance(exc.errors, list)
+
+    assert exc.errors[1]['message'] == 'DOES NOT COMPUTE!'
 
 
 def test_get_object_500_with_junk(galaxy_api_mocked, requests_mock):
@@ -366,15 +439,16 @@ def test_get_object_500_with_junk(galaxy_api_mocked, requests_mock):
 
     requests_mock.get(url,
                       status_code=500,
+                      reason='Internal Server Ooopsie',
                       text=response_text)
 
-    data = galaxy_api_mocked.get_object(href=url)
+    # exc str(): Could not process data from the API server (http://bogus.invalid:9443/api/v24/rhymes/orange/): Expecting value: line 1 column 1 (char 0)
+    with pytest.raises(exceptions.GalaxyRestServerError,
+                       match='.*500 Server Error: Internal Server Ooopsie for url.*bogus.invalid:9443.*') as exc_info:
 
-    log.debug('data: %s', data)
+        galaxy_api_mocked.get_object(href=url)
 
-    # TODO: for now, a 500 with bogus json body will return an empty dict,
-    #       but should be updated to raise an exception?
-    assert data == {}
+    log.debug('exc_info: %s', exc_info)
 
 
 def test_get_object_500_with_html(galaxy_api_mocked, requests_mock):
@@ -384,16 +458,17 @@ def test_get_object_500_with_html(galaxy_api_mocked, requests_mock):
     response_text = r'''<h1>Server Error (500)</h1>'''
     requests_mock.get(url,
                       status_code=500,
+                      reason='Internal Server Ooopsie',
                       headers={'content-type': 'text/html; charset=UTF-8'},
                       text=response_text)
 
-    data = galaxy_api_mocked.get_object(href=url)
+    # exc str(): Could not process data from the API server (http://bogus.invalid:9443/api/v24/rhymes/orange/): Expecting value: line 1 column 1 (char 0)
+    with pytest.raises(exceptions.GalaxyRestServerError,
+                       match='.*500 Server Error: Internal Server Ooopsie for url.*bogus.invalid:9443.*') as exc_info:
+        # match="Could not process data from the API server") as exc_info:
+        galaxy_api_mocked.get_object(href=url)
 
-    log.debug('data: %s', data)
-
-    # TODO: for now, a 500 with bogus json body will return an empty dict,
-    #       but should be updated to raise an exception?
-    assert data == {}
+    log.debug('exc_info: %s', exc_info)
 
 
 # # FIXME:use mocked requests.Response, set status. requests wont raise an exception so side_effect is wrong

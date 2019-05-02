@@ -24,7 +24,6 @@ __metaclass__ = type
 
 import codecs
 import logging
-import json
 import os
 import socket
 import ssl
@@ -39,7 +38,6 @@ from six.moves.urllib.parse import urlencode
 from ansible_galaxy import __version__ as mazer_version
 from ansible_galaxy import exceptions
 from ansible_galaxy.multipart_form import MultiPartForm
-from ansible_galaxy.utils.text import to_native
 
 log = logging.getLogger(__name__)
 http_log = logging.getLogger('%s.(http).(general)' % __name__)
@@ -155,26 +153,14 @@ class RestClient(object):
 
             # debug log the raw response body
             response_log.debug('%s response body:\n%s', slug, response_body)
-
-        except requests.exceptions.RequestException as http_exc:
+        except requests.exceptions.RequestException as request_exc:
             self.log.debug('Exception on %s', pre_request_slug)
-            self.log.exception("%s: %s", pre_request_slug, http_exc)
+            self.log.exception("%s: %s", pre_request_slug, request_exc)
 
-            http_log.error('%s data from server error response:\n%s', pre_request_slug, http_exc.response)
+            http_log.error('%s data from server error response:\n%s', pre_request_slug, request_exc.response)
 
-            if http_exc.response:
-                # FIXME: probably need a try/except here if the response body isnt json which
-                #        can happen if a proxy mangles the response
-                try:
-                    error_msg = 'HTTP error on request %s: %s' % (pre_request_slug,
-                                                                  http_exc.response.json()['detail'])
-                    raise exceptions.GalaxyClientError(error_msg)
-                except (ValueError, KeyError, TypeError) as detail_parse_exc:
-                    self.log.exception("%s: %s", pre_request_slug, detail_parse_exc)
-                    self.log.warning('Unable to parse error detail from response for request: %s response:  %s', request_slug, detail_parse_exc)
+            raise exceptions.GalaxyRestAPIClientRequestError(url=url, request_exc=request_exc)
 
-            # TODO: great place to be able to use 'raise from'
-            raise exceptions.GalaxyClientError(http_exc)
         except (ssl.SSLError, socket.error) as e:
             self.log.debug('Connection error to Galaxy API for request %s: %s', pre_request_slug, e)
             self.log.exception("%s: %s", pre_request_slug, e)
@@ -242,7 +228,10 @@ class GalaxyAPI(object):
         data = self._get_object(href=url)
 
         if 'current_version' not in data:
-            raise exceptions.GalaxyClientError("missing required 'current_version' from server response (%s)" % url)
+            # The Galaxy API info at http://bogus.invalid:9443/api/ is missing the required 'current_version' field and the API version could not be determined.
+            error_msg = "The Galaxy API version could not be determined. The required 'current_version' field is missing from info at %s" % url
+
+            raise exceptions.GalaxyClientError(error_msg)
 
         self.log.debug('Server API version of URL %s is "%s"', url, data['current_version'])
 
@@ -266,7 +255,8 @@ class GalaxyAPI(object):
         log.debug('url: %s params: %s', url, params)
 
         # can raise a GalaxyClientError
-        data = self.__call_galaxy(url, http_method='GET')
+        # data = self.__call_galaxy(url, http_method='GET')
+        data = self._get_object(href=url)
 
         # empty list for return value if there are no results
         results = data.get('results', [])
@@ -295,24 +285,20 @@ class GalaxyAPI(object):
         data = self.get_object(href=url)
         return data
 
-    def _get_object(self, href=None):
-        '''Get a full url and return deserialized results'''
-        url = href
-        # url = "%s%s" % (self.api_server, href)
+    def post_object(self, href, obj):
+        pass
 
-        resp = self.rest_client.mkrequest(url, http_method='GET')
-
+    def handle_response(self, resp):
         slug = response_slug(resp)
 
         # TODO/FIXME: Move the loading/parsing of json up a layer, since we don't always need it
         try:
             data = resp.json()
             # debug log a json version of the data that was created from the response
-            self.log.debug('%s data:\n%s', slug, json.dumps(data, indent=2))
-            return data
+            # self.log.debug('%s data:\n%s', slug, json.dumps(data, indent=2))
         except ValueError as e:
             log.exception(e)
-            raise exceptions.GalaxyClientError("Could not process data from the API server (%s): %s " % (resp.url, to_native(e)))
+            data = None
 
         # The rest of this is handling cases where we got an http error, but the body did not contain json
 
@@ -325,23 +311,33 @@ class GalaxyAPI(object):
 
             http_log.error('%s data from server error response:\n%s', slug, http_exc.response)
 
-            if http_exc.response:
-                # TODO: plugin in exception mapper layer if we need it, to handle the error response from galaxy api
+            error_data = None
 
+            if http_exc.response is not None:
                 try:
-                    error_msg = 'HTTP error on request %s: %s' % (slug,
-                                                                  # TODO: update for new error message format
-                                                                  http_exc.response.json()['detail'])
-                    raise exceptions.GalaxyClientError(error_msg)
+                    error_data = http_exc.response.json()
                 except (ValueError, KeyError, TypeError) as detail_parse_exc:
                     self.log.exception("%s: %s", slug, detail_parse_exc)
                     self.log.warning('Unable to parse error detail from response for request: %s response:  %s', slug, detail_parse_exc)
 
+                    # Got an http response, but it wasn't valid json, so not an exception from the web app
+                    raise exceptions.GalaxyRestServerError(http_exc,
+                                                           response=http_exc.response)
+
             # TODO: great place to be able to use 'raise from'
-            # TODO: if we want client specific errors for say, a 409 on publish, could raise them here
-            raise exceptions.GalaxyClientError(http_exc)
+            raise exceptions.GalaxyRestAPIError(http_exc,
+                                                response=http_exc.response,
+                                                error_data=error_data)
 
         return data
+
+    def _get_object(self, href=None):
+        '''Get a full url and return deserialized results'''
+        url = href
+
+        resp = self.rest_client.mkrequest(url, http_method='GET')
+
+        return self.handle_response(resp)
 
     @g_connect
     def get_object(self, href=None):

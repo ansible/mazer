@@ -1,5 +1,7 @@
 """Exceptions used by ansible_galaxy client library"""
 
+import requests
+
 
 class GalaxyError(Exception):
     """Base exception for ansible_galaxy library and ansible_galaxy_cli app"""
@@ -57,6 +59,57 @@ class GalaxyCouldNotFindAnswerForRequirement(GalaxyClientError):
 class GalaxyClientAPIConnectionError(GalaxyClientError):
     '''Raised if there were errors connecting to the Galaxy REST API'''
     pass
+
+
+# FIXME: subclass from request.RequestException?
+class GalaxyRestServerError(requests.RequestException, GalaxyClientError):
+    '''Raised if the REST API http server returns an http server error
+
+    ie, the server response has a http status code indicating an error
+    but the response does not contain a json formatted error message.
+
+    For example, a 500 error that returns a plain text body is a
+    server error, but not a Galaxy API error.'''
+    pass
+
+
+class GalaxyRestAPIError(requests.HTTPError, GalaxyClientError):
+    '''Raised if there were errors returned from the Galaxy REST API'''
+    def __init__(self, *args, **kwargs):
+        error_data = kwargs.pop('error_data', {}) or {}
+
+        super(GalaxyRestAPIError, self).__init__(*args, **kwargs)
+
+        self.error_data = error_data
+        # self.url = url
+
+        # TODO: set defaults for 'code', 'message', 'error' attributes
+        self.code = error_data.get('code', 'unknown_api_error')
+        self.message = error_data.get('message', 'A Galaxy REST API error.')
+        self.errors = error_data.get('errors', [])
+
+    # TODO: repr/str to format error_data 'code', 'message' and 'error' fields
+
+
+# TODO: possibly add a GalaxyRestAPIHttpError for cases where server responds
+#       with an error status, but without returning a json error body (ie, a web server level
+#       error and not a web app level error
+# TODO: subclass requests.RequestException?
+
+class GalaxyRestAPIClientRequestError(GalaxyClientError):
+    '''Raised if there is an error while making a http rest api request
+
+    ie, requests.ConnectionError, requests.Timeout, etc.
+    This should not be raised if the server responded with a http response
+    with an error status code. Use GalaxyRestAPIError for that.'''
+
+    def __init__(self, *args, **kwargs):
+        url = kwargs.pop('url', None)
+        request_exc = kwargs.pop('request_exc', None)
+        super(GalaxyRestAPIClientRequestError, self).__init__(*args, **kwargs)
+
+        self.url = url
+        self.request_exc = request_exc
 
 
 # TODO: proper rst docstrings with api info
