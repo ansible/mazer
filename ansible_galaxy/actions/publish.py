@@ -6,8 +6,8 @@ import os
 
 from six.moves.urllib.parse import urljoin
 
+from ansible_galaxy import exceptions
 from ansible_galaxy.rest_api import GalaxyAPI
-from ansible_galaxy.utils.text import to_text
 
 log = logging.getLogger(__name__)
 
@@ -38,12 +38,13 @@ def _publish(galaxy_context,
 
     log.debug("Publishing file %s with data: %s" % (archive_path, json.dumps(data)))
 
-    # TODO: get a requests.Response here and use it's status/.json()
-    b_response_body = api.publish_file(data, archive_path, publish_api_key)
-    response_body = to_text(b_response_body, errors='surrogate_or_strict')
-
-    response_data = json.loads(response_body)
-    results['response_data'] = response_data
+    try:
+        response_data = api.publish_file(data, archive_path, publish_api_key)
+        log.debug('response_data: %s', response_data)
+        results['response_data'] = response_data
+    except exceptions.GalaxyRequestsError as requests_exc:
+        results['success'] = False
+        results['errors'].append(str(requests_exc))
 
     return results
 
@@ -55,7 +56,7 @@ def publish(galaxy_context, archive_path, publish_api_key, display_callback):
                        publish_api_key=publish_api_key,
                        display_callback=display_callback)
 
-    log.debug('cli publish action results: %s', json.dumps(results))
+    log.debug('cli publish action results: %s', results)
 
     if results['errors']:
         for error in results['errors']:

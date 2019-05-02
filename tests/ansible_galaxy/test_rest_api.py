@@ -207,8 +207,8 @@ def test_galaxy_api_publish_file_202(galaxy_api_mocked, requests_mock, tmpdir):
 
     log.debug('res: %s', res)
 
-    assert isinstance(res, text_type)
-    assert json.loads(res) == status_202_json
+    assert isinstance(res, dict)
+    assert res == status_202_json
 
 
 def test_galaxy_api_publish_file_conflict_409(galaxy_api_mocked, requests_mock, tmpdir):

@@ -25,8 +25,6 @@ __metaclass__ = type
 import codecs
 import logging
 import os
-import socket
-import ssl
 import sys
 import uuid
 
@@ -86,6 +84,14 @@ def g_connect(method):
 
 
 class RestClient(object):
+    '''http REST client
+
+    Mostly wrapper around requests.Session and Session.request(), but with
+    more logging.
+
+    Also sets the mazer http user agent, and adds 'Request-ID' headers.
+    '''
+
     def __init__(self, http_context=None):
         self.http_context = http_context or {}
 
@@ -106,6 +112,16 @@ class RestClient(object):
 
     # TODO: raise an API/net specific exception?
     def mkrequest(self, url, args=None, headers=None, http_method=None):
+        '''Make an REST-y http request to Galaxy APIs
+
+        Requests that fail and raise exceptions are caught and
+        either GalaxyClientAPIConnectionError or GalaxyRestAPIClientRequestError
+        are raised. ie, mazer specific request error exceptions.
+
+        Note: This only raises exceptions if the request fails (a connection failure,
+              an SSL failure, DNS failure etc. If the server responds at all, this
+              will not fail. Those cases are handled in GalaxyAPI.
+        '''
         http_method = http_method or 'GET'
 
         request_headers = headers or {}
@@ -127,6 +143,7 @@ class RestClient(object):
             request_log.debug('%s args=%s', pre_request_slug, args)
             request_log.debug('%s headers=%s', pre_request_slug, request_headers)
 
+            # Make the actual request
             resp = self.session.request(http_method, url, data=args, headers=request_headers,
                                         verify=self.validate_certs)
 
@@ -148,24 +165,21 @@ class RestClient(object):
 
             response_log.debug('%s resp repr:\n%r', slug, resp)
 
-            # FIXME: making the request and loading the response should be sep try/except blocks
-            response_body = resp.text
+        except requests.exceptions.ConnectionError as connection_exc:
+            self.log.debug('Connection exception on %s', pre_request_slug)
+            self.log.exception("%s: %s", pre_request_slug, connection_exc)
 
-            # debug log the raw response body
-            response_log.debug('%s response body:\n%s', slug, response_body)
+            raise exceptions.GalaxyClientAPIConnectionError(connection_exc,
+                                                            response=connection_exc.response)
+
         except requests.exceptions.RequestException as request_exc:
             self.log.debug('Exception on %s', pre_request_slug)
             self.log.exception("%s: %s", pre_request_slug, request_exc)
 
             http_log.error('%s data from server error response:\n%s', pre_request_slug, request_exc.response)
 
-            raise exceptions.GalaxyRestAPIClientRequestError(url=url, request_exc=request_exc)
-
-        except (ssl.SSLError, socket.error) as e:
-            self.log.debug('Connection error to Galaxy API for request %s: %s', pre_request_slug, e)
-            self.log.exception("%s: %s", pre_request_slug, e)
-
-            raise exceptions.GalaxyClientAPIConnectionError('Connection error to Galaxy API for request %s: %s' % (pre_request_slug, e))
+            raise exceptions.GalaxyRestAPIClientRequestError(request_exc,
+                                                             response=request_exc.response)
 
         return resp
 
@@ -206,7 +220,7 @@ class GalaxyAPI(object):
         self.rest_client = RestClient(http_context={'server': galaxy_context.server})
         # self.log.debug('Validate TLS certificates for %s: %s', self._api_server, self._validate_certs)
 
-        # self._validate_certs = not galaxy_context.server['ignore_certs']
+        # This is set to true by the g_connect wrapper once there is there has been a server api check
         self.initialized = False
 
     @property
@@ -237,6 +251,7 @@ class GalaxyAPI(object):
 
         return data['current_version']
 
+    # TODO: rm
     @g_connect
     def _get_paginated_list(self, list_url, page_size=None):
         """
@@ -245,17 +260,15 @@ class GalaxyAPI(object):
         """
         self.log.debug('related_url=%s', list_url)
 
-        page_size = page_size or 50
-        # param_dict = {'page_size': 50}
         param_dict = {}
         params = urlencode(param_dict)
         url = list_url
         if params:
             url = '%s?%s' % (list_url, params)
+
         log.debug('url: %s params: %s', url, params)
 
         # can raise a GalaxyClientError
-        # data = self.__call_galaxy(url, http_method='GET')
         data = self._get_object(href=url)
 
         # empty list for return value if there are no results
@@ -265,6 +278,7 @@ class GalaxyAPI(object):
 
         while not done:
             url = '%s%s' % (self._api_server, data['next_link'])
+            # TODO: get_object
             data = self.__call_galaxy(url, http_method='GET')
 
             # if no results, default to a empty list
@@ -281,17 +295,12 @@ class GalaxyAPI(object):
         url = "%s%s" % (self.base_api_url,
                         '/v2/collections/{namespace}/{name}'.format(namespace=namespace, name=name))
 
-        # data = self.rest_client.mkrequest(url, http_method='GET')
         data = self.get_object(href=url)
         return data
-
-    def post_object(self, href, obj):
-        pass
 
     def handle_response(self, resp):
         slug = response_slug(resp)
 
-        # TODO/FIXME: Move the loading/parsing of json up a layer, since we don't always need it
         try:
             data = resp.json()
             # debug log a json version of the data that was created from the response
@@ -302,7 +311,6 @@ class GalaxyAPI(object):
 
         # The rest of this is handling cases where we got an http error, but the body did not contain json
 
-        # Don't raise connection indicating errors unless we dont have valid error json
         try:
             resp.raise_for_status()
         except requests.exceptions.HTTPError as http_exc:
@@ -331,11 +339,19 @@ class GalaxyAPI(object):
 
         return data
 
+    def post_multipart_form(self, url, form_data, headers=None):
+        resp = self.rest_client.mkrequest(url=url, http_method='POST',
+                                          args=form_data,
+                                          headers=headers)
+
+        return self.handle_response(resp)
+
+    # _get_object is not decorated with @g_connect, so we can call it
+    # directly from _get_server_api_version() without recursion
     def _get_object(self, href=None):
         '''Get a full url and return deserialized results'''
-        url = href
 
-        resp = self.rest_client.mkrequest(url, http_method='GET')
+        resp = self.rest_client.mkrequest(url=href, http_method='GET')
 
         return self.handle_response(resp)
 
@@ -361,15 +377,10 @@ class GalaxyAPI(object):
 
         file_args = self._form_add_file_args(archive_path)
         form.add_file(*file_args)
-        # form.add_file('file', os.path.basename(archive_path),
-        #               fileHandle=codecs.open(archive_path, "rb"),
-        #               mimetype='application/octet-stream')
 
         log.debug('form: %s', form)
-#         log.debug('form.files: %s', form.files)
-        # TODO: figure out how to track API versions finer grained? Ideally
-        #       simple enough to not end up with adhoc HATEAOS imp
-        #       Maybe just hardcode api ver in calls?
+
+        # TODO: at somepoint, get the publish url from api
         collection_url_ver = 'v2'
         url = '%s/%s/collections/' % (self.base_api_url, collection_url_ver)
 
@@ -387,29 +398,27 @@ class GalaxyAPI(object):
         try:
 
             # TODO: pass in a file-like object and use stream=True
-            resp = self.rest_client.mkrequest(url, args=form_buffer,
-                                              headers=request_headers,
-                                              http_method='POST')
+            data = self.post_multipart_form(url,
+                                            form_data=form_buffer,
+                                            headers=request_headers)
 
-        except socket.error as exc:
+            return data
+        except exceptions.GalaxyRestAPIError as exc:
             log.exception(exc)
+
+            error_msg = exc.message
+
             raise exceptions.GalaxyPublishError(
-                'Network error while transferring file "%s" to Galaxy server (%s): %s' %
-                (archive_path, self.galaxy_context.server['url'], str(exc)),
-                archive_path=archive_path
+                error_msg,
+                archive_path=archive_path,
+                url=url
             )
 
-        log.debug('resp.headers:\n%s', resp.headers)
-        log.debug('resp body:\n%s', resp.text)
+        except exceptions.GalaxyRequestError as exc:
+            log.exception(exc)
 
-        # 202 'Accepted'
-        if resp.status_code == 202:
-            # FIXME: return the data instead of the text, ie return resp.json()
-            return resp.text
-        else:
-            log.debug('error response json:\n%s', resp.json())
             raise exceptions.GalaxyPublishError(
-                'Error transferring file "%s" to Galaxy server (%s): %s - %s' %
-                (archive_path, self.galaxy_context.server['url'], resp.status_code, resp.reason),
-                archive_path=archive_path
+                'Network error: %s' % str(exc),
+                archive_path=archive_path,
+                url=url
             )
