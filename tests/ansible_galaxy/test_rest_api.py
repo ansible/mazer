@@ -430,6 +430,31 @@ def test_get_object_500_with_body(galaxy_api_mocked, requests_mock):
     assert exc.errors[1]['message'] == 'DOES NOT COMPUTE!'
 
 
+# # FIXME:use mocked requests.Response, set status. requests wont raise an exception so side_effect is wrong
+def test_get_object_500_json_not_dict(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v2/collections/alikins/some_collection'
+
+    requests_mock.get(url,
+                      status_code=500,
+                      reason='Internal Server Ooopsie',
+                      json=[])
+
+    # ansible_galaxy.exceptions.GalaxyRestAPIError:
+    # 500 Server Error: Internal Server Ooopsie for url: http://bogus.invalid:9443/api/v2/collections/alikins/some_collection
+    with pytest.raises(exceptions.GalaxyRestAPIError) as exc_info:
+        galaxy_api_mocked.get_object(href=url)
+
+    log.debug('exc_info: %s', exc_info)
+
+    exc = exc_info.value
+
+    # ie, this error resonse was not in the expected {'code':...} style data structure
+    assert exc.code == 'unknown_api_error'
+    assert exc.message == 'A Galaxy REST API error.'
+    assert isinstance(exc.errors, list)
+    assert exc.errors == []
+
+
 def test_get_object_500_with_junk(galaxy_api_mocked, requests_mock):
     url = 'http://bogus.invalid:9443/api/v22/rhymes/purple/'
 
@@ -467,46 +492,6 @@ def test_get_object_500_with_html(galaxy_api_mocked, requests_mock):
         galaxy_api_mocked.get_object(href=url)
 
     log.debug('exc_info: %s', exc_info)
-
-
-# # FIXME:use mocked requests.Response, set status. requests wont raise an exception so side_effect is wrong
-# def test_galaxy_api_get_collection_detail_500_json_not_dict(mocker, galaxy_api):
-#     mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-#                  side_effect=HTTPError(url='http://whatever',
-#                                        code=500,
-#                                        msg='Stuff broke.',
-#                                        hdrs={},
-#                                        fp=io.StringIO(initial_value=u'[]')))
-
-#     try:
-#         galaxy_api.get_collection_detail('some-test-namespace', 'some-test-name')
-#     except exceptions.GalaxyClientError as e:
-#         log.exception(e)
-#         log.debug(e)
-#         return
-
-#     assert False, 'Excepted to get a HTTPError(code=500) here but did not.'
-
-
-# FIXME: return mocked requests.Response, rm side_effect
-# def test_galaxy_api_get_collection_detail_500_json(mocker, galaxy_api):
-#     error_body_text = u'{"detail": "Stuff broke, 500 error but server response has valid json include the detail key"}'
-
-#     mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-#                  side_effect=HTTPError(url='http://whatever',
-#                                        code=500,
-#                                        msg='Stuff broke.',
-#                                        hdrs={},
-#                                        fp=io.StringIO(initial_value=error_body_text)))
-
-#     try:
-#         galaxy_api.get_collection_detail('some-test-namespace', 'some-test-name')
-#     except exceptions.GalaxyClientError as e:
-#         log.exception(e)
-#         log.debug(e)
-#         return
-
-#     assert False, 'Excepted to get a GalaxyClientError here but did not.'
 
 
 def test_galaxy_api_get_collection_detail_SSLError(mocker, galaxy_api, requests_mock):
