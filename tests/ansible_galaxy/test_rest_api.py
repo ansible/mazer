@@ -1,11 +1,10 @@
 import io
-import json
 import logging
-import ssl
 import sys
 
 import pytest
 
+import requests
 from six import text_type
 
 import ansible_galaxy
@@ -465,7 +464,6 @@ def test_get_object_500_with_html(galaxy_api_mocked, requests_mock):
     # exc str(): Could not process data from the API server (http://bogus.invalid:9443/api/v24/rhymes/orange/): Expecting value: line 1 column 1 (char 0)
     with pytest.raises(exceptions.GalaxyRestServerError,
                        match='.*500 Server Error: Internal Server Ooopsie for url.*bogus.invalid:9443.*') as exc_info:
-        # match="Could not process data from the API server") as exc_info:
         galaxy_api_mocked.get_object(href=url)
 
     log.debug('exc_info: %s', exc_info)
@@ -514,9 +512,10 @@ def test_get_object_500_with_html(galaxy_api_mocked, requests_mock):
 def test_galaxy_api_get_collection_detail_SSLError(mocker, galaxy_api, requests_mock):
     ssl_msg = 'ssl stuff broke... good luck and godspeed.'
     requests_mock.get('http://bogus.invalid:9443/api/v2/collections/some-test-namespace/some-test-name',
-                      exc=ssl.SSLError(ssl_msg)
+                      exc=requests.exceptions.SSLError(ssl_msg)
                       )
 
+    # ansible_galaxy.exceptions.GalaxyClientAPIConnectionError: ssl stuff broke... good luck and godspeed.
     with pytest.raises(exceptions.GalaxyClientAPIConnectionError, match='.*%s.*' % ssl_msg) as exc_info:
         galaxy_api.get_collection_detail('some-test-namespace', 'some-test-name')
 
