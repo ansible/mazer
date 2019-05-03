@@ -317,6 +317,110 @@ def test_get_object(galaxy_api_mocked, requests_mock):
     assert data['stuff'] == [3, 4, 5]
 
 
+def test_get_object_paginated(galaxy_api_mocked, requests_mock):
+    url_page1 = 'http://bogus.invalid:9443/api/v3/unicorns/sparkleland/magestic/versions/'
+
+    response_data_page1 = {
+        "count": 5,
+        "next": "http://localhost:8000/api/v2/collections/alikins/collection_ntp/versions/?page=2&page_size=3",
+        "previous": None,
+        "results": [
+            {
+                "version": "0.1.181",
+                "href": "http://localhost:8000/api/v2/collections/alikins/collection_ntp/versions/0.1.181/"
+            },
+            {
+                "version": "0.1.177",
+                "href": "http://localhost:8000/api/v2/collections/alikins/collection_ntp/versions/0.1.177/"
+            },
+            {
+                "version": "0.1.176",
+                "href": "http://localhost:8000/api/v2/collections/alikins/collection_ntp/versions/0.1.176/"
+            }
+        ]
+    }
+
+    url_page2 = 'http://localhost:8000/api/v2/collections/alikins/collection_ntp/versions/?page=2&page_size=3'
+
+    response_data_page2 = {
+        "count": 5,
+        "next": None,
+        "previous": "http://localhost:8000/api/v2/collections/alikins/collection_ntp/versions/?page_size=3",
+        "results": [
+            {
+                "version": "0.1.175",
+                "href": "http://localhost:8000/api/v2/collections/alikins/collection_ntp/versions/0.1.175/"
+            },
+            {
+                "version": "0.1.173",
+                "href": "http://localhost:8000/api/v2/collections/alikins/collection_ntp/versions/0.1.173/"
+            },
+        ]
+    }
+
+    requests_mock.get(url_page1,
+                      status_code=200,
+                      reason='OK',
+                      json=response_data_page1)
+
+    requests_mock.get(url_page2,
+                      status_code=200,
+                      reason='OK',
+                      json=response_data_page2)
+
+    data = galaxy_api_mocked.get_object(href=url_page1)
+
+    import json
+    log.debug('data:\n%s', json.dumps(data, indent=4))
+    log.debug('len: %s', len(data))
+
+    assert len(data) == 5
+    assert data[0]['version'] == '0.1.181'
+    assert data[2]['version'] == '0.1.176'
+    assert data[4]['version'] == '0.1.173'
+
+
+def test_get_object_paginated_error_on_second_request(galaxy_api_mocked, requests_mock):
+    url_page1 = 'http://bogus.invalid:9443/api/v3/even_numbers/'
+
+    response_data_page1 = {
+        "count": 5,
+        "next": "http://bogus.invalid:9443/api/v3/even_numbers/?page=2&page_size=2",
+        "previous": None,
+        "results": [4, 6]
+    }
+
+    url_page2 = 'http://bogus.invalid:9443/api/v3/even_numbers/?page=2&page_size=2'
+
+    requests_mock.get(url_page1,
+                      status_code=200,
+                      reason='OK',
+                      json=response_data_page1)
+
+    requests_mock.get(url_page2,
+                      status_code=500,
+                      reason='error',
+                      json={'code': 'error',
+                            'message': 'This server does not count very well. Sorry.'})
+
+    with pytest.raises(exceptions.GalaxyRestAPIError) as exc_info:
+        galaxy_api_mocked.get_object(href=url_page1)
+
+    exc = exc_info.value
+
+    import json
+    log.debug('resp.json:\n%s', json.dumps(exc.response.json(), indent=4))
+
+    assert exc.code == 'error'
+    assert exc.message == 'This server does not count very well. Sorry.'
+    assert isinstance(exc.errors, list)
+    assert exc.response.url == 'http://bogus.invalid:9443/api/v3/even_numbers/?page=2&page_size=2'
+
+    log.debug('exc: %s', exc)
+
+    assert 'http://bogus.invalid:9443/api/v3/even_numbers/?page=2&page_size=2' in str(exc)
+
+
 def test_get_object_403(galaxy_api_mocked, requests_mock):
     url = 'http://bogus.invalid:9443/api/v3/invisible_unicorns/narnia/aurora/versions/51.51.51/'
 

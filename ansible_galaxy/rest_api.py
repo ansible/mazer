@@ -251,40 +251,51 @@ class GalaxyAPI(object):
 
         return data['current_version']
 
-    # TODO: rm
-    @g_connect
-    def _get_paginated_list(self, list_url, page_size=None):
+    def paginate(self, data):
         """
         Fetch the list of related items for the given role.
         The url comes from the 'related' field of the role.
         """
-        self.log.debug('related_url=%s', list_url)
 
-        param_dict = {}
-        params = urlencode(param_dict)
-        url = list_url
-        if params:
-            url = '%s?%s' % (list_url, params)
+        # This is not an object that could have paging data
+        if not isinstance(data, dict):
+            return data
 
-        log.debug('url: %s params: %s', url, params)
+        # No results list, so not paged
+        if 'results' not in data:
+            return data
 
-        # can raise a GalaxyClientError
-        data = self._get_object(href=url)
+        if 'next' not in data and 'count' not in data:
+            return data
 
-        # empty list for return value if there are no results
-        results = data.get('results', [])
+        log.debug('Going to page the data: %s', data)
 
-        done = (data.get('next_link', None) is None)
+        results = data['results']
+
+        _starting_length = len(results)
+        log.debug('len(results): %s', _starting_length)
+        log.debug('data[next]: %s', data['next'])
+
+        done = (data.get('next', None) is None)
 
         while not done:
-            url = '%s%s' % (self._api_server, data['next_link'])
-            # TODO: get_object
-            data = self.__call_galaxy(url, http_method='GET')
+            next_url = data['next']
 
+            log.debug('next_url: %s', next_url)
+
+            # Basic get_object() but sans automatic paging
+            resp = self.rest_client.mkrequest(url=next_url, http_method='GET')
+            next_data = self.handle_response(resp)
+
+            # can assume all the rest of the links will also be 'page' dicts
             # if no results, default to a empty list
-            results += data.get('results', [])
+            results += next_data.get('results', [])
 
-            done = (data.get('next_link', None) is None)
+            log.debug('  len(results): %s was %s added %s', len(results), _starting_length, len(results) - _starting_length)
+            log.debug('  len(next_data[results]): %s', len(next_data['results']))
+            log.debug('  next_data[next]: %s', next_data['next'])
+
+            done = (next_data.get('next', None) is None)
 
         return results
 
@@ -309,7 +320,7 @@ class GalaxyAPI(object):
             log.exception(e)
             data = None
 
-        # The rest of this is handling cases where we got an http error, but the body did not contain json
+        # Convert/map/raise any errors returned from galaxy api into exceptions
 
         try:
             resp.raise_for_status()
@@ -351,9 +362,14 @@ class GalaxyAPI(object):
     def _get_object(self, href=None):
         '''Get a full url and return deserialized results'''
 
+        # responses = self.rest_client.mkrequest():
+        # return self.handle_responses(responses)
         resp = self.rest_client.mkrequest(url=href, http_method='GET')
 
-        return self.handle_response(resp)
+        data = self.handle_response(resp)
+
+        # determine if the data is paginated and if so, page it and accumulate results
+        return self.paginate(data)
 
     @g_connect
     def get_object(self, href=None):

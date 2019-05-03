@@ -88,7 +88,7 @@ class GalaxyUrlFetch(base.BaseFetch):
             raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.requirement_spec.label,
                                                                                      api.api_server))
 
-        versions_url = collection_detail_data.get('versions_url', None)
+        versions_list_url = collection_detail_data.get('versions_url', None)
 
         # TODO: if versions ends up with a 'related' we could follow it instead of specific
         #       get_collection_version_list()
@@ -102,9 +102,9 @@ class GalaxyUrlFetch(base.BaseFetch):
         #   "href": "/api/v2/collections/ansible/k8s/versions/1.2.3/",
         #  }]
         log.debug('Getting collectionversions for %s.%s from %s',
-                  namespace, collection_name, versions_url)
+                  namespace, collection_name, versions_list_url)
 
-        collection_version_list_data = api._get_paginated_list(versions_url)
+        collection_version_list_data = api.get_object(versions_list_url)
 
         log.debug('collectionvertlist data:\n%s', collection_version_list_data)
 
