@@ -57,11 +57,6 @@ def response_slug(response):
     return slug
 
 
-def request_slug(request):
-    slug = '"%s %s" %s' % (request.method, request.url, request.headers['X-Request-Id'])
-    return slug
-
-
 def g_connect(method):
     ''' wrapper to lazily initialize connection info to galaxy '''
 
