@@ -380,6 +380,46 @@ def test_get_object_list(galaxy_api_mocked, requests_mock):
     assert data[1]['stuff'] == [1, 2, 3]
 
 
+def test_get_object_redirect_302(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v3/unicorns/sparkleland/magestic/versions/1.0.0/artifact/'
+    new_url = 'https://bogus.invalid:9443/box_of_unicorns/f7325978-5339-4669-b7a4-a9406f32994f'
+    requests_mock.get(url,
+                      status_code=302,
+                      reason='Found',
+                      headers={'location': new_url})
+
+    requests_mock.get(new_url,
+                      status_code=200,
+                      reason='OK',
+                      json={'unicorn_stuff': [5, 10, 15]})
+
+    data = galaxy_api_mocked.get_object(href=url)
+
+    log.debug('data:\n%s', data)
+
+    assert data['unicorn_stuff'] == [5, 10, 15]
+
+
+def test_get_object_redirect_301(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v3/unicorns/sparkleland/magestic/versions/1.0.0/artifact/'
+    ssl_url = 'https://bogus.invalid:9443/api/v3/unicorns/sparkleland/magestic/versions/1.0.0/artifact/'
+    requests_mock.get(url,
+                      status_code=301,
+                      reason='Permanently Moved',
+                      headers={'location': ssl_url})
+
+    requests_mock.get(ssl_url,
+                      status_code=200,
+                      reason='OK',
+                      json={'unicorn_stuff': [5, 10, 15]})
+
+    data = galaxy_api_mocked.get_object(href=url)
+
+    log.debug('data:\n%s', data)
+
+    assert data['unicorn_stuff'] == [5, 10, 15]
+
+
 def test_get_object_dict_with_results_but_not_paginated(galaxy_api_mocked, requests_mock):
     url = 'http://bogus.invalid:9443/api/v3/unicorns/sparkleland/magestic/enemies/'
 
