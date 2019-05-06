@@ -1,5 +1,4 @@
-
-import hashlib
+import codecs
 import json
 import logging
 import os
@@ -7,17 +6,11 @@ import os
 from six.moves.urllib.parse import urljoin
 
 from ansible_galaxy import exceptions
+from ansible_galaxy import multipart_form
 from ansible_galaxy.rest_api import GalaxyAPI
+from ansible_galaxy.utils import chksums
 
 log = logging.getLogger(__name__)
-
-
-def _get_file_checksum(file_path):
-    checksum = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
-            checksum.update(byte_block)
-    return checksum.hexdigest()
 
 
 def _publish(galaxy_context,
@@ -33,13 +26,24 @@ def _publish(galaxy_context,
     api = GalaxyAPI(galaxy_context)
 
     data = {
-        'sha256': _get_file_checksum(archive_path),
+        'sha256': chksums.sha256sum_from_path(archive_path),
     }
+
+    form = multipart_form.MultiPartForm()
+    for key in data:
+        form.add_field(key, data[key])
+
+    form.add_file('file',
+                  os.path.basename(archive_path),
+                  codecs.open(archive_path, 'rb'),
+                  'application/octet-stream')
+
+    log.debug('form: %s', form)
 
     log.debug("Publishing file %s with data: %s" % (archive_path, json.dumps(data)))
 
     try:
-        response_data = api.publish_file(data, archive_path, publish_api_key)
+        response_data = api.publish_file(form, publish_api_key)
         log.debug('response_data: %s', response_data)
         results['response_data'] = response_data
     except exceptions.GalaxyRequestsError as requests_exc:

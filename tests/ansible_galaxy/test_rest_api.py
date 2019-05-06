@@ -9,6 +9,7 @@ from six import text_type
 
 import ansible_galaxy
 from ansible_galaxy import exceptions
+from ansible_galaxy import multipart_form
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy import rest_api
 
@@ -180,12 +181,6 @@ def test_galaxy_api_properties(galaxy_api):
 
 @pytest.fixture
 def galaxy_api_mocked(mocker, galaxy_context_example_invalid, requests_mock):
-    mocker.patch('ansible_galaxy.rest_api.MultiPartForm.add_file')
-    mocker.patch('ansible_galaxy.rest_api.MultiPartForm.get_binary',
-                 return_value=io.BytesIO())
-    mocker.patch('ansible_galaxy.rest_api.GalaxyAPI._form_add_file_args',
-                 return_value=('file', 'dummy args', None, 'application/octet-stream'))
-
     requests_mock.get('http://bogus.invalid:9443/api/',
                       json={'current_version': 'v2'})
 
@@ -194,7 +189,25 @@ def galaxy_api_mocked(mocker, galaxy_context_example_invalid, requests_mock):
     return api
 
 
-def test_galaxy_api_publish_file_202(galaxy_api_mocked, requests_mock, tmpdir):
+@pytest.fixture
+def file_upload_form():
+    data = {
+        'sha256': 'f9e588573f5e45b0640abe9eb0a82537c258c65a41a81d184984da28630a35db'
+    }
+
+    form = multipart_form.MultiPartForm()
+    for key in data:
+        form.add_field(key, data[key])
+
+    # ('file', 'foo.tar.gz', some_fd, 'application/octetstream')
+    # artifact_file_info = multipart_form.form_add_file_args(archive_path, mimetype='application/octet-stream')
+    some_fd = io.BytesIO(b'Some bytes from a tar.gz')
+    form.add_file('file', 'somens-somename-1.2.3.tar.gz', some_fd, 'application/octet-stream')
+
+    return form
+
+
+def test_galaxy_api_publish_file_202(galaxy_api_mocked, requests_mock, tmpdir, file_upload_form):
     status_202_json = {"task": "https://galaxy-dev.ansible.com/api/v2/collection-imports/224/"}
 
     # POST http://bogus.invalid:9443/api/v2/collections/
@@ -202,7 +215,8 @@ def test_galaxy_api_publish_file_202(galaxy_api_mocked, requests_mock, tmpdir):
                        status_code=202,
                        json=status_202_json)
 
-    res = galaxy_api_mocked.publish_file(data={}, archive_path=None, publish_api_key=None)
+    publish_api_key = '1f107befb89e0863829264d5241111a'
+    res = galaxy_api_mocked.publish_file(form=file_upload_form, publish_api_key=publish_api_key)
 
     log.debug('res: %s', res)
 
@@ -210,7 +224,7 @@ def test_galaxy_api_publish_file_202(galaxy_api_mocked, requests_mock, tmpdir):
     assert res == status_202_json
 
 
-def test_galaxy_api_publish_file_conflict_409(galaxy_api_mocked, requests_mock, tmpdir):
+def test_galaxy_api_publish_file_conflict_409(galaxy_api_mocked, requests_mock, tmpdir, file_upload_form):
     err_409_conflict_json = {'code': 'conflict.collection_exists', 'message': 'Collection "testing-ansible_testing_content-4.0.4" already exists.'}
 
     # POST http://bogus.invalid:9443/api/v2/collections/
@@ -219,7 +233,38 @@ def test_galaxy_api_publish_file_conflict_409(galaxy_api_mocked, requests_mock, 
                        json=err_409_conflict_json)
 
     with pytest.raises(ansible_galaxy.exceptions.GalaxyPublishError) as exc_info:
-        galaxy_api_mocked.publish_file(data={}, archive_path=None, publish_api_key=None)
+        galaxy_api_mocked.publish_file(form=file_upload_form, publish_api_key=None)
+
+    log.debug('exc_info:%s', exc_info)
+
+
+def test_galaxy_api_publish_file_unauthorized_401(galaxy_api_mocked, requests_mock, tmpdir, file_upload_form):
+    err_401_unauthorized_json = {'code': 'authentication_failed', 'message': 'Invalid token.'}
+
+    # POST http://bogus.invalid:9443/api/v2/collections/
+    requests_mock.post('http://bogus.invalid:9443/api/v2/collections/',
+                       status_code=401,
+                       reason='Unauthorized',
+                       json=err_401_unauthorized_json)
+
+    bad_publish_api_key = '1f107deadbeefcafee0863829264d5211a'
+    with pytest.raises(ansible_galaxy.exceptions.GalaxyPublishError) as exc_info:
+        galaxy_api_mocked.publish_file(form=file_upload_form, publish_api_key=bad_publish_api_key)
+
+    log.debug('exc_info:%s', exc_info)
+
+
+def test_galaxy_api_publish_file_request_error(galaxy_api_mocked, requests_mock, tmpdir, file_upload_form):
+    ssl_msg = 'SSL stuff broke? Good luck figuring that out'
+
+    # POST http://bogus.invalid:9443/api/v2/collections/
+    requests_mock.post('http://bogus.invalid:9443/api/v2/collections/',
+                       exc=requests.exceptions.SSLError(ssl_msg))
+
+    publish_api_key = '1f107befb89e0863829264d5241111a'
+
+    with pytest.raises(ansible_galaxy.exceptions.GalaxyPublishError) as exc_info:
+        galaxy_api_mocked.publish_file(form=file_upload_form, publish_api_key=publish_api_key)
 
     log.debug('exc_info:%s', exc_info)
 

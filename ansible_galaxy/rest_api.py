@@ -22,20 +22,16 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-import codecs
 import logging
-import os
 import sys
 import uuid
 
 import requests
 
 from six.moves.urllib.parse import quote as urlquote
-from six.moves.urllib.parse import urlencode
 
 from ansible_galaxy import __version__ as mazer_version
 from ansible_galaxy import exceptions
-from ansible_galaxy.multipart_form import MultiPartForm
 
 log = logging.getLogger(__name__)
 http_log = logging.getLogger('%s.(http).(general)' % __name__)
@@ -376,26 +372,8 @@ class GalaxyAPI(object):
         '''Get a full url and return deserialized results'''
         return self._get_object(href=href)
 
-    # FIXME: update publish_file to be easier to test/mock
-    # This is so unit test can mock args to form.add_file()
-    def _form_add_file_args(self, archive_path):
-        return ('file',
-                os.path.basename(archive_path),
-                codecs.open(archive_path, "rb"),
-                'application/octet-stream')
-
     @g_connect
-    def publish_file(self, data, archive_path, publish_api_key):
-        form = MultiPartForm()
-
-        for key in data:
-            form.add_field(key, data[key])
-
-        file_args = self._form_add_file_args(archive_path)
-        form.add_file(*file_args)
-
-        log.debug('form: %s', form)
-
+    def publish_file(self, form, publish_api_key):
         # TODO: at somepoint, get the publish url from api
         collection_url_ver = 'v2'
         url = '%s/%s/collections/' % (self.base_api_url, collection_url_ver)
@@ -410,6 +388,9 @@ class GalaxyAPI(object):
 
         request_headers['Content-type'] = form.get_content_type()
         request_headers['Content-length'] = str(len(form_buffer))
+
+        # FIXME: too tightly coupled
+        artifact_path = form.files[0][1]
 
         try:
 
@@ -426,15 +407,15 @@ class GalaxyAPI(object):
 
             raise exceptions.GalaxyPublishError(
                 error_msg,
-                archive_path=archive_path,
+                archive_path=artifact_path,
                 url=url
             )
 
-        except exceptions.GalaxyRequestError as exc:
+        except exceptions.GalaxyClientAPIConnectionError as exc:
             log.exception(exc)
 
             raise exceptions.GalaxyPublishError(
                 'Network error: %s' % str(exc),
-                archive_path=archive_path,
+                archive_path=artifact_path,
                 url=url
             )

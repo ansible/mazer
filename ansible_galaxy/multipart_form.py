@@ -1,4 +1,3 @@
-import mimetypes
 import io
 import uuid
 
@@ -23,11 +22,9 @@ class MultiPartForm(object):
         self.form_fields.append((name, value))
         return
 
-    def add_file(self, fieldname, filename, fileHandle, mimetype=None):
+    def add_file(self, fieldname, filename, fileHandle, mimetype):
         """Add a file to be uploaded."""
         body = fileHandle.read()
-        if mimetype is None:
-            mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
         self.files.append((fieldname, filename, mimetype, body))
         return
 
