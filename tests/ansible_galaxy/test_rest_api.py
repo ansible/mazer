@@ -362,6 +362,48 @@ def test_get_object(galaxy_api_mocked, requests_mock):
     assert data['stuff'] == [3, 4, 5]
 
 
+def test_get_object_list(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v3/unicorns/sparkleland/magestic/'
+
+    requests_mock.get(url,
+                      status_code=200,
+                      reason='OK',
+                      json=[{'stuff': [3, 4, 5]},
+                            {'stuff': [1, 2, 3]}])
+
+    data = galaxy_api_mocked.get_object(href=url)
+
+    log.debug('data:\n%s', data)
+
+    assert isinstance(data, list)
+    assert data[0]['stuff'] == [3, 4, 5]
+    assert data[1]['stuff'] == [1, 2, 3]
+
+
+def test_get_object_dict_with_results_but_not_paginated(galaxy_api_mocked, requests_mock):
+    url = 'http://bogus.invalid:9443/api/v3/unicorns/sparkleland/magestic/enemies/'
+
+    response_data = {
+        "results": [
+            {'stuff': [3, 4, 5]},
+            {'stuff': [1, 2, 3]}
+        ]
+    }
+
+    requests_mock.get(url,
+                      status_code=200,
+                      reason='OK',
+                      json=response_data,)
+
+    data = galaxy_api_mocked.get_object(href=url)
+
+    log.debug('data:\n%s', data)
+
+    assert isinstance(data, dict)
+    assert data['results'][0]['stuff'] == [3, 4, 5]
+    assert data['results'][1]['stuff'] == [1, 2, 3]
+
+
 def test_get_object_paginated(galaxy_api_mocked, requests_mock):
     url_page1 = 'http://bogus.invalid:9443/api/v3/unicorns/sparkleland/magestic/versions/'
 
