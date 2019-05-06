@@ -163,8 +163,10 @@ class RestClient(object):
 
         except requests.exceptions.ConnectionError as connection_exc:
             self.log.debug('Connection exception on %s', pre_request_slug)
-            self.log.exception("%s: %s", pre_request_slug, connection_exc)
+            self.log.exception("%s: %s %r", pre_request_slug, connection_exc, connection_exc)
 
+            # TODO: The request.ConnectionError error messages are very knarly and obscure real
+            #       cause of message (like a 'connection refused'). Try to improve these cases.
             raise exceptions.GalaxyClientAPIConnectionError(connection_exc,
                                                             response=connection_exc.response)
 
@@ -346,9 +348,15 @@ class GalaxyAPI(object):
 
         return data
 
-    def post_multipart_form(self, url, form_data, headers=None):
-        resp = self.rest_client.mkrequest(url=url, http_method='POST',
-                                          args=form_data,
+    def post_multipart_form(self, url, form, headers=None):
+        form_buffer = form.get_binary().getvalue()
+
+        headers['Content-type'] = form.get_content_type()
+        headers['Content-length'] = str(len(form_buffer))
+
+        resp = self.rest_client.mkrequest(url=url,
+                                          http_method='POST',
+                                          args=form_buffer,
                                           headers=headers)
 
         return self.handle_response(resp)
@@ -384,19 +392,14 @@ class GalaxyAPI(object):
         if publish_api_key:
             request_headers['Authorization'] = 'Token %s' % publish_api_key
 
-        form_buffer = form.get_binary().getvalue()
-
-        request_headers['Content-type'] = form.get_content_type()
-        request_headers['Content-length'] = str(len(form_buffer))
-
         # FIXME: too tightly coupled
         artifact_path = form.files[0][1]
 
         try:
-
             # TODO: pass in a file-like object and use stream=True
+
             data = self.post_multipart_form(url,
-                                            form_data=form_buffer,
+                                            form=form,
                                             headers=request_headers)
 
             return data
@@ -407,15 +410,6 @@ class GalaxyAPI(object):
 
             raise exceptions.GalaxyPublishError(
                 error_msg,
-                archive_path=artifact_path,
-                url=url
-            )
-
-        except exceptions.GalaxyClientAPIConnectionError as exc:
-            log.exception(exc)
-
-            raise exceptions.GalaxyPublishError(
-                'Network error: %s' % str(exc),
                 archive_path=artifact_path,
                 url=url
             )

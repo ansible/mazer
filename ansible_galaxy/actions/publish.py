@@ -46,9 +46,9 @@ def _publish(galaxy_context,
         response_data = api.publish_file(form, publish_api_key)
         log.debug('response_data: %s', response_data)
         results['response_data'] = response_data
-    except exceptions.GalaxyRequestsError as requests_exc:
+    except exceptions.GalaxyError as exc:
         results['success'] = False
-        results['errors'].append(str(requests_exc))
+        results['errors'].append(str(exc))
 
     return results
 
@@ -62,6 +62,7 @@ def publish(galaxy_context, archive_path, publish_api_key, display_callback):
 
     log.debug('cli publish action results: %s', results)
 
+    # TODO: add a error_display_callback that understands the format of rest API responses
     if results['errors']:
         for error in results['errors']:
             display_callback(error)

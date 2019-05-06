@@ -255,15 +255,17 @@ def test_galaxy_api_publish_file_unauthorized_401(galaxy_api_mocked, requests_mo
 
 
 def test_galaxy_api_publish_file_request_error(galaxy_api_mocked, requests_mock, tmpdir, file_upload_form):
-    ssl_msg = 'SSL stuff broke? Good luck figuring that out'
 
     # POST http://bogus.invalid:9443/api/v2/collections/
+    # requests_mock.get('http://bogus.invalid:9443/api/',
+    #                  exc=requests.
+    exc = exceptions.GalaxyClientAPIConnectionError(requests.exceptions.SSLError('SSL stuff broke'))
     requests_mock.post('http://bogus.invalid:9443/api/v2/collections/',
-                       exc=requests.exceptions.SSLError(ssl_msg))
+                       exc=exc)
 
     publish_api_key = '1f107befb89e0863829264d5241111a'
 
-    with pytest.raises(ansible_galaxy.exceptions.GalaxyPublishError) as exc_info:
+    with pytest.raises(ansible_galaxy.exceptions.GalaxyClientAPIConnectionError) as exc_info:
         galaxy_api_mocked.publish_file(form=file_upload_form, publish_api_key=publish_api_key)
 
     log.debug('exc_info:%s', exc_info)
