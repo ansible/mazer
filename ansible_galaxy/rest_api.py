@@ -123,38 +123,18 @@ class RestClient(object):
         # For ex, '"GET https://galaxy.ansible.com/api/v1/repositories" c48937f4e8e849828772c4a0ce0fd5ed'
         pre_request_slug = '"%s %s" %s' % (http_method, url, request_id)
 
-        log.debug('self.session: %s', self.session)
+        # log the http request_slug with request_id to the main log and
+        # to the http log, both at INFO level for now.
+        http_log.info('%s', pre_request_slug)
+        self.log.info('%s', pre_request_slug)
+
+        # request_log.debug('%s headers=%s', pre_request_slug, request_headers)
 
         try:
-            # log the http request_slug with request_id to the main log and
-            # to the http log, both at INFO level for now.
-            http_log.info('%s', pre_request_slug)
-            self.log.info('%s', pre_request_slug)
-
-            request_log.debug('%s args=%s', pre_request_slug, args)
-            request_log.debug('%s headers=%s', pre_request_slug, request_headers)
 
             # Make the actual request
             resp = self.session.request(http_method, url, data=args, headers=request_headers,
                                         verify=self.validate_certs)
-
-            log.debug('resp: %s', resp)
-            log.debug('resp.request: %s', resp.request)
-            log.debug('resp.request.headers: %s', resp.request.headers)
-
-            slug = response_slug(resp)
-
-            response_log.info('%s http_status=%s', slug, resp.status_code)
-            response_log.debug('%s reason=%s', slug, resp.reason)
-            response_log.debug('%s headers=%s', slug, resp.headers)
-            response_log.debug('%s history=%s', slug, resp.history)
-
-            if resp.history:
-                for redirect in resp.history:
-                    log.debug('%s Redirected. %s is redirected to %s',
-                              slug, redirect.url, redirect.headers['Location'])
-
-            response_log.debug('%s resp repr:\n%r', slug, resp)
 
         except requests.exceptions.ConnectionError as connection_exc:
             self.log.debug('Connection exception on %s', pre_request_slug)
@@ -169,10 +149,23 @@ class RestClient(object):
             self.log.debug('Exception on %s', pre_request_slug)
             self.log.exception("%s: %s", pre_request_slug, request_exc)
 
-            http_log.error('%s data from server error response:\n%s', pre_request_slug, request_exc.response)
-
             raise exceptions.GalaxyRestAPIClientRequestError(request_exc,
                                                              response=request_exc.response)
+
+        # Log info about the request/response for debug
+        log.debug('resp.request: %s', resp.request)
+        # log.debug('resp.request.headers: %s', resp.request.headers)
+        log.debug('resp: %s', resp)
+
+        slug = response_slug(resp)
+
+        response_log.info('%s http_status=%s reason=%s', slug, resp.status_code, resp.reason)
+        response_log.debug('%s headers=%s', slug, resp.headers)
+
+        if resp.history:
+            for redirect in resp.history:
+                log.debug('%s %s redirected -->  %s',
+                          slug, redirect.url, redirect.headers['Location'])
 
         return resp
 
@@ -261,13 +254,7 @@ class GalaxyAPI(object):
         if 'next' not in data and 'count' not in data:
             return data
 
-        log.debug('Going to page the data: %s', data)
-
         results = data['results']
-
-        _starting_length = len(results)
-        log.debug('len(results): %s', _starting_length)
-        log.debug('data[next]: %s', data['next'])
 
         done = (data.get('next', None) is None)
 
@@ -283,10 +270,6 @@ class GalaxyAPI(object):
             # can assume all the rest of the links will also be 'page' dicts
             # if no results, default to a empty list
             results += next_data.get('results', [])
-
-            log.debug('  len(results): %s was %s added %s', len(results), _starting_length, len(results) - _starting_length)
-            log.debug('  len(next_data[results]): %s', len(next_data['results']))
-            log.debug('  next_data[next]: %s', next_data['next'])
 
             done = (next_data.get('next', None) is None)
 
@@ -321,7 +304,7 @@ class GalaxyAPI(object):
             self.log.debug('Exception on %s', slug)
             self.log.exception("%s: %s", slug, http_exc)
 
-            http_log.error('%s data from server error response:\n%s', slug, http_exc.response)
+            # http_log.error('%s data from server error response:\n%s', slug, http_exc.response)
 
             error_data = None
 
