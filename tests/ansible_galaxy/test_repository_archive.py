@@ -49,19 +49,9 @@ def test_install(galaxy_context, tmpdir):
     namespaced_repository_path = '%s/%s' % (repo_spec.namespace,
                                             repo_spec.name)
 
-    extract_archive_to_dir = os.path.join(galaxy_context.collections_path,
-                                          namespaced_repository_path,
-                                          '')
-
-    install_info_path = os.path.join(galaxy_context.collections_path,
-                                     namespaced_repository_path,
-                                     'meta/.galaxy_install_info')
-
-    destination_info = InstallDestinationInfo(destination_root_dir=galaxy_context.collections_path,
+    destination_info = InstallDestinationInfo(collections_path=galaxy_context.collections_path,
                                               repository_spec=repo_spec,
-                                              extract_archive_to_dir=extract_archive_to_dir,
                                               namespaced_repository_path=namespaced_repository_path,
-                                              install_info_path=install_info_path,
                                               force_overwrite=True,
                                               editable=False)
 

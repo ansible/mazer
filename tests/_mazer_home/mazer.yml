@@ -2,7 +2,7 @@ server:
   ignore_certs: false
   url: http://localhost:8000
 
-collections_path: tests/_mazer_work_dir/user_collections/ansible_collections
-global_collections_path: tests/_mazer_work_dir/global_collections/ansible_collections
+collections_path: tests/_mazer_work_dir/user_collections
+global_collections_path: tests/_mazer_work_dir/global_collections
 
 version: 1

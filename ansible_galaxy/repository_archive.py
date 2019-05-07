@@ -145,8 +145,8 @@ def install(repository_archive, repository_spec, destination_info, display_callb
         all_installed_files = []
     else:
         all_installed_files = extract(repository_spec,
-                                      collections_path=destination_info.destination_root_dir,
-                                      extract_archive_to_dir=destination_info.extract_archive_to_dir,
+                                      collections_path=destination_info.collections_path,
+                                      extract_archive_to_dir=destination_info.path,
                                       tar_file=repository_archive.tar_file,
                                       display_callback=display_callback)
 

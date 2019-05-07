@@ -139,21 +139,13 @@ def install(galaxy_context,
     namespaced_repository_path = '%s/%s' % (repository_spec.namespace,
                                             repository_spec.name)
 
-    install_info_path = os.path.join(galaxy_context.collections_path,
-                                     namespaced_repository_path,
-                                     'meta/.galaxy_install_info')
-
-    # extract_archive_to_dir depends on the repo_archive type, so ask it
-    extract_archive_to_dir = os.path.join(galaxy_context.collections_path,
-                                          namespaced_repository_path)
-
     editable = repository_spec.fetch_method == FetchMethods.EDITABLE
 
-    destination_info = InstallDestinationInfo(destination_root_dir=galaxy_context.collections_path,
+    # FIXME: compensate for 'ansible_collections' in InstallDestinationInfo?
+    #        ie, build extract_archive_to_dir instead of setting explicitly
+    destination_info = InstallDestinationInfo(collections_path=galaxy_context.collections_path,
                                               repository_spec=repository_spec,
-                                              extract_archive_to_dir=extract_archive_to_dir,
                                               namespaced_repository_path=namespaced_repository_path,
-                                              install_info_path=install_info_path,
                                               force_overwrite=force_overwrite,
                                               editable=editable)
 
