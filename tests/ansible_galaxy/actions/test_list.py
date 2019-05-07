@@ -14,7 +14,6 @@ def display_callback(msg, **kwargs):
 # TODO: make a fixture that sets up a faux installed_*_db
 
 def test__list(galaxy_context, mocker):
-    # galaxy_context.content_path = os.path.join(galaxy_context.content_path, 'doesntexist')
     mocker.patch('ansible_galaxy.installed_namespaces_db.get_namespace_paths',
                  return_value=iter(['ns_blip', 'ns_foo']))
     mocker.patch('ansible_galaxy.installed_repository_db.get_repository_paths',
@@ -48,10 +47,10 @@ def test_list_empty_roles_paths(galaxy_context):
 
 
 def test_list_no_content_dir(galaxy_context):
-    galaxy_context.content_path = os.path.join(galaxy_context.content_path, 'doesntexist')
+    galaxy_context.collections_path = os.path.join(galaxy_context.collections_path, 'doesntexist')
     res = list_action.list_action(galaxy_context,
                                   display_callback=display_callback)
 
-    # TODO: list should probably return non-zero if galaxy_context.content_path doesnt exist,
+    # TODO: list should probably return non-zero if galaxy_context.collections_path doesnt exist,
     #       but should probaly initially check that when creating galaxy_context
     assert res == 0

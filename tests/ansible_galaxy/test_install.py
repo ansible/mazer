@@ -60,7 +60,7 @@ def test_install(galaxy_context, mocker):
     assert len(res) > 0
     assert isinstance(res[0], Repository)
     assert res[0].repository_spec == repo_spec
-    assert galaxy_context.content_path in res[0].path
+    assert galaxy_context.collections_path in res[0].path
 
 
 def test_find(mocker):

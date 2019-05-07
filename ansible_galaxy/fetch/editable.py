@@ -38,7 +38,7 @@ class EditableFetch(object):
             raise exceptions.GalaxyClientError('Error fetching an editable install of %s because no "real_path" was found in find_results',
                                                self.requirement_spec.src, real_path)
 
-        dst_ns_root = os.path.join(self.galaxy_context.content_path, self.requirement_spec.namespace)
+        dst_ns_root = os.path.join(self.galaxy_context.collections_path, self.requirement_spec.namespace)
         dst_repo_root = os.path.join(dst_ns_root,
                                      self.requirement_spec.name)
 

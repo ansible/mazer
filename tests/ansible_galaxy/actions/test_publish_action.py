@@ -38,7 +38,7 @@ def test__publish(galaxy_context, mocker):
 def test__publish_api_error(galaxy_context, mocker, requests_mock):
     publish_api_key = "doesnt_matter_not_used"
 
-    context = GalaxyContext(content_path=galaxy_context.content_path,
+    context = GalaxyContext(collections_path=galaxy_context.collections_path,
                             server={'url': 'http://notreal.invalid:8000',
                                     'ignore_certs': False})
     log.debug('galaxy_context: %s', context)

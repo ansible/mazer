@@ -69,9 +69,9 @@ def test_installed_content_item_iterator_tmp_content(galaxy_context):
     ici = installed_content_item_db.installed_content_item_iterator(galaxy_context,
                                                                     content_item_type='roles')
 
-    content_path = galaxy_context.content_path
+    collections_path = galaxy_context.collections_path
 
-    # make some 'namespace_paths' in temp content_path
+    # make some 'namespace_paths' in temp collections_path
     tmp_namespace_paths = ['ns1.repo1', 'ns1.repo2', 'ns2.repo1']
     content_item_type_dirs = ['roles']
     content_item_names = ['somerole1', 'somerole2', 'role3']
@@ -82,7 +82,7 @@ def test_installed_content_item_iterator_tmp_content(galaxy_context):
         for content_item_type_dir in content_item_type_dirs:
             for content_item_name in content_item_names:
                 for role_subdir in role_subdirs:
-                    full_content_item_path = os.path.join(content_path, tmp_namespace_path, content_item_type_dir, content_item_name, role_subdir)
+                    full_content_item_path = os.path.join(collections_path, tmp_namespace_path, content_item_type_dir, content_item_name, role_subdir)
                     log.debug('full_content_path: %s', full_content_item_path)
                     os.makedirs(full_content_item_path)
 

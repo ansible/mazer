@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 # TODO: extract_archive_to_dir may not be needed now (was for roles)
 def extract(repository_spec,
-            content_path,
+            collections_path,
             extract_archive_to_dir,
             tar_file,
             force_overwrite=False,
@@ -31,7 +31,7 @@ def extract(repository_spec,
         # TODO: better error
         raise exceptions.GalaxyError('While installing a collection , no namespace was found. Try providing one with --namespace')
 
-    log.debug('About to extract "%s" to %s', repository_spec.label, content_path)
+    log.debug('About to extract "%s" to collections_path %s', repository_spec.label, collections_path)
 
     tar_members = tar_file.members
 
@@ -145,7 +145,7 @@ def install(repository_archive, repository_spec, destination_info, display_callb
         all_installed_files = []
     else:
         all_installed_files = extract(repository_spec,
-                                      content_path=destination_info.destination_root_dir,
+                                      collections_path=destination_info.destination_root_dir,
                                       extract_archive_to_dir=destination_info.extract_archive_to_dir,
                                       tar_file=repository_archive.tar_file,
                                       display_callback=display_callback)

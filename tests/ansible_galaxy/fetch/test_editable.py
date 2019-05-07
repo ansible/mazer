@@ -62,7 +62,7 @@ def test_editable_fetch_fetch(galaxy_context, mocker, tmpdir):
     res = fetcher.fetch(find_results=find_results)
     log.debug('res: %s', res)
 
-    expected_link_name = os.path.join(galaxy_context.content_path,
+    expected_link_name = os.path.join(galaxy_context.collections_path,
                                       namespace_override,
                                       name)
     log.debug('expected_link_name: %s', expected_link_name)

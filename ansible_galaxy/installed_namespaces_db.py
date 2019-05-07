@@ -8,7 +8,7 @@ from ansible_galaxy.models.galaxy_namespace import GalaxyNamespace
 log = logging.getLogger(__name__)
 
 
-def get_namespace_paths(content_path):
+def get_namespace_paths(collections_path):
     # TODO: abstract this a bit?  one to make it easier to mock, but also
     #       possibly to prepare for nested dirs, multiple paths, various
     #       filters/whitelist/blacklist/excludes, caching, or respecting
@@ -17,11 +17,11 @@ def get_namespace_paths(content_path):
         # TODO: filter on any rules for what a namespace path looks like
         #       may one being 'somenamespace.somename' (a dot sep ns and name)
         #
-        namespace_paths = os.listdir(content_path)
+        namespace_paths = os.listdir(collections_path)
     except OSError as e:
         log.exception(e)
         log.warning('The content path %s did not exist so no content or repositories were found.',
-                    content_path)
+                    collections_path)
         namespace_paths = []
 
     return namespace_paths
@@ -32,13 +32,13 @@ def installed_namespace_iterator(galaxy_context,
 
     namespace_match_filter = match_filter or matchers.MatchAll()
 
-    content_path = galaxy_context.content_path
+    collections_path = galaxy_context.collections_path
 
-    namespace_paths = get_namespace_paths(content_path)
+    namespace_paths = get_namespace_paths(collections_path)
 
-    log.debug('Looking for namespaces in %s', content_path)
+    log.debug('Looking for namespaces in %s', collections_path)
     for namespace_path in namespace_paths:
-        namespace_full_path = os.path.join(content_path, namespace_path)
+        namespace_full_path = os.path.join(collections_path, namespace_path)
 
         collection_namespace = GalaxyNamespace(namespace=namespace_path,
                                                path=namespace_full_path)

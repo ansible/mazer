@@ -31,7 +31,7 @@ default_server_dict = {'url': 'http://bogus.invalid:9443',
 
 @pytest.fixture
 def galaxy_context_example_invalid(galaxy_context):
-    context = GalaxyContext(content_path=galaxy_context.content_path,
+    context = GalaxyContext(collections_path=galaxy_context.collections_path,
                             server={'url': default_server_dict['url'],
                                     'ignore_certs': False})
     return context

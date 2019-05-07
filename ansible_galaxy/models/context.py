@@ -31,11 +31,11 @@ log = logging.getLogger(__name__)
 class GalaxyContext(object):
     ''' Keeps global galaxy info '''
 
-    def __init__(self, content_path=None, server=None):
+    def __init__(self, collections_path=None, server=None):
         self.server = server or {'url': None,
                                  'ignore_certs': False}
-        self.content_path = content_path
+        self.collections_path = collections_path
 
     def __repr__(self):
-        return 'GalaxyContext(content_path=%s, server=%s)' % \
-            (self.content_path, self.server)
+        return 'GalaxyContext(collections_path=%s, server=%s)' % \
+            (self.collections_path, self.server)

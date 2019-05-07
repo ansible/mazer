@@ -7,7 +7,7 @@ from ansible_galaxy import matchers
 log = logging.getLogger(__name__)
 
 
-# galaxy_context.content_path is empty
+# galaxy_context.collections_path is empty
 def test_installed_repository_db(galaxy_context):
     icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
@@ -15,7 +15,7 @@ def test_installed_repository_db(galaxy_context):
         log.debug('x: %s', x)
 
 
-# galaxy_context.content_path is empty
+# galaxy_context.collections_path is empty
 def test_installed_repository_db_match_names(galaxy_context):
     icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 

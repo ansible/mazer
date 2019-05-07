@@ -47,7 +47,7 @@ EXAMPLE_REPO_VERSIONS_LIST = \
 
 @pytest.fixture
 def galaxy_context_example_invalid(galaxy_context):
-    context = GalaxyContext(content_path=galaxy_context.content_path,
+    context = GalaxyContext(collections_path=galaxy_context.collections_path,
                             server={'url': 'http://example.invalid',
                                     'ignore_certs': False})
     return context

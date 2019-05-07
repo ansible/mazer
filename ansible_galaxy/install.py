@@ -130,26 +130,26 @@ def install(galaxy_context,
     # hand, does not have a parent directory at all.
 
     # preparation for archive extraction
-    if not os.path.isdir(galaxy_context.content_path):
-        log.debug('No content path (%s) found so creating it', galaxy_context.content_path)
+    if not os.path.isdir(galaxy_context.collections_path):
+        log.debug('No content path (%s) found so creating it', galaxy_context.collections_path)
 
-        os.makedirs(galaxy_context.content_path)
+        os.makedirs(galaxy_context.collections_path)
 
     # Build up all the info about where the repository will be installed to
     namespaced_repository_path = '%s/%s' % (repository_spec.namespace,
                                             repository_spec.name)
 
-    install_info_path = os.path.join(galaxy_context.content_path,
+    install_info_path = os.path.join(galaxy_context.collections_path,
                                      namespaced_repository_path,
                                      'meta/.galaxy_install_info')
 
     # extract_archive_to_dir depends on the repo_archive type, so ask it
-    extract_archive_to_dir = os.path.join(galaxy_context.content_path,
+    extract_archive_to_dir = os.path.join(galaxy_context.collections_path,
                                           namespaced_repository_path)
 
     editable = repository_spec.fetch_method == FetchMethods.EDITABLE
 
-    destination_info = InstallDestinationInfo(destination_root_dir=galaxy_context.content_path,
+    destination_info = InstallDestinationInfo(destination_root_dir=galaxy_context.collections_path,
                                               repository_spec=repository_spec,
                                               extract_archive_to_dir=extract_archive_to_dir,
                                               namespaced_repository_path=namespaced_repository_path,
@@ -167,7 +167,7 @@ def install(galaxy_context,
 
     if display_callback:
         display_callback("- The repository %s was successfully installed to %s" % (repository_spec.label,
-                                                                                   galaxy_context.content_path))
+                                                                                   galaxy_context.collections_path))
 
     # rm any temp files created when getting the content archive
     # TODO: use some sort of callback?
