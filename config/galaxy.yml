@@ -2,5 +2,5 @@ defaults: {}
 server:
   ignore_certs: false
   url: https://galaxy-qa.ansible.com
-content_path: ~/.ansible/collections/ansible_collections
+collections_path: ~/.ansible/collections/ansible_collections
 version: 1

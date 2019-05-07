@@ -73,7 +73,7 @@ to ~/.ansible/collections/ansible_collections/testing/ansible_testing_content/
 ### Install a collection to a different content path
 
 ```
-$ mazer install --content-path ~/my-ansible-content alikins.collection_inspect
+$ mazer install --collections-path ~/my-ansible-content alikins.collection_inspect
 ```
 
 This will install the alikins.collection_inspect collection to ~/my-ansible-content/alikins/collection_inspect
@@ -153,14 +153,14 @@ server:
 #
 # default: /usr/share/ansible/collections/ansible_collections
 #
-global_content_path: /usr/share/ansible/collections/ansible_collections
+global_collections_path: /usr/share/ansible/collections/ansible_collections
 
 # When installing content like ansible collections, mazer will install into
 # sub directories of this path.
 #
 # default: ~/.ansible/collections/ansible_collections
 #
-content_path: ~/.ansible/collections/ansible_collections
+collections_path: ~/.ansible/collections/ansible_collections
 
 # The version of the config file format.
 # This should never need to be changed manually.

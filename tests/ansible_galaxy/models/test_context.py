@@ -17,7 +17,7 @@ def test_context_empty_init():
 
 
 def test_context_with_collections_path_and_server():
-    collections_path = '/dev/null/some_content_path'
+    collections_path = '/dev/null/some_collections_path'
     server_url = 'http://example.com:9999/'
     ignore_certs = False
 
@@ -61,7 +61,7 @@ def test_context_server_none_collections_path_none():
 
 
 def test_context_repr():
-    collections_path = '/dev/null/some_content_path'
+    collections_path = '/dev/null/some_collections_path'
     server_url = 'http://example.com:9999/'
     ignore_certs = False
 
@@ -76,4 +76,4 @@ def test_context_repr():
     assert isinstance(rep_res, six.string_types)
     assert 'collections_path' in rep_res
     assert 'server' in rep_res
-    assert 'some_content_path' in rep_res
+    assert 'some_collections_path' in rep_res

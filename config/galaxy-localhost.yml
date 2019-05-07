@@ -2,5 +2,5 @@ defaults: {}
 server:
   ignore_certs: false
   url: http://localhost:8000
-content_path: ~/.ansible/collections/ansible_collections
+collections_path: ~/.ansible/collections/ansible_collections
 version: 1

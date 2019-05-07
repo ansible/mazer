@@ -61,8 +61,8 @@ VALID_YAML = b'''
 server:
   ignore_certs: true
   url: https://someserver.example.com
-content_path: ~/.ansible/some_collections_path/ansible_collections
-global_content_path: /usr/local/share/collections/ansible_collections
+collections_path: ~/.ansible/some_collections_path/ansible_collections
+global_collections_path: /usr/local/share/collections/ansible_collections
 options:
   verbosity: 0
 version: 1
@@ -79,14 +79,14 @@ def test_load_valid_yaml():
     log.debug('config_data: %s', config_data)
 
     assert config_data is not None
-    expected_keys = ['server', 'content_path', 'options']
+    expected_keys = ['server', 'collections_path', 'options']
     for expected_key in expected_keys:
         assert expected_key in config_data
 
     assert config_data['server']['url'] == 'https://someserver.example.com'
     assert config_data['server']['ignore_certs'] is True
-    assert config_data['content_path'] == '~/.ansible/some_collections_path/ansible_collections'
-    assert config_data['global_content_path'] == '/usr/local/share/collections/ansible_collections'
+    assert config_data['collections_path'] == '~/.ansible/some_collections_path/ansible_collections'
+    assert config_data['global_collections_path'] == '/usr/local/share/collections/ansible_collections'
 
 
 def test_save_empty_config():
@@ -106,7 +106,7 @@ def test_save_config():
 
     config.server = {'url': 'https://someserver.example.com',
                      'ignore_certs': True}
-    config.content_path = '~/.ansible/not-content-path'
+    config.collections_path = '~/.ansible/not-collections-path'
 
     res = config_file.save(_config.as_dict(), yaml_fo.name)
 
@@ -118,7 +118,7 @@ def test_save_bogus_path():
 
     config.server = {'url': 'https://someserver.example.com',
                      'ignore_certs': True}
-    config.content_path = '~/.ansible/not-content-path'
+    config.collections_path = '~/.ansible/not-collections-path'
 
     bogus_path = '/dev/null/doesnt/exist.yml'
     res = None

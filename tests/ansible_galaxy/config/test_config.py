@@ -6,7 +6,7 @@ from ansible_galaxy.config import config
 
 log = logging.getLogger(__name__)
 
-CONFIG_SECTIONS = ['server', 'content_path', 'global_content_path', 'options']
+CONFIG_SECTIONS = ['server', 'collections_path', 'global_collections_path', 'options']
 
 
 def assert_object(config_obj):
@@ -65,8 +65,8 @@ def test_config_as_dict():
     orig_config_data = OrderedDict([
         ('server', {'url': 'some_url_value',
                     'ignore_certs': True}),
-        ('content_path', None),
-        ('global_content_path', None),
+        ('collections_path', None),
+        ('global_collections_path', None),
         ('options', {'some_option': 'some_option_value'}),
     ])
 
@@ -97,7 +97,7 @@ def test_config_as_dict_from_partial_dict():
     assert isinstance(config_data['options'], dict)
     assert config_data['options'] == {}
 
-    assert config_data['content_path'] is None
+    assert config_data['collections_path'] is None
 
 
 def test_load_empty():
@@ -123,7 +123,7 @@ def test_save_empty():
 
     assert written_yaml != ''
     assert 'server' in written_yaml
-    assert 'content_path' in written_yaml
+    assert 'collections_path' in written_yaml
 
 
 def test_save():

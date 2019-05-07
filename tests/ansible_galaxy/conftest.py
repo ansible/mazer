@@ -3,7 +3,6 @@ import pytest
 
 @pytest.fixture
 def galaxy_context(tmpdir):
-    # tmp_content_path = tempfile.mkdtemp()
     # FIXME: mock
     server = {'url': 'http://localhost:8000',
               'ignore_certs': False}
