@@ -160,7 +160,7 @@ class GalaxyCLI(cli.CLI):
 
         super(GalaxyCLI, self).parse()
 
-        if self.action == 'install' and getattr(self.options, 'content_path') and getattr(self.options, 'global_install'):
+        if self.action == 'install' and getattr(self.options, 'collections_path') and getattr(self.options, 'global_install'):
             raise cli_exceptions.CliOptionsError('--content-path and --global are mutually exclusive')
 
     def _get_galaxy_context(self, options, config):
@@ -174,8 +174,7 @@ class GalaxyCLI(cli.CLI):
         if hasattr(options, 'global_install') and options.global_install:
             raw_collections_path = config.global_collections_path
 
-        # content_path = os.path.expanduser(raw_content_path)
-        content_path = os.path.abspath(os.path.expanduser(raw_content_path))
+        collections_path = os.path.abspath(os.path.expanduser(raw_collections_path))
 
         server = config.server.copy()
 
@@ -186,7 +185,7 @@ class GalaxyCLI(cli.CLI):
             # use ignore certs from options if available, but fallback to configured ignore_certs
             server['ignore_certs'] = options.ignore_certs
 
-        galaxy_context = GalaxyContext(server=server, collections_path=content_path)
+        galaxy_context = GalaxyContext(server=server, collections_path=collections_path)
 
         return galaxy_context
 

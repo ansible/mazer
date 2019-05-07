@@ -131,7 +131,7 @@ class TestGalaxy(unittest.TestCase):
         # installing role
         log.debug('self.role_path: %s', self.role_path)
 
-        gc = GalaxyCLI(args=self.default_args + ["install", "--content-path", self.role_path, '--force', self.role_name])
+        gc = GalaxyCLI(args=self.default_args + ["install", "--collections-path", self.role_path, '--force', self.role_name])
         gc.parse()
         gc.run()
 
