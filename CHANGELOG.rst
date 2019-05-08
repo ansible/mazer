@@ -2,6 +2,33 @@
 Changelog
 =========
 
+0.5.0
+-----
+
+* WARNING: The config file items and cli options for specifying install paths
+           have changed and may break existing configs and scripts.
+* The cli option '--content-root' is now '--collections-path'
+* The short cli option '-C' is now shorthand for '--collections-path' instead
+  of '--content-root'
+* The config item 'content_root' has been replaced with 'collections_path'
+* The config item 'global_content_root' has been replaced with 'global_collections_path'
+* The new 'collections_path' value no longer needs to end with 'ansible_collections'
+* The new 'global_collections_path' value no longer needs to end with 'ansible_collections'
+* The new 'collections_path' defaults to '~/.ansible/collections'.
+  Note that this replaces the previous 'content_root' config item that
+  defaulted to '~/.ansible/collections/ansible_collections'
+* The new 'global_collections_path' defaults to '/usr/share/ansible/collections'.
+  Note that this replaces the previous 'global_content_root' config item that
+  defaulted to '/usr/share/ansible/collections/ansible_collections'
+* 'mazer install' with default 'collections_path' ('~/.ansible/collections') will
+  still install to '~/.ansible/collections/ansible_collections', but install
+  will add the require trailing 'ansible_collections' automatically.
+* 'mazer install --global' with default 'globale_collections_path'
+  ('/usr/share/ansible/collections') will still install to
+  '/usr/share/ansible/collections/ansible_collections', but
+  'install --global' will add the require trailing
+  'ansible_collections' automatically.
+
 0.4.0 (2019-03-28)
 ------------------
 
