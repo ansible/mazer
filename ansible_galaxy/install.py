@@ -141,8 +141,6 @@ def install(galaxy_context,
 
     editable = repository_spec.fetch_method == FetchMethods.EDITABLE
 
-    # FIXME: compensate for 'ansible_collections' in InstallDestinationInfo?
-    #        ie, build extract_archive_to_dir instead of setting explicitly
     destination_info = InstallDestinationInfo(collections_path=galaxy_context.collections_path,
                                               repository_spec=repository_spec,
                                               namespaced_repository_path=namespaced_repository_path,

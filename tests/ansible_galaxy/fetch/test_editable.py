@@ -2,6 +2,7 @@
 import logging
 import os
 
+from ansible_galaxy.config.defaults import COLLECTIONS_PYTHON_NAMESPACE
 from ansible_galaxy.fetch import editable
 from ansible_galaxy import requirements
 from ansible_galaxy.models.requirement_spec import RequirementSpec
@@ -63,6 +64,7 @@ def test_editable_fetch_fetch(galaxy_context, mocker, tmpdir):
     log.debug('res: %s', res)
 
     expected_link_name = os.path.join(galaxy_context.collections_path,
+                                      COLLECTIONS_PYTHON_NAMESPACE,
                                       namespace_override,
                                       name)
     log.debug('expected_link_name: %s', expected_link_name)

@@ -51,8 +51,10 @@ def installed_repository_iterator(galaxy_context,
 
         for repository_path in repository_paths:
 
+            # TODO: just build up one dir and pass it in
             # TODO: if we need to distinquish repo from collection or role, we could do it here
             repository_ = repository.load_from_dir(galaxy_context.collections_path,
+                                                   namespace_path=namespace.path,
                                                    namespace=namespace.namespace,
                                                    name=repository_path,
                                                    installed=True)

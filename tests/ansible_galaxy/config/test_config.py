@@ -21,6 +21,10 @@ def test_config_init():
 
     assert_object(config_)
 
+    assert config_.server == {}
+    assert config_.collections_path is None
+    assert config_.global_collections_path is None
+
 
 def test_config_unknown_attr():
     config_ = config.Config()
@@ -103,10 +107,15 @@ def test_config_as_dict_from_partial_dict():
 def test_load_empty():
     yaml_fo = tempfile.NamedTemporaryFile()
 
-    config_ = config.load(yaml_fo.name)
+    config_obj = config.load(yaml_fo.name)
 
-    assert_object(config_)
-    log.debug('data: %s', config_.as_dict())
+    assert_object(config_obj)
+    log.debug('data: %s', config_obj.as_dict())
+
+    assert config_obj.server['url'] == 'https://galaxy.ansible.com'
+    assert config_obj.server['ignore_certs'] is False
+    assert config_obj.collections_path == '~/.ansible/collections'
+    assert config_obj.global_collections_path == '/usr/share/ansible/collections'
 
 
 def test_save_empty():

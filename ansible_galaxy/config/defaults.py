@@ -2,6 +2,7 @@ import os
 
 MAZER_HOME = os.environ.get('MAZER_HOME', None) or '~/.ansible'
 DEFAULT_CONFIG_FILE = '~/.ansible/mazer.yml'
+COLLECTIONS_PYTHON_NAMESPACE = 'ansible_collections'
 
 
 def get_config_path():
@@ -24,8 +25,8 @@ DEFAULTS = [
      ),
 
     # In order of priority
-    ('collections_path', os.path.join(MAZER_HOME, 'collections/ansible_collections')),
-    ('global_collections_path', '/usr/share/ansible/collections/ansible_collections'),
+    ('collections_path', os.path.join(MAZER_HOME, 'collections')),
+    ('global_collections_path', '/usr/share/ansible/collections'),
 
     # runtime options
     ('options',

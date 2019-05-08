@@ -61,8 +61,8 @@ VALID_YAML = b'''
 server:
   ignore_certs: true
   url: https://someserver.example.com
-collections_path: ~/.ansible/some_collections_path/ansible_collections
-global_collections_path: /usr/local/share/collections/ansible_collections
+collections_path: ~/.ansible/some_collections_path
+global_collections_path: /usr/local/share/collections
 options:
   verbosity: 0
 version: 1
@@ -85,8 +85,8 @@ def test_load_valid_yaml():
 
     assert config_data['server']['url'] == 'https://someserver.example.com'
     assert config_data['server']['ignore_certs'] is True
-    assert config_data['collections_path'] == '~/.ansible/some_collections_path/ansible_collections'
-    assert config_data['global_collections_path'] == '/usr/local/share/collections/ansible_collections'
+    assert config_data['collections_path'] == '~/.ansible/some_collections_path'
+    assert config_data['global_collections_path'] == '/usr/local/share/collections'
 
 
 def test_save_empty_config():

@@ -78,9 +78,12 @@ def load_from_archive(repository_archive, namespace=None, installed=True):
     return repository
 
 
+# TODO: rename load_from_dir_in_namespace()?
 # TODO: simplify this, rename as part of Repository->Collection re-re-naming
-def load_from_dir(content_dir, namespace, name, installed=True):
-    path_name = os.path.join(content_dir, namespace, name)
+def load_from_dir(content_dir, namespace_path, namespace, name, installed=True):
+    path_name = os.path.join(namespace_path, name)
+
+    log.debug('Loading repository %s.%s from path: %s', namespace, name, path_name)
 
     if not os.path.isdir(path_name):
         log.debug('The directory %s does not exist, unable to load a Repository from it', path_name)
@@ -179,7 +182,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
                             installed=installed,
                             requirements=requirements_list,)
 
-    log.debug('Repository %s loaded from %s', repository.repository_spec.label, path_name)
+    log.debug('Loaded repository %s from %s', repository.repository_spec.label, path_name)
 
     return repository
 

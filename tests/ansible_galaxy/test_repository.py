@@ -46,7 +46,7 @@ def test_load_from_archive_artifact(galaxy_context, tmpdir):
 
 # def load_from_dir(content_dir, namespace, name, installed=True):
 def test_load_from_dir_no_dir():
-    res = repository.load_from_dir('/dev/null/doesntexist', 'some_namespace', 'some_name')
+    res = repository.load_from_dir('/dev/null/doesntexist', 'ns/path', 'some_namespace', 'some_name')
 
     log.debug('res: %s', res)
 

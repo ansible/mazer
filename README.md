@@ -151,16 +151,16 @@ server:
 # When installing content like ansible collection globally (using the '-g/--global' flag),
 # mazer will install into sub directories of this path.
 #
-# default: /usr/share/ansible/collections/ansible_collections
+# default: /usr/share/ansible/collections
 #
-global_collections_path: /usr/share/ansible/collections/ansible_collections
+global_collections_path: /usr/share/ansible/collections
 
 # When installing content like ansible collections, mazer will install into
 # sub directories of this path.
 #
-# default: ~/.ansible/collections/ansible_collections
+# default: ~/.ansible/collections
 #
-collections_path: ~/.ansible/collections/ansible_collections
+collections_path: ~/.ansible/collections
 
 # The version of the config file format.
 # This should never need to be changed manually.
