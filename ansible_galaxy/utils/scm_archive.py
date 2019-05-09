@@ -54,12 +54,13 @@ def scm_archive_content(src, name, scm='git', version='HEAD'):
     log.debug('Archiving scm src %s to tar file: %s', src, temp_file.name)
 
     if scm == 'hg':
-        archive_cmd = ['hg', 'archive', '--prefix', "%s/" % name]
+        # archive --prefix . builds archive with no top level dir or prefix
+        archive_cmd = ['hg', 'archive', '--prefix', '.']
         if version:
             archive_cmd.extend(['-r', version])
         archive_cmd.append(temp_file.name)
     if scm == 'git':
-        archive_cmd = ['git', 'archive', '--prefix=%s/' % name, '--output=%s' % temp_file.name]
+        archive_cmd = ['git', 'archive', '--output=%s' % temp_file.name]
         if version:
             archive_cmd.append(version)
         else:
