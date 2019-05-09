@@ -27,7 +27,10 @@ class RequirementSpec(object):
     version_aka = attr.ib(default=None)
     fetch_method = attr.ib(default=None, cmp=False)
     src = attr.ib(default=None, cmp=False)
-    req_spec_string = attr.ib(default=None, cmp=False)
+    scm = attr.ib(default=None, cmp=False)
+
+    # If created from a parsed string, spec_string is copy of the full string
+    spec_string = attr.ib(default=None, cmp=False)
 
     @property
     def label(self):
@@ -58,7 +61,8 @@ class RequirementSpec(object):
                        version_spec=version_spec_str,
                        version_aka=data.get('version_aka', None),
                        fetch_method=data.get('fetch_method', None),
-                       req_spec_string=data.get('req_spec_string', None),
+                       scm=data.get('scm', None),
+                       spec_string=data.get('spec_string', None),
                        src=data.get('src', None),
                        )
         return instance

@@ -15,7 +15,6 @@ def from_dependencies_dict(dependencies_dict, namespace_override=None, editable=
                                               namespace_override=namespace_override,
                                               editable=editable)
         req_spec_data['version_spec'] = req_version_spec
-        req_spec_data['req_spec_string'] = req_spec_data.pop('spec_string', None)
 
         log.debug('req_spec_data: %s', req_spec_data)
 
