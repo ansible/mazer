@@ -29,6 +29,7 @@ def _build(galaxy_context,
     results['collection_path'] = collection_path
     results['info_file_path'] = collection_info_file_path
     results['errors'] = []
+    results['success'] = False
 
     info = None
 
@@ -37,13 +38,14 @@ def _build(galaxy_context,
             info = collection_info.load(info_fd)
 
             log.debug('info: %s', info)
-    except IOError as e:
+    except (IOError, ValueError) as e:
         log.error('Error loading the %s at %s: %s', collection_info.COLLECTION_INFO_FILENAME, collection_info_file_path, e)
-        results['errors'].append('Error loading the %s at %s: %s' % (collection_info.COLLECTION_INFO_FILENAME,
-                                                                     collection_info_file_path, e))
+        results['errors'].append('Error loading the %s at %s' % (collection_info.COLLECTION_INFO_FILENAME,
+                                                                 collection_info_file_path))
+        results['errors'].append(str(e))
+        return results
 
     if not info:
-        results['success'] = False
         results['errors'].append('There was no collection info in %s' % collection_info_file_path)
         return results
 
@@ -65,7 +67,6 @@ def _build(galaxy_context,
         results['success'] = True
         return results
 
-    results['success'] = False
     return results
 
 
