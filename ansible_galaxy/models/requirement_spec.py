@@ -51,7 +51,7 @@ class RequirementSpec(object):
                 if version_needs_aka(str(ver)):
                     data['version'] = normalize_version_string(ver)
                     data['version_aka'] = ver
-                version_spec_str = '==%s' % data['version']
+                version_spec_str = data['version']
             else:
                 # No version_spec, and version is None, that means match anything
                 version_spec_str = '*'
