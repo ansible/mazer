@@ -2,9 +2,14 @@
 Changelog
 =========
 
-0.5.0
------
+0.5.0 (2019-04-15)
+------------------
 
+* WARNING: Mazer now requires a Ansible Galaxy server that provides the 'v2' style REST API.
+  At time of release, that includes galaxy-dev.ansible.com and galaxy-qa.ansible.com
+* WARNING: Support for directly installing 'traditional' style roles from Ansible Galaxy
+  is no longer supported. ie, 'mazer install geerlingguy.ntp' will no longer work.
+  However, roles can still be installed if they are included in a collection
 * WARNING: The config file items and cli options for specifying install paths
            have changed and may break existing configs and scripts.
 * The cli option '--content-root' is now '--collections-path'
@@ -28,6 +33,15 @@ Changelog
   '/usr/share/ansible/collections/ansible_collections', but
   'install --global' will add the require trailing
   'ansible_collections' automatically.
+* The REST API client now uses 'requests' python module instead of the 'url' module bundle from ansible.
+* Add cli '--config' option to specify a path to an alternative config file.
+* Add support for 'MAZER_HOME' environment variable. MAZER_HOME defaults to ~/.ansible and
+  specifies where mazer looks for it's config (mazer.yml and mazer-logging.yml)
+* `216 Use Galaxy REST API v2 <https://github.com/ansible/mazer/issues/216>`_.
+* `239 Rename content-root to collections-path to be consistent with ansible <https://github.com/ansible/mazer/issues/239>`_.
+* `228 For envs w/no LANG/locale/text encoding, assume utf8 <https://github.com/ansible/mazer/issues/228>`_.
+* `236 Partial fix for scm_url installs <https://github.com/ansible/mazer/issues/236>`_.
+
 
 0.4.0 (2019-03-28)
 ------------------
