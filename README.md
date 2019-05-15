@@ -41,12 +41,9 @@ to ~/.ansible/collections/ansible_collections/testing/ansible_testing_content/
 
 ```
 /home/adrian/.ansible/collections/ansible_collections
-└── alikins
+└── testing
     ├── ansible_testing_content
     │   ├── FILES.json
-    │   ├── galaxy.yml
-    │   ├── galaxy.yml.new
-    │   ├── __init__.py
     │   ├── LICENSE
     │   ├── MANIFEST.json
     │   ├── meta
