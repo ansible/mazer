@@ -173,6 +173,9 @@
     "BitTorrent-1.1":{
         "deprecated":false
     },
+    "BlueOak-1.0.0":{
+        "deprecated":false
+    },
     "Borceux":{
         "deprecated":false
     },
