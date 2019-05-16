@@ -30,7 +30,7 @@ For additional documentation on mazer, view the [Mazer topic on Ansible Galaxy D
 
 ### Installing collection
 
-To install the galaxy repo [testing.ansible_testing_content](https://galaxy-qa.ansible.com/testing/ansible_testing_content):
+To install the Collection [testing.ansible_testing_content](https://galaxy-qa.ansible.com/testing/ansible_testing_content) from Galaxy:
 
 ```
 $ mazer install testing.ansible_testing_content
