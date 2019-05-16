@@ -30,14 +30,13 @@ For additional documentation on mazer, view the [Mazer topic on Ansible Galaxy D
 
 ### Installing collection
 
-To install the Collection [testing.ansible_testing_content](https://galaxy-qa.ansible.com/testing/ansible_testing_content) from Galaxy:
+To install the collection [testing.ansible_testing_content](https://galaxy-qa.ansible.com/testing/ansible_testing_content) from Galaxy:
 
 ```
 $ mazer install testing.ansible_testing_content
 ```
 
-This will install the collection in the https://galaxy-qa.ansible.com/testing/ansible_testing_content
-to ~/.ansible/collections/ansible_collections/testing/ansible_testing_content/
+The above will download the collection artifact from Galaxy, and install the contents to ~/.ansible/collections/ansible_collections/testing/ansible_testing_content/
 
 ```
 /home/adrian/.ansible/collections/ansible_collections
@@ -73,7 +72,7 @@ to ~/.ansible/collections/ansible_collections/testing/ansible_testing_content/
 $ mazer install --collections-path ~/my-ansible-content alikins.collection_inspect
 ```
 
-This will install the alikins.collection_inspect collection to ~/my-ansible-content/alikins/collection_inspect
+The above will download the collection alikins.collection_inspect form Galaxy and install the contents to `~/my-ansible-content/alikins/collection_inspect`
 
 ### Installing collections in 'editable' mode for development
 
