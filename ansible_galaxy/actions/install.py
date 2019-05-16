@@ -78,8 +78,13 @@ def install_repositories_matching_repository_specs(galaxy_context,
     already_installed_repository_spec_set = set([installed.repository_spec for installed in already_installed_generator])
     log.debug('already_installed_repository_spec_set: %s', already_installed_repository_spec_set)
 
+    log.debug('force_overwrite: %s', force_overwrite)
     # This filters out already installed repositories unless --force. Aside from the warning, 'mazer install alikins.something_installed_already' is ok.
-    requirements_to_install = [y for y in requirements_list if y.requirement_spec not in already_installed_repository_spec_set and not force_overwrite]
+    if force_overwrite:
+        log.debug('--force/force_overwrite=True, so [re]installing everything in %s', requirements_list)
+        requirements_to_install = requirements_list
+    else:
+        requirements_to_install = [y for y in requirements_list if y.requirement_spec not in already_installed_repository_spec_set]
 
     log.debug('repository_specs_to_install: %s', pprint.pformat(requirements_to_install))
 
