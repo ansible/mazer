@@ -390,6 +390,10 @@ def install_repository(galaxy_context,
     repository_spec_to_install = found_repository_spec
     log.debug('About to download repository requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)
 
+    if find_results['custom'].get('collection_is_deprecated', False):
+        display_callback("The collection '%s' is deprecated." % (found_repository_spec.label),
+                         level='warning')
+
     # FETCH state
     try:
         fetch_results = install.fetch(fetcher,

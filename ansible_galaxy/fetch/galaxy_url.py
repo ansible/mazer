@@ -90,6 +90,8 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         versions_list_url = collection_detail_data.get('versions_url', None)
 
+        collection_is_deprecated = collection_detail_data.get('deprecated', False)
+
         # TODO: if versions ends up with a 'related' we could follow it instead of specific
         #       get_collection_version_list()
         # example results
@@ -157,7 +159,8 @@ class GalaxyUrlFetch(base.BaseFetch):
         results = {'content': {'galaxy_namespace': namespace,
                                'repo_name': collection_name,
                                'version': best_version},
-                   'custom': {'download_url': download_url},
+                   'custom': {'download_url': download_url,
+                              'collection_is_deprecated': collection_is_deprecated},
                    }
 
         return results

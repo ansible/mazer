@@ -51,6 +51,37 @@ def test_install_repositories(galaxy_context, mocker):
     assert ret == expected_repos
 
 
+def test_install_repository_deprecated(galaxy_context, mocker):
+    requirements_to_install = \
+        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
+
+    find_results = {'content': {'galaxy_namespace': 'some_namespace',
+                                'repo_name': 'some_name'},
+                    'custom': {'repo_data': {},
+                               'download_url': 'http://foo.invalid/stuff/blip.tar.gz',
+                               'repoversion': {'version': '9.3.245'},
+                               'collection_is_deprecated': True,
+                               },
+                    }
+
+    mocker.patch('ansible_galaxy.actions.install.install.find',
+                 return_value=find_results)
+    mocker.patch('ansible_galaxy.actions.install.install.fetch')
+    mocker.patch('ansible_galaxy.actions.install.install.install')
+
+    mock_display_callback = mocker.MagicMock(name='mock_display_callback')
+
+    ret = install.install_repository(galaxy_context,
+                                     requirement_to_install=requirements_to_install[0],
+                                     display_callback=mock_display_callback)
+
+    expected_display_calls = mocker.call("The collection 'some_namespace.this_requires_some_name' is deprecated.", level='warning')
+
+    log.debug('ret: %s', ret)
+
+    assert expected_display_calls in mock_display_callback.call_args_list
+
+
 def test_install_repositories_no_deps_required(galaxy_context, mocker):
     needed_deps = []
 
