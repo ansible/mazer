@@ -91,7 +91,7 @@ class GalaxyCLI(cli.CLI):
         if self.action == "info":
             self.parser.set_usage("usage: %prog info [options] repo_name[,version]")
         elif self.action == "install":
-            self.parser.set_usage("usage: %prog install [options] [-r FILE | repo_name(s)[,version] | scm+repo_url[,version] | tar_file(s)]")
+            self.parser.set_usage("usage: %prog install [options] [collection_name(s)[,version] | collection_artifact_file(s)]")
             self.parser.add_option('-g', '--global', dest='global_install', action='store_true',
                                    help='Install content to the path containing your global or system-wide content. The default is the '
                                    'global_collections_path configured in your mazer.yml file (/usr/share/ansible/content, if not configured)')

@@ -179,7 +179,7 @@ class TestGalaxy(unittest.TestCase):
             # self.assertIsInstance(galaxycli_obj.galaxy, ansible_galaxy.models.context.GalaxyContext)
             formatted_call = {
                 'info': 'usage: %prog info [options] repo_name[,version]',
-                'install': 'usage: %prog install [options] [-r FILE | repo_name(s)[,version] | scm+repo_url[,version] | tar_file(s)]',
+                'install': 'usage: %prog install [options] [collection_name(s)[,version] | collection_artifact_file(s)]',
                 'list': 'usage: %prog list [repo_name]',
                 'publish': 'usage: %prog publish [options] archive_path',
                 'remove': 'usage: %prog remove repo1 repo2 ...',
