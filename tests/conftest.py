@@ -18,3 +18,15 @@ def inject_mazer_home(monkeypatch):
     monkeypatch.setattr("ansible_galaxy.config.defaults.MAZER_HOME",
                         _mazer_home)
     # log.debug('monkeypatched MAZER_HOME to %s', _mazer_home)
+
+
+@pytest.fixture
+def galaxy_context(tmpdir):
+    # FIXME: mock
+    server = {'url': 'http://localhost:8000',
+              'ignore_certs': False}
+    collections_path = tmpdir.mkdir('collections')
+
+    from ansible_galaxy.models.context import GalaxyContext
+
+    return GalaxyContext(server=server, collections_path=collections_path.strpath)
