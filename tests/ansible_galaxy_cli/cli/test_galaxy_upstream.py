@@ -55,6 +55,27 @@ def ensure_dir(path):
             raise
 
 
+def test_execute_remove(galaxy_context, mocker):
+
+    mock_remove = mocker.patch('ansible_galaxy.actions.remove.repository.remove',
+                               return_value='REMOVE_RESULT?',
+                               )
+
+    # Remove the default user collection testing.some_collection, except repository.remove is defused
+    args = ["mazer", "remove", 'testing.some_collection']
+    log.debug('args: %s', args)
+
+    gc = GalaxyCLI(args=args)
+    gc.parse()
+    gc.run()
+
+    remove_args, dummy = mock_remove.call_args_list[0]
+    first_arg = remove_args[0]
+
+    assert first_arg.repository_spec.namespace == 'testing'
+    assert first_arg.repository_spec.name == 'some_collection'
+
+
 class TestGalaxy(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -126,33 +147,6 @@ class TestGalaxy(unittest.TestCase):
                 # testing
                 self.assertEqual(mock_run.call_count, 1)
                 self.assertEqual(mock_ex.call_count, 1)
-
-    def test_execute_remove(self):
-        # installing role
-        log.debug('self.role_path: %s', self.role_path)
-
-        gc = GalaxyCLI(args=self.default_args + ["install", "--collections-path", self.role_path, '--force', self.role_name])
-        gc.parse()
-        gc.run()
-
-        log.debug('self.role_name: %s', self.role_name)
-        # location where the role was installed
-        role_file = os.path.join(self.role_path, self.role_name)
-
-        # self.assertTrue(os.path.exists(role_file))
-        log.debug('role_file: %s', role_file)
-
-        # removing role
-        # args = ["ansible-galaxy", "remove", role_file, self.role_name]
-        args = self.default_args + ["remove", self.role_name]
-        log.debug('args: %s', args)
-        gc = GalaxyCLI(args=args)
-        gc.parse()
-        gc.run()
-
-        # testing role was removed
-        removed_role = not os.path.exists(role_file)
-        self.assertTrue(removed_role)
 
     def test_raise_without_ignore_without_flag(self):
         ''' tests that GalaxyCLI exits with the error specified if the --ignore-errors flag is not used '''
