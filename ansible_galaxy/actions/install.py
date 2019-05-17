@@ -153,12 +153,19 @@ def install_repository_specs_loop(galaxy_context,
         requirements_list.append(req)
 
     log.debug('requirements_list: %s', requirements_list)
-    for req in requirements_list:
-        display_callback('Installing %s' % req.requirement_spec.label, level='info')
 
     while True:
         if not requirements_list:
             break
+
+        display_callback('Installing:', level='info')
+
+        for req in requirements_list:
+            if req.repository_spec:
+                msg = '  %s (required by %s)' % (req.requirement_spec.label, req.repository_spec)
+            else:
+                msg = '  %s' % req.requirement_spec.label
+            display_callback(msg, level='info')
 
         just_installed_repositories = \
             install_repositories_matching_repository_specs(galaxy_context,
@@ -170,18 +177,18 @@ def install_repository_specs_loop(galaxy_context,
                                                            no_deps=no_deps,
                                                            force_overwrite=force_overwrite)
 
+        display_callback('Installed:', level='info')
+
+        for just_installed_repo in just_installed_repositories:
+            display_callback('  %s to %s' % (just_installed_repo.repository_spec,
+                                             just_installed_repo.path),
+                             level='info')
+
         # set the repository_specs to search for to whatever the install reported as being needed yet
         # requirements_list = new_requirements_list
         requirements_list = find_new_deps_from_installed(galaxy_context,
                                                          just_installed_repositories,
                                                          no_deps=no_deps)
-
-        for req in requirements_list:
-            if req.repository_spec:
-                msg = 'Installing requirement %s (required by %s)' % (req.requirement_spec.label, req.repository_spec.label)
-            else:
-                msg = 'Installing requirement %s' % req.requirement_spec.label
-            display_callback(msg, level='info')
 
     # FIXME: what results to return?
     return 0
@@ -344,6 +351,11 @@ def install_repository(galaxy_context,
 
         return None
 
+    # TODO: The already installed check above verifies that nothing that matches the requirement spec is installed,
+    #       but just because the name+version required wasn't installed, that doesn't mean that name at a different
+    #       version isn't installed.
+    #       To catch that, also need to check if the irdb by name to see if anything with that name is installed.
+    #
     # We dont have anything that matches the RequirementSpec installed
     fetcher = fetch_factory.get(galaxy_context=galaxy_context,
                                 requirement_spec=requirement_spec_to_install)
@@ -430,7 +442,7 @@ def install_repository(galaxy_context,
                                                  display_callback=display_callback)
     except exceptions.GalaxyError as e:
         msg = "- %s was NOT installed successfully: %s "
-        display_callback(msg % (found_repository_spec.label, e), level='warning')
+        display_callback(msg % (found_repository_spec, e), level='warning')
         log.warning(msg, found_repository_spec.label, str(e))
         raise_without_ignore(ignore_errors, e)
         return []

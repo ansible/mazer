@@ -111,8 +111,9 @@ def test_galaxy_url_fetch_find_no_repo_data(galaxy_url_fetch, galaxy_context, re
 
     # galaxy_url_fetch = galaxy_url.GalaxyUrlFetch(requirement_spec=req_spec, galaxy_context=context)
     # - sorry, some_namespace.some_name (version_spec: ==9.3.245) was not found on http://galaxy.invalid/.
+    # - sorry, some_namespace.some_name,==9.3.245 was not found on http://example.invalid.
     with pytest.raises(exceptions.GalaxyClientError,
-                       match='- sorry, some_namespace.some_name.*version_spec.*was not found on http://example.invalid') as exc_info:
+                       match='- sorry, some_namespace.some_name,.* was not found on http://example.invalid') as exc_info:
         galaxy_url_fetch.find()
 
     log.debug('exc_info:%s', exc_info)

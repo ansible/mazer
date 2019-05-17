@@ -31,7 +31,7 @@ def extract(repository_spec,
         # TODO: better error
         raise exceptions.GalaxyError('While installing a collection , no namespace was found. Try providing one with --namespace')
 
-    log.debug('About to extract "%s" to collections_path %s', repository_spec.label, collections_path)
+    log.debug('About to extract "%s" to collections_path %s', repository_spec, collections_path)
 
     tar_members = tar_file.members
 

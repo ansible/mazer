@@ -35,7 +35,7 @@ class RequirementSpec(object):
 
     @property
     def label(self):
-        return '%s.%s (version_spec: %s)' % (self.namespace, self.name, str(self.version_spec))
+        return '%s.%s,%s' % (self.namespace, self.name, str(self.version_spec))
 
     @classmethod
     def from_dict(cls, data):

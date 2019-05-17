@@ -19,7 +19,7 @@ def test_get_content_version_none():
                      'name': 'some_name',
                      'version': None}
     req_spec = RequirementSpec.from_dict(req_spec_data)
-    with pytest.raises(exceptions.GalaxyError, match="The list of available versions for some_namespace.some_name.*version_spec.*is empty"):
+    with pytest.raises(exceptions.GalaxyError, match="The list of available versions for some_namespace.some_name,.* is empty"):
         repository_version.get_repository_version({}, req_spec, [])
 
 

@@ -155,10 +155,6 @@ def install(galaxy_context,
 
     just_installed_spec_and_results.append((repository_spec, res))
 
-    if display_callback:
-        display_callback("- The repository %s was successfully installed to %s" % (repository_spec.label,
-                                                                                   galaxy_context.collections_path))
-
     # rm any temp files created when getting the content archive
     # TODO: use some sort of callback?
     fetcher.cleanup()

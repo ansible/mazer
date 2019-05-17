@@ -60,4 +60,4 @@ class RepositorySpec(object):
         return instance
 
     def __str__(self):
-        return '{label}-{version}'.format(label=self.label, version=self.version)
+        return '{label},{version}'.format(label=self.label, version=self.version)
