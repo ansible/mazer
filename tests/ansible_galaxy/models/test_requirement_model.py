@@ -48,3 +48,34 @@ def test_repository_spec_requirement_spec_cmp():
 
     assert req.repository_spec == repo_spec1
     assert req.requirement_spec == req_spec
+
+
+def test_repository_spec_requirement_spec_sortable():
+    repo_spec1 = repository_spec.RepositorySpec(namespace='ns',
+                                                name='n',
+                                                version='3.4.5')
+
+    req_spec = requirement_spec.RequirementSpec(namespace='ns',
+                                                name='n',
+                                                version_spec='==3.4.5')
+
+    req_spec2 = requirement_spec.RequirementSpec(namespace='ns',
+                                                 name='n',
+                                                 version_spec='*')
+
+    req1 = requirement.Requirement(repository_spec=repo_spec1, requirement_spec=req_spec,
+                                   op=requirement.RequirementOps.EQ)
+
+    req2 = requirement.Requirement(repository_spec=repo_spec1, requirement_spec=req_spec2,
+                                   op=requirement.RequirementOps.EQ)
+
+    log.debug('req1: %s', req1)
+    log.debug('req2: %s', req2)
+    log.debug('repo_spec1: %s', repo_spec1)
+    log.debug('req_spec: %s', req_spec)
+
+    reqs = [req1, req2]
+
+    res = sorted(reqs)
+
+    log.debug('res: %s', res)

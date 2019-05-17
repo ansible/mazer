@@ -19,7 +19,8 @@ class RequirementSpec(object):
     namespace = attr.ib()
     name = attr.ib()
     version_spec = attr.ib(type=semantic_version.Spec, default=semantic_version.Spec('*'),
-                           converter=convert_string_to_version_spec)
+                           converter=convert_string_to_version_spec,
+                           cmp=False)
 
     # This is for supporting 'v1.0.0' etc. In that case the version_spec is '==1.0.0' and
     # version_aka is 'v1.0.0'. Need to track it because it is used to build github download
