@@ -1,9 +1,11 @@
 import logging
 import tempfile
+import uuid
 
 import requests
 
 from ansible_galaxy import exceptions
+from ansible_galaxy import user_agent
 
 log = logging.getLogger(__name__)
 
@@ -18,9 +20,16 @@ def fetch_url(archive_url, validate_certs=True):
     #       content downloads could support any thing the rest code does
     #       (ie, any TLS cert setup, proxy config, auth options, etc)
     # WHEN: if we change the underlying http client impl at least
+
+    request_headers = {}
+    request_id = uuid.uuid4().hex
+    request_headers['X-Request-ID'] = request_id
+    request_headers['User-Agent'] = user_agent.user_agent()
+
     try:
         log.debug('Downloading archive_url: %s', archive_url)
-        resp = requests.get(archive_url, verify=validate_certs, stream=True)
+        resp = requests.get(archive_url, verify=validate_certs,
+                            headers=request_headers, stream=True)
 
         temp_file = tempfile.NamedTemporaryFile(delete=False,
                                                 prefix='tmp-ansible-galaxy-content-archive-',
