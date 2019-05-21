@@ -23,31 +23,19 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import logging
-import sys
 import uuid
 
 import requests
 
 from six.moves.urllib.parse import quote as urlquote
 
-from ansible_galaxy import __version__ as mazer_version
 from ansible_galaxy import exceptions
+from ansible_galaxy import user_agent
 
 log = logging.getLogger(__name__)
 http_log = logging.getLogger('%s.(http).(general)' % __name__)
 request_log = logging.getLogger('%s.(http).(request)' % __name__)
 response_log = logging.getLogger('%s.(http).(response)' % __name__)
-
-USER_AGENT_FORMAT = 'Mazer/{version} ({platform}; python:{py_major}.{py_minor}.{py_micro}) ansible_galaxy/{version}'
-
-
-def user_agent():
-    user_agent_data = {'version': mazer_version,
-                       'platform': sys.platform,
-                       'py_major': sys.version_info.major,
-                       'py_minor': sys.version_info.minor,
-                       'py_micro': sys.version_info.micro}
-    return USER_AGENT_FORMAT.format(**user_agent_data)
 
 
 def response_slug(response):
@@ -88,7 +76,7 @@ class RestClient(object):
 
         log.debug('http_context: %s', http_context)
 
-        self.user_agent = user_agent()
+        self.user_agent = user_agent.user_agent()
 
         log.debug('User Agent: %s', self.user_agent)
 

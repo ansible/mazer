@@ -1,13 +1,11 @@
 import io
 import logging
-import sys
 
 import pytest
 
 import requests
 from six import text_type
 
-import ansible_galaxy
 from ansible_galaxy import exceptions
 from ansible_galaxy import multipart_form
 from ansible_galaxy.models.context import GalaxyContext
@@ -232,7 +230,7 @@ def test_galaxy_api_publish_file_conflict_409(galaxy_api_mocked, requests_mock, 
                        status_code=409,
                        json=err_409_conflict_json)
 
-    with pytest.raises(ansible_galaxy.exceptions.GalaxyPublishError) as exc_info:
+    with pytest.raises(exceptions.GalaxyPublishError) as exc_info:
         galaxy_api_mocked.publish_file(form=file_upload_form, publish_api_key=None)
 
     log.debug('exc_info:%s', exc_info)
@@ -248,7 +246,7 @@ def test_galaxy_api_publish_file_unauthorized_401(galaxy_api_mocked, requests_mo
                        json=err_401_unauthorized_json)
 
     bad_publish_api_key = '1f107deadbeefcafee0863829264d5211a'
-    with pytest.raises(ansible_galaxy.exceptions.GalaxyPublishError) as exc_info:
+    with pytest.raises(exceptions.GalaxyPublishError) as exc_info:
         galaxy_api_mocked.publish_file(form=file_upload_form, publish_api_key=bad_publish_api_key)
 
     log.debug('exc_info:%s', exc_info)
@@ -265,7 +263,7 @@ def test_galaxy_api_publish_file_request_error(galaxy_api_mocked, requests_mock,
 
     publish_api_key = '1f107befb89e0863829264d5241111a'
 
-    with pytest.raises(ansible_galaxy.exceptions.GalaxyClientAPIConnectionError) as exc_info:
+    with pytest.raises(exceptions.GalaxyClientAPIConnectionError) as exc_info:
         galaxy_api_mocked.publish_file(form=file_upload_form, publish_api_key=publish_api_key)
 
     log.debug('exc_info:%s', exc_info)
@@ -738,11 +736,3 @@ def test_galaxy_api_get_collection_detail_SSLError(mocker, galaxy_api, requests_
         galaxy_api.get_collection_detail('some-test-namespace', 'some-test-name')
 
     log.debug('exc_info: %s', exc_info)
-
-
-def test_user_agent():
-    res = rest_api.user_agent()
-    assert res.startswith('Mazer/%s' % ansible_galaxy.__version__)
-    assert sys.platform in res
-    assert 'python:' in res
-    assert 'ansible_galaxy' in res
