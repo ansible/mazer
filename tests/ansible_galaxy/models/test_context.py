@@ -47,6 +47,7 @@ def test_context_from_empty_server():
     log.debug('server: %s', galaxy_context.server)
     assert galaxy_context.server['url'] is None
     assert galaxy_context.server['ignore_certs'] is False
+    assert galaxy_context.server['api_key'] is None
 
 
 def test_context_server_none_collections_path_none():

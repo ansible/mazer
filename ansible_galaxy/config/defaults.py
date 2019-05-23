@@ -21,7 +21,8 @@ def get_config_path():
 DEFAULTS = [
     ('server',
      {'url': 'https://galaxy.ansible.com',
-      'ignore_certs': False}
+      'ignore_certs': False,
+      'api_key': None}
      ),
 
     # In order of priority

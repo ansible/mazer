@@ -24,7 +24,9 @@ def inject_mazer_home(monkeypatch):
 def galaxy_context(tmpdir):
     # FIXME: mock
     server = {'url': 'http://localhost:8000',
-              'ignore_certs': False}
+              'ignore_certs': False,
+              'api_key': None,
+              }
     collections_path = tmpdir.mkdir('collections')
 
     from ansible_galaxy.models.context import GalaxyContext

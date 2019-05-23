@@ -15,7 +15,6 @@ log = logging.getLogger(__name__)
 
 def _publish(galaxy_context,
              archive_path,
-             publish_api_key=None,
              display_callback=None):
 
     results = {
@@ -24,6 +23,8 @@ def _publish(galaxy_context,
     }
 
     api = GalaxyAPI(galaxy_context)
+
+    publish_api_key = galaxy_context.server.get('api_key', None)
 
     data = {
         'sha256': chksums.sha256sum_from_path(archive_path),
@@ -53,11 +54,10 @@ def _publish(galaxy_context,
     return results
 
 
-def publish(galaxy_context, archive_path, publish_api_key, display_callback):
+def publish(galaxy_context, archive_path, display_callback):
 
     results = _publish(galaxy_context,
                        archive_path,
-                       publish_api_key=publish_api_key,
                        display_callback=display_callback)
 
     log.debug('cli publish action results: %s', results)

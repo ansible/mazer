@@ -144,6 +144,16 @@ server:
   #
   ignore_certs: false
 
+  # This is the API key used when the Galaxy API needs to authenticate
+  # a request. For example, for the POST request made when using the
+  # 'publish' sub command to upload collection artifacts.
+  # 'api_key' here is equilivent to the cli '--api-key'
+  #
+  # The default value is unset or None.
+  #
+  # The API key can be found at https://galaxy.ansible.com/me/preferences
+  api_key: da39a3ee5e6b4b0d3255bfef95601890afd80709
+
 # When installing content like ansible collection globally (using the '-g/--global' flag),
 # mazer will install into sub directories of this path.
 #
