@@ -98,6 +98,77 @@ The install option **'--editable'** or the short **'-e'** can be used.
 
 Note that **'--namespace'** option is required.
 
+### Install collections specified in a collections lockfile
+
+Mazer supports specifying a list of collections to be installed
+from a file (a 'collections lockfile').
+
+To install collections specified in a lockfile, use the
+**'--lockfile' option of the 'install' subcommand**:
+
+```
+$ mazer install --lockfile collections_lockfile.yml
+```
+
+### Generate a collections lockfile based on installed collections
+
+To create a collections lockfile representing the currently installed
+collections:
+
+```
+$ mazer list --lockfile
+```
+
+To create a lockfile that matches current versions exactly, add
+the **'--frozen'** flag:
+
+```
+$ mazer list --lockfile --frozen
+```
+
+To reproduce an existing installed collection path, redirect the 'list --lockfile'
+output to a file and use that file with 'install --collections-lock':
+
+```
+$ mazer list --lockfile  > collections_lockfile.yml
+$ mazer install --collections-path /tmp/somenewplace --lockfile collections_lockfile.yml
+```
+
+#### Collections lockfile format
+
+The contents of  collections lock file is a yaml file, containing a dictionary.
+
+The dictionary is the same format as the 'dependencies' dict in
+galaxy.yml.
+
+The keys are collection labels (the namespace and the name
+dot separated ala 'alikins.collection_inspect').
+
+The values are a version spec string. For ex, `*` or "==1.0.0".
+
+Example contents of a collections lockfile:
+
+``` yaml
+alikins.collection_inspect: "*"
+alikins.collection_ntp: "*"
+```
+
+Example contents of a collections lockfile specifying
+version specs:
+
+``` yaml
+alikins.collection_inspect: "1.0.0"
+alikins.collection_ntp: ">0.0.1,!=0.0.2"
+```
+
+Example contents of a collections lockfile specifying
+exact "frozen" versions:
+
+``` yaml
+alikins.collection_inspect: "1.0.0"
+alikins.collection_ntp: "2.3.4"
+```
+
 ### Building ansible content collection artifacts with 'mazer build'
 
 In the future, galaxy will support importing and ansible content collection

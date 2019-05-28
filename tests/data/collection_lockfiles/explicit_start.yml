@@ -1,0 +1,5 @@
+---
+alikins.collection_inspect: "*"
+alikins.collection_ntp: ">=1.0.0"
+example1.name: 1.0.0
+example2.name: ">=2.3.4,!=1.0.0"

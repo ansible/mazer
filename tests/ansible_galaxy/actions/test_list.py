@@ -54,3 +54,31 @@ def test_list_no_content_dir(galaxy_context):
     # TODO: list should probably return non-zero if galaxy_context.collections_path doesnt exist,
     #       but should probaly initially check that when creating galaxy_context
     assert res == 0
+
+
+def test_format_as_lockfile_empty():
+    repo_list = []
+    res = list_action.format_as_lockfile(repo_list)
+    log.debug('res: |%s|', res)
+    assert res == ''
+
+
+def test_format_as_lockfile(mocker):
+    repo_list = []
+    mock_installed = mocker.MagicMock()
+    mock_installed.repository_spec.version = '1.2.3'
+    mock_installed.repository_spec.label = 'testns.testcollection'
+    mock_installed2 = mocker.MagicMock()
+    mock_installed2.repository_spec.version = '0.0.1'
+    mock_installed2.repository_spec.label = 'example.randomjunk'
+
+    repo_dict = {'content_items': {},
+                 'installed_repository': mock_installed
+                 }
+    repo_list.append(repo_dict)
+    repo_list.append({'content_items': {},
+                      'installed_repository': mock_installed2})
+    res = list_action.format_as_lockfile(repo_list)
+    log.debug('res: |%s|', res)
+
+    assert 'testns.testcollection' in res

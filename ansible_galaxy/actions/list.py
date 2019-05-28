@@ -4,13 +4,37 @@ import logging
 from ansible_galaxy import installed_content_item_db
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
+from ansible_galaxy import yaml_persist
 
 log = logging.getLogger(__name__)
+
+
+def format_as_lockfile(repo_list, lockfile_freeze=False):
+    '''For a given repo_list, return the string content of the lockfile that matches'''
+
+    if not repo_list:
+        return ''
+
+    collections_deps = {}
+    for repo_item in repo_list:
+        label = "{installed_repository.repository_spec.label}".format(**repo_item)
+        version_spec = '*'
+
+        if lockfile_freeze:
+            version_spec = "=={installed_repository.repository_spec.version}".format(**repo_item)
+
+        collections_deps[label] = version_spec
+
+    buf = yaml_persist.safe_dump(collections_deps, None, default_flow_style=False)
+
+    return buf.strip()
 
 
 def _list(galaxy_context,
           repository_spec_match_filter=None,
           list_content=False,
+          lockfile_format=False,
+          lockfile_freeze=False,
           display_callback=None):
 
     log.debug('list_content: %s', list_content)
@@ -55,6 +79,12 @@ def _list(galaxy_context,
                      'installed_repository': installed_repository}
         repo_list.append(repo_dict)
 
+    if lockfile_format:
+        output = format_as_lockfile(repo_list, lockfile_freeze=lockfile_freeze)
+        display_callback(output)
+
+        return repo_list
+
     for repo_item in repo_list:
         repo_msg = "repo={installed_repository.repository_spec.label}, type=repository, version={installed_repository.repository_spec.version}"
         display_callback(repo_msg.format(**repo_item))
@@ -84,12 +114,16 @@ def _list(galaxy_context,
 def list_action(galaxy_context,
                 repository_spec_match_filter=None,
                 list_content=False,
+                lockfile_format=False,
+                lockfile_freeze=False,
                 display_callback=None):
     '''Run _list action and return an exit code suitable for process exit'''
 
     _list(galaxy_context,
           repository_spec_match_filter=repository_spec_match_filter,
           list_content=list_content,
+          lockfile_format=lockfile_format,
+          lockfile_freeze=lockfile_freeze,
           display_callback=display_callback)
 
     return 0

@@ -92,6 +92,8 @@ class GalaxyCLI(cli.CLI):
             self.parser.set_usage("usage: %prog info [options] repo_name[,version]")
         elif self.action == "install":
             self.parser.set_usage("usage: %prog install [options] [collection_name(s)[,version] | collection_artifact_file(s)]")
+            self.parser.add_option('-l', '--lockfile', dest='collections_lockfile',
+                                   help='A collections lockfile listing collections to install')
             self.parser.add_option('-g', '--global', dest='global_install', action='store_true',
                                    help='Install content to the path containing your global or system-wide content. The default is the '
                                    'global_collections_path configured in your mazer.yml file (/usr/share/ansible/content, if not configured)')
@@ -107,7 +109,11 @@ class GalaxyCLI(cli.CLI):
             self.parser.set_usage("usage: %prog remove repo1 repo2 ...")
         elif self.action == "list":
             self.parser.set_usage("usage: %prog list [repo_name]")
-            self.parser.add_option('--content', dest='list_content', default=False, action='store_true', help="List each content item type in a repo")
+            self.parser.add_option('--content', dest='list_content', default=False, action='store_true', help="List each content item type in a collection")
+            self.parser.add_option('--lockfile', dest='list_lockfile_format', default=False, action='store_true',
+                                   help="List installed collections in collections lockfile format")
+            self.parser.add_option('--freeze', dest='list_lockfile_freeze', default=False, action='store_true',
+                                   help="List installed collections in collections lockfile format with frozen versions")
         elif self.action == "version":
             self.parser.set_usage("usage: %prog version")
 
@@ -279,6 +285,7 @@ class GalaxyCLI(cli.CLI):
         rc = install.install_repository_specs_loop(galaxy_context,
                                                    editable=self.options.editable_install,
                                                    repository_spec_strings=requested_spec_strings,
+                                                   collections_lockfile_path=self.options.collections_lockfile,
                                                    namespace_override=self.options.namespace,
                                                    display_callback=self.display,
                                                    ignore_errors=self.options.ignore_errors,
@@ -334,6 +341,8 @@ class GalaxyCLI(cli.CLI):
         return list_action.list_action(galaxy_context,
                                        repository_spec_match_filter=match_filter,
                                        list_content=list_content,
+                                       lockfile_format=self.options.list_lockfile_format,
+                                       lockfile_freeze=self.options.list_lockfile_freeze,
                                        display_callback=self.display)
 
     def execute_version(self):

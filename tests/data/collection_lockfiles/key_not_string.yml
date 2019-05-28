@@ -1,0 +1,4 @@
+- "foo"
+- "bar":
+  alikins.collection_inspect: "*"
+  alikins.collection_ntp: ">=1.0.0"

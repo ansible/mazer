@@ -2,6 +2,7 @@ import logging
 import pprint
 
 from ansible_galaxy import collection_artifact
+from ansible_galaxy import collections_lockfile
 from ansible_galaxy import display
 from ansible_galaxy import download
 from ansible_galaxy import exceptions
@@ -9,7 +10,9 @@ from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy import repository_spec_parse
+from ansible_galaxy import requirements
 from ansible_galaxy.fetch import fetch_factory
+from ansible_galaxy.models.collections_lock import CollectionsLock
 from ansible_galaxy.models.repository_spec import FetchMethods
 from ansible_galaxy.models.requirement import Requirement, RequirementOps
 from ansible_galaxy.models.requirement_spec import RequirementSpec
@@ -95,11 +98,27 @@ def install_repositories_matching_repository_specs(galaxy_context,
                                 force_overwrite=force_overwrite)
 
 
+def load_collections_lockfile(lockfile_path):
+    try:
+        log.debug('Opening the collections lockfile %s', lockfile_path)
+        with open(lockfile_path, 'r') as lffd:
+            return collections_lockfile.load(lffd)
+
+    except EnvironmentError as exc:
+        log.exception(exc)
+
+        msg = 'Error opening the collections lockfile "%s": %s' % (lockfile_path, exc)
+        log.error(msg)
+
+        raise exceptions.GalaxyClientError(msg)
+
+
 # FIXME: probably pass the point where passing around all the data to methods makes sense
 #        so probably needs a stateful class here
 def install_repository_specs_loop(galaxy_context,
                                   repository_spec_strings=None,
                                   requirements_list=None,
+                                  collections_lockfile_path=None,
                                   editable=False,
                                   namespace_override=None,
                                   display_callback=None,
@@ -151,6 +170,19 @@ def install_repository_specs_loop(galaxy_context,
         req = Requirement(repository_spec=None, op=RequirementOps.EQ, requirement_spec=req_spec)
 
         requirements_list.append(req)
+
+    log.debug('collections_lockfile_path: %s', collections_lockfile_path)
+
+    if collections_lockfile_path:
+        # load collections lockfile as if the 'dependencies' dict from a collection_info
+        collections_lockfile = load_collections_lockfile(collections_lockfile_path)
+
+        dependencies_list = requirements.from_dependencies_dict(collections_lockfile.dependencies)
+
+        # Create the CollectionsLock for the validators
+        collections_lock = CollectionsLock(dependencies=dependencies_list)
+
+        requirements_list.extend(collections_lock.dependencies)
 
     log.debug('requirements_list: %s', requirements_list)
 
