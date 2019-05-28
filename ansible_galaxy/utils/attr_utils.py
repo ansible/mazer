@@ -9,6 +9,28 @@ import six
 log = logging.getLogger(__name__)
 
 
+def convert_none_to_empty_dict(val):
+    ''' if val is None, return an empty dict'''
+
+    # if val is not a dict or val 'None' return val
+    # and let the validators raise errors later
+    if val is None:
+        return {}
+    return val
+
+
+def convert_single_to_list(val):
+    '''If a single object is provided, replace with a list containing only that object'''
+
+    if val is None:
+        return []
+
+    if not isinstance(val, list):
+        return [val]
+
+    return val
+
+
 def is_attr(obj):
     if isinstance(obj, six.class_types):
         try:

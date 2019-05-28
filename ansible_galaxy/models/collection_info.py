@@ -10,6 +10,7 @@ import semantic_version
 import six
 
 from ansible_galaxy.data import spdx_licenses
+from ansible_galaxy.utils import attr_utils
 
 log = logging.getLogger(__name__)
 
@@ -29,35 +30,13 @@ NAME_REGEXP = re.compile(r'^(?!.*__)[a-z]+[0-9a-z_]*$')
 MATCH_LEADING_NUMBER_REGEXP = re.compile(r'^[0-9]')
 
 
-def convert_none_to_empty_dict(val):
-    ''' if val is None, return an empty dict'''
-
-    # if val is not a dict or val 'None' return val
-    # and let the validators raise errors later
-    if val is None:
-        return {}
-    return val
-
-
-def convert_single_to_list(val):
-    '''If a single object is provided, replace with a list containing only that object'''
-
-    if val is None:
-        return []
-
-    if not isinstance(val, list):
-        return [val]
-
-    return val
-
-
 @attr.s(frozen=True)
 class CollectionInfo(object):
     namespace = attr.ib(default=None)
     name = attr.ib(default=None)
     version = attr.ib(default=None)
     # license = attr.ib(default=None)
-    license = attr.ib(factory=list, converter=convert_single_to_list)
+    license = attr.ib(factory=list, converter=attr_utils.convert_single_to_list)
     description = attr.ib(default=None)
 
     repository = attr.ib(default=None)
@@ -76,7 +55,7 @@ class CollectionInfo(object):
 
     # Note galaxy.yml 'dependencies' field is what mazer and ansible
     # consider 'requirements'. ie, install time requirements.
-    dependencies = attr.ib(factory=dict, converter=convert_none_to_empty_dict)
+    dependencies = attr.ib(factory=dict, converter=attr_utils.convert_none_to_empty_dict)
 
     def __attrs_post_init__(self):
         # validate with have something in license or license_file
