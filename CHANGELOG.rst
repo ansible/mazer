@@ -2,6 +2,25 @@
 Changelog
 =========
 
+0.6.0 (2019-05-30)
+------------------
+
+* Add 'request-id' and user-agent to artifact download requests.
+* Fix 'mazer install /path/to/namespace-name-1.2.3.tar.gz'
+* 'list' now supports --lockfile, --frozen, and --full output formats.
+  --lockfile/--frozen are for creating lockfiles. --full is used in combo
+  with --content to see installed collections fully qualified names.
+* SPDX data updated to 3.5-32-g5b1f683
+* `196 Improve 'list' output and add --full <https://github.com/ansible/mazer/issues/196>`_.
+* `173 Add lockfile support  <https://github.com/ansible/mazer/issues/173>`_.
+* `266 Fix 'install --force' <https://github.com/ansible/mazer/issues/266>`_.
+* `256 Fix --force failing to install anything <https://github.com/ansible/mazer/issues/256>`_.
+* `245 Show warning when user installs deprecated collection <https://github.com/ansible/mazer/issues/245>`_.
+* `249 Add 'api_key' to config  <https://github.com/ansible/mazer/issues/249>`_.
+* `267 Set default log level to info, improve logs <https://github.com/ansible/mazer/issues/267>`_.
+* `251 Help blurb updates <https://github.com/ansible/mazer/issues/251>`_.
+* `255 Fix errors with conflicting collection deps <https://github.com/ansible/mazer/issues/255>`_.
+
 0.5.0 (2019-04-15)
 ------------------
 
