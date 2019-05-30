@@ -8,7 +8,7 @@ import yaml
 from ansible_galaxy.config import defaults
 
 DEFAULT_CONSOLE_LEVEL = os.getenv('MAZER_LOG_LEVEL', 'WARNING').upper()
-DEFAULT_LEVEL = 'DEBUG'
+DEFAULT_LEVEL = 'INFO'
 
 DEFAULT_LOGGING_CONFIG_YAML = os.path.join(os.path.dirname(__file__), 'default-mazer-logging.yml')
 

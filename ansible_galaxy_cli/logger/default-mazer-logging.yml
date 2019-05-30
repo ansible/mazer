@@ -24,13 +24,13 @@ handlers:
     # Sets log filename to MAZER_HOME (~/.ansible) + basename ('~/.ansible/mazer.log' by default)
     basename: "mazer.log"
     formatter: file_verbose
-    level: DEBUG
+    level: INFO
   http_file:
     class: ansible_galaxy_cli.logger.setup.ExpandTildeWatchedFileHandler
     # Sets log filename to MAZER_HOME (~/.ansible) + basename ('~/.ansible/mazer-http.log' by default)
     basename: "mazer-http.log"
     formatter: file_verbose
-    level: DEBUG
+    level: INFO
 loggers:
   ansible_galaxy:
     handlers:
