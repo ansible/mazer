@@ -1,12 +1,9 @@
 # Mazer
 
-A new command-line tool for managing [Ansible](https://github.com/ansible/ansible) content.
+A command-line tool for managing [Ansible](https://github.com/ansible/ansible) content.
 
 **Note:** Mazer is most useful when used with a version of Ansible that understands mazer installed content.
 Currently that means ansible 2.8 and later.
-
-**Note:** By default, mazer currently defaults to using the "beta" Ansible Galaxy server at https://galaxy-qa.ansible.com.
-https://galaxy-qa.ansible.com may have different data than the primary Ansible Galaxy server at https://galaxy.ansible.com
 
 ### Expect breaking changes!
 
@@ -30,7 +27,7 @@ For additional documentation on mazer, view the [Mazer topic on Ansible Galaxy D
 
 ### Installing collection
 
-To install the collection [testing.ansible_testing_content](https://galaxy-qa.ansible.com/testing/ansible_testing_content) from Galaxy:
+To install the collection [testing.ansible_testing_content](https://galaxy.ansible.com/testing/ansible_testing_content) from Galaxy:
 
 ```
 $ mazer install testing.ansible_testing_content
@@ -201,12 +198,12 @@ mazer is configured by a 'mazer.yml' config file in ~/.ansible.
 # The galaxy rest api server mazer will communicate with.
 server:
   # The http or https URL of the Galaxy server used by default.
-  # REST requests will be made to https://galaxy-qa.ansible.com/api/v1
+  # REST requests will be made to https://galaxy.ansible.com/api/v2
   # in this example.
   #
-  # default: https://galaxy-qa.ansible.com
+  # default: https://galaxy.ansible.com
   #
-  url: https://galaxy-qa.ansible.com
+  url: https://galaxy.ansible.com
 
   # if ignore_certs is true, https requests will not verify the
   # https server certificate is signed a known CA.

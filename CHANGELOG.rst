@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.0.0 (2019-05-30)
+------------------
+
+* Point to galaxy.ansible.com instead of galaxy-qa.ansible.com in docs.
+
 0.6.0 (2019-05-30)
 ------------------
 
