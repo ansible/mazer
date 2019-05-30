@@ -47,6 +47,10 @@ class RepositorySpec(object):
     def label(self):
         return '%s.%s' % (self.namespace, self.name)
 
+    @property
+    def ns_n_v(self):
+        return '%s,%s' % (self.label, self.version)
+
     @classmethod
     def from_dict(cls, data):
         instance = cls(namespace=data['namespace'],

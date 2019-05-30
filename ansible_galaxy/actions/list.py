@@ -9,6 +9,13 @@ from ansible_galaxy import yaml_persist
 log = logging.getLogger(__name__)
 
 
+class OutputFormat(object):
+    HUMAN = 'human'
+    LOCKFILE = 'lockfile'
+    LOCKFILE_FREEZE = 'lockfile_freeze'
+    FULLY_QUALIFIED = 'fully_qualified'
+
+
 def format_as_lockfile(repo_list, lockfile_freeze=False):
     '''For a given repo_list, return the string content of the lockfile that matches'''
 
@@ -30,12 +37,64 @@ def format_as_lockfile(repo_list, lockfile_freeze=False):
     return buf.strip()
 
 
+def display_for_human(repo_list, list_content, display_callback):
+    '''Display installed collections in a format readable but probably not prefered by some humans'''
+
+    INDENT = ' '
+    for repo_item in repo_list:
+        repo_msg = "{installed_repository.repository_spec.ns_n_v}"
+        display_callback(repo_msg.format(**repo_item))
+
+        if not list_content:
+            continue
+
+        for content_item_type_key, content_items_data in repo_item['content_items'].items():
+            content_type_msg = "{indent:2}- {content_item_type}".format(content_item_type=content_item_type_key,
+                                                                        indent=INDENT)
+
+            display_callback(content_type_msg)
+
+            content_msg = "{indent:4}- {name}"
+            for content_item_data in content_items_data:
+                display_callback(content_msg.format(indent=INDENT, name=content_item_data['name']))
+
+
+def display_fully_qualified(repo_list, list_content, display_callback):
+    '''Display installed collections in a format more or less like they would be referenced in a playbook'''
+
+    INDENT = ' '
+    for repo_item in repo_list:
+        repo_msg = "{installed_repository.repository_spec.ns_n_v}"
+        display_callback(repo_msg.format(**repo_item))
+
+        if not list_content:
+            continue
+
+        for content_item_type_key, content_items_data in repo_item['content_items'].items():
+            content_type_msg = "{indent:2}- {content_item_type}".format(content_item_type=content_item_type_key,
+                                                                        indent=INDENT)
+
+            display_callback(content_type_msg)
+
+            content_msg = "{indent:4}- {installed_repository.repository_spec.label}.{name}"
+            for content_item_data in content_items_data:
+                content_item_data['indent'] = INDENT
+                display_callback(content_msg.format(**content_item_data))
+
+                # show python paths for plugins
+                if content_item_data['is_plugin']:
+                    python_path_msg = "{indent:6}- (python path) ansible_collections.{installed_repository.repository_spec.label}.plugins.{type}.{name}"
+                    content_item_data['indent'] = INDENT
+                    display_callback(python_path_msg.format(**content_item_data))
+
+
 def _list(galaxy_context,
           repository_spec_match_filter=None,
           list_content=False,
-          lockfile_format=False,
-          lockfile_freeze=False,
+          output_format=None,
           display_callback=None):
+
+    output_format = output_format or OutputFormat.HUMAN
 
     log.debug('list_content: %s', list_content)
 
@@ -65,6 +124,7 @@ def _list(galaxy_context,
             # revisit this output format once we get some feedback
             content_dict.update({'type': content_item_type,
                                  'name': content_dict['content_data'].name,
+                                 'is_plugin': content_dict['content_data'].is_plugin,
                                  # 'installed_repo_namespace': repo.namespace,
                                  # 'installed_repo_name': repo.name,
                                  # 'installed_repo_path': repo.path,
@@ -79,34 +139,20 @@ def _list(galaxy_context,
                      'installed_repository': installed_repository}
         repo_list.append(repo_dict)
 
-    if lockfile_format:
-        output = format_as_lockfile(repo_list, lockfile_freeze=lockfile_freeze)
+    if output_format == OutputFormat.LOCKFILE:
+        output = format_as_lockfile(repo_list,
+                                    lockfile_freeze=False)
         display_callback(output)
 
-        return repo_list
+    elif output_format == OutputFormat.LOCKFILE_FREEZE:
+        output = format_as_lockfile(repo_list,
+                                    lockfile_freeze=True)
+        display_callback(output)
 
-    for repo_item in repo_list:
-        repo_msg = "collection={installed_repository.repository_spec.label}, type=collection, version={installed_repository.repository_spec.version}"
-        display_callback(repo_msg.format(**repo_item))
-
-        if not list_content:
-            continue
-
-        for content_item_type_key, content_items_data in repo_item['content_items'].items():
-            content_msg = "collection={installed_repository.repository_spec.label}, type={type}, name={name}, " + \
-                "version={installed_repository.repository_spec.version}"
-            # content_msg = "    type={type}, name={name}, " + \
-            #    "version={installed_repository.repository_spec.version}"
-
-            # type_msg = "  {content_item_type}:"
-            # display_callback(type_msg.format(content_item_type=content_item_type_key))
-
-            log.debug('content_item: %s', content_items_data)
-            log.debug('content_item_type_key: %s', content_item_type_key)
-
-            for content_item_data in content_items_data:
-                display_callback(content_msg.format(**content_item_data))
-        # display_callback(msg.format(**content_dict))
+    elif output_format == OutputFormat.FULLY_QUALIFIED:
+        display_fully_qualified(repo_list, list_content, display_callback)
+    else:
+        display_for_human(repo_list, list_content, display_callback)
 
     return repo_list
 
@@ -116,14 +162,22 @@ def list_action(galaxy_context,
                 list_content=False,
                 lockfile_format=False,
                 lockfile_freeze=False,
+                output_format=None,
                 display_callback=None):
     '''Run _list action and return an exit code suitable for process exit'''
+
+    output_format = output_format or OutputFormat.HUMAN
+    if lockfile_format:
+        output_format = OutputFormat.LOCKFILE
+    if lockfile_freeze:
+        output_format = OutputFormat.LOCKFILE_FREEZE
+
+    output_format = OutputFormat.FULLY_QUALIFIED
 
     _list(galaxy_context,
           repository_spec_match_filter=repository_spec_match_filter,
           list_content=list_content,
-          lockfile_format=lockfile_format,
-          lockfile_freeze=lockfile_freeze,
+          output_format=output_format,
           display_callback=display_callback)
 
     return 0

@@ -63,10 +63,15 @@ def repository_content_iterator(repository, content_item_type, content_item_path
         # in the future.
         content_item_name = os.path.splitext(file_name)[0]
 
+        is_plugin = True
+        if content_item_type in ('roles', 'modules'):
+            is_plugin = False
+
         content_item = ContentItem(namespace=repo_namespace,
                                    name=content_item_name,
                                    path=file_name,
                                    content_item_type=content_item_type,
+                                   is_plugin=is_plugin,
                                    version=repository.repository_spec.version)
 
         log.debug('Found %s "%s" at %s', content_item, content_item.name, file_name)

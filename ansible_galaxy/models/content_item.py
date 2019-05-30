@@ -15,6 +15,7 @@ class ContentItem(object):
     content_item_type = attr.ib(default=None)
     version = attr.ib(default=None)
     path = attr.ib(default=None)
+    is_plugin = attr.ib(default=False)
 
     @property
     def label(self):
