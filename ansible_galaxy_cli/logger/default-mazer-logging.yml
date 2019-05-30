@@ -52,7 +52,7 @@ loggers:
     level: INFO
     propagate: false
     handlers:
-      - file
+      - http_file
     # to log verbose debug level logging to http_file handler:
     # level: DEBUG
     # handlers:

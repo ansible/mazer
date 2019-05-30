@@ -112,9 +112,9 @@ class RestClient(object):
         pre_request_slug = '"%s %s" %s' % (http_method, url, request_id)
 
         # log the http request_slug with request_id to the main log and
-        # to the http log, both at INFO level for now.
+        # to the http log.
         http_log.info('%s', pre_request_slug)
-        self.log.info('%s', pre_request_slug)
+        self.log.debug('%s', pre_request_slug)
 
         # request_log.debug('%s headers=%s', pre_request_slug, request_headers)
 
@@ -142,7 +142,6 @@ class RestClient(object):
 
         # Log info about the request/response for debug
         log.debug('resp.request: %s', resp.request)
-        # log.debug('resp.request.headers: %s', resp.request.headers)
         log.debug('resp: %s', resp)
 
         slug = response_slug(resp)
