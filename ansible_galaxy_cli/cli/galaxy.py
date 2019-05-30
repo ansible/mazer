@@ -115,6 +115,8 @@ class GalaxyCLI(cli.CLI):
                                    help="List installed collections in collections lockfile format")
             self.parser.add_option('--freeze', dest='list_lockfile_freeze', default=False, action='store_true',
                                    help="List installed collections in collections lockfile format with frozen versions")
+            self.parser.add_option('--full', dest='list_fully_qualified', default=False, action='store_true',
+                                   help="List installed collections using fully qualifed names as used in playbooks")
         elif self.action == "version":
             self.parser.set_usage("usage: %prog version")
 
@@ -355,6 +357,7 @@ class GalaxyCLI(cli.CLI):
                                        list_content=list_content,
                                        lockfile_format=self.options.list_lockfile_format,
                                        lockfile_freeze=self.options.list_lockfile_freeze,
+                                       fully_qualified=self.options.list_fully_qualified,
                                        display_callback=self.display)
 
     def execute_version(self):

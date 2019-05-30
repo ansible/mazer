@@ -162,6 +162,7 @@ def list_action(galaxy_context,
                 list_content=False,
                 lockfile_format=False,
                 lockfile_freeze=False,
+                fully_qualified=False,
                 output_format=None,
                 display_callback=None):
     '''Run _list action and return an exit code suitable for process exit'''
@@ -171,8 +172,8 @@ def list_action(galaxy_context,
         output_format = OutputFormat.LOCKFILE
     if lockfile_freeze:
         output_format = OutputFormat.LOCKFILE_FREEZE
-
-    output_format = OutputFormat.FULLY_QUALIFIED
+    if fully_qualified:
+        output_format = OutputFormat.FULLY_QUALIFIED
 
     _list(galaxy_context,
           repository_spec_match_filter=repository_spec_match_filter,
