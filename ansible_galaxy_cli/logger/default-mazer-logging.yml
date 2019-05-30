@@ -21,12 +21,14 @@ handlers:
     stream: ext://sys.stderr
   file:
     class: ansible_galaxy_cli.logger.setup.ExpandTildeWatchedFileHandler
-    filename: "~/.ansible/mazer.log"
+    # Sets log filename to MAZER_HOME (~/.ansible) + basename ('~/.ansible/mazer.log' by default)
+    basename: "mazer.log"
     formatter: file_verbose
     level: DEBUG
   http_file:
     class: ansible_galaxy_cli.logger.setup.ExpandTildeWatchedFileHandler
-    filename: "~/.ansible/mazer-http.log"
+    # Sets log filename to MAZER_HOME (~/.ansible) + basename ('~/.ansible/mazer-http.log' by default)
+    basename: "mazer-http.log"
     formatter: file_verbose
     level: DEBUG
 loggers:

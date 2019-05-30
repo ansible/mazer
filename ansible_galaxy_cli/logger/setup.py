@@ -39,9 +39,17 @@ FALLBACK_LOGGING_CONFIG = {
 
 
 class ExpandTildeWatchedFileHandler(logging.handlers.WatchedFileHandler):
-    '''A variant of WatchedFileHandler that will expand ~/ in it's filename param'''
+    '''A variant of WatchedFileHandler that will expand ~/ in it's filename param
+
+    Params:
+        basename: The basename of the log file (optional). Default is 'mazer.log'
+                  This is joined with MAZER_HOME to set the default log path.
+        filename: The full filename of the log file (optional). Default is
+                  MAZER_HOME/$basename (~/.ansible/mazer.log).
+    '''
     def __init__(self, *args, **kwargs):
-        orig_filename = kwargs.pop('filename', '~/.ansible/mazer.log')
+        basename = kwargs.pop('basename', 'mazer.log')
+        orig_filename = kwargs.pop('filename', os.path.join(defaults.MAZER_HOME, basename))
         kwargs['filename'] = os.path.expandvars(os.path.expanduser(orig_filename))
         logdir = os.path.dirname(kwargs['filename'])
         if not os.path.exists(logdir):
