@@ -44,7 +44,7 @@ def main(args=None):
 
         return os.EX_CONFIG
     except exceptions.GalaxyError as e:
-        log.exception(e)
+        log.debug(e, exc_info=True)
         stderr_log.error(e)
 
         # exit with EX_SOFTWARE on generic error
