@@ -326,7 +326,7 @@ def install_repositories(galaxy_context,
             if requirement_to_install.repository_spec:
                 required_by_blurb = ' (required by %s)' % requirement_to_install.repository_spec.label
 
-            log.info('Installed: %s %s to %s%s',
+            log.info('Installed %s,%s to %s%s',
                      installed_repo.label,
                      installed_repo.repository_spec.version,
                      installed_repo.path,
