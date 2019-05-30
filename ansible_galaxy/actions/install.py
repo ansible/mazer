@@ -191,7 +191,8 @@ def install_repository_specs_loop(galaxy_context,
         if not requirements_list:
             break
 
-        display_callback('Installing:', level='info')
+        display_callback('', level='info')
+        display_callback('Collection specs to install:', level='info')
 
         for req in requirements_list:
             if req.repository_spec:
@@ -210,11 +211,10 @@ def install_repository_specs_loop(galaxy_context,
                                                            no_deps=no_deps,
                                                            force_overwrite=force_overwrite)
 
-        display_callback('Installed:', level='info')
-
         for just_installed_repo in just_installed_repositories:
-            display_callback('  %s to %s' % (just_installed_repo.repository_spec,
-                                             just_installed_repo.path),
+            display_callback('  Installed: %s (to %s)' %
+                             (just_installed_repo.repository_spec,
+                              just_installed_repo.path),
                              level='info')
 
         # set the repository_specs to search for to whatever the install reported as being needed yet
@@ -366,6 +366,9 @@ def install_repository(galaxy_context,
 
     log.debug('About to find() requested requirement_spec_to_install: %s', requirement_spec_to_install)
 
+    display_callback('', level='info')
+    display_callback('Installing spec: %s' % requirement_spec_to_install.label, level='info')
+
     # We dont have anything that matches the RequirementSpec installed
     fetcher = fetch_factory.get(galaxy_context=galaxy_context,
                                 requirement_spec=requirement_spec_to_install)
@@ -409,7 +412,7 @@ def install_repository(galaxy_context,
 
     log.debug('found_repository_spec: %s', found_repository_spec)
 
-    display_callback('Found %s for spec %s' % (found_repository_spec, requirement_spec_to_install.label))
+    display_callback('  Found: %s (for spec %s)' % (found_repository_spec, requirement_spec_to_install.label))
 
     # See if the found collection spec is already installed and either warn or 'force_overwrite'
     # to remove existing first.
@@ -476,7 +479,7 @@ def install_repository(galaxy_context,
 
         # bail if we are not overwriting already installed content
         if not force_overwrite:
-            display_callback('%s is already installed at %s' %
+            display_callback('  %s is already installed at %s' %
                              (repo_label,
                               already_installed_repository.path),
                              level='warning')
@@ -485,7 +488,7 @@ def install_repository(galaxy_context,
 
             return None
 
-        display_callback('Removing previously installed %s from %s' %
+        display_callback('  Removing: %s (previously installed to %s)' %
                          (repo_label,
                           already_installed_repository.path),
                          level='info')
