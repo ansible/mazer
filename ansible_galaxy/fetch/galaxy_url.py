@@ -151,6 +151,9 @@ class GalaxyUrlFetch(base.BaseFetch):
         if not download_url:
             raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % self.requirement_spec.label)
 
+        artifact_detail = best_collectionversion_detail_data.get('artifact', {})
+        log.debug('artifact_detail: %s', artifact_detail)
+
         # collectionversion_metadata = best_collectionversion_detail_data.get('metadata', None)
         # log.debug('collectionversion_metadata: %s', collectionversion_metadata)
 
@@ -159,6 +162,9 @@ class GalaxyUrlFetch(base.BaseFetch):
         results = {'content': {'galaxy_namespace': namespace,
                                'repo_name': collection_name,
                                'version': best_version},
+                   'artifact': {'sha256': artifact_detail['sha256'],
+                                'filename': artifact_detail['filename'],
+                                'size': artifact_detail['size']},
                    'custom': {'download_url': download_url,
                               'collection_is_deprecated': collection_is_deprecated},
                    }
@@ -203,5 +209,6 @@ class GalaxyUrlFetch(base.BaseFetch):
         # we know the original and the final url after redirects
         results['custom'] = find_results['custom']
         results['content'] = find_results['content']
+        results['artifact'] = find_results['artifact']
 
         return results

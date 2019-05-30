@@ -22,6 +22,7 @@ class ScmUrlFetch(base.BaseFetch):
     def find(self):
         results = {'content': {'galaxy_namespace': self.requirement_spec.namespace,
                                'repo_name': self.requirement_spec.name},
+                   'custom': {},
                    }
         results['custom'] = {'scm_url': self.requirement_spec.src}
 
@@ -39,6 +40,7 @@ class ScmUrlFetch(base.BaseFetch):
 
         results = {'archive_path': repository_archive_path,
                    'download_url': self.requirement_spec.src,
+                   'artifact': {},
                    'fetch_method': self.fetch_method}
         results['content'] = find_results['content']
         results['custom'] = find_results.get('custom', {})

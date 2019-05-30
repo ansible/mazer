@@ -63,6 +63,7 @@ class EditableFetch(object):
                              'real_path': real_path,
                              'symlinked_repo_root': dst_repo_root}
         results['content'] = find_results['content']
+        results['artifact'] = {}
 
         return results
 

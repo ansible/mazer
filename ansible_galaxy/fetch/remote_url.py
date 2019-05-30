@@ -24,6 +24,7 @@ class RemoteUrlFetch(base.BaseFetch):
     def find(self):
         results = {'content': {'galaxy_namespace': self.requirement_spec.namespace,
                                'repo_name': self.requirement_spec.name},
+                   'custom': {},
                    }
 
         return results
@@ -42,7 +43,8 @@ class RemoteUrlFetch(base.BaseFetch):
         log.debug('repository_archive_path=%s', repository_archive_path)
 
         results = {'archive_path': repository_archive_path,
-                   'fetch_method': self.fetch_method}
+                   'fetch_method': self.fetch_method,
+                   'artifact': {}}
         results['content'] = find_results['content']
         results['custom'] = {'remote_url': self.remote_url,
                              'validate_certs': self.validate_certs}
