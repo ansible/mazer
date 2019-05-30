@@ -10,14 +10,14 @@ log = logging.getLogger(__name__)
 
 INFO_LEVEL = {
     'prefix': '',
-    'log_level': logging.INFO,
+    'log_level': logging.DEBUG,
     'stream': sys.stdout,
 }
 
 DISPLAY_LEVEL_MAP = {
     'warning': {
         'prefix': 'WARNING| ',
-        'log_level': logging.WARNING,
+        'log_level': logging.DEBUG,
         'stream': sys.stderr
     },
     'info': INFO_LEVEL
