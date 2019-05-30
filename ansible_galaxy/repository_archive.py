@@ -144,6 +144,8 @@ def install(repository_archive, repository_spec, destination_info, display_callb
     if destination_info.editable:
         all_installed_files = []
     else:
+        log.debug('destination_info.force_overrite: %s', destination_info.force_overwrite)
+
         all_installed_files = extract(repository_spec,
                                       collections_path=destination_info.collections_path,
                                       extract_archive_to_dir=destination_info.path,

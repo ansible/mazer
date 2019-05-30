@@ -9,6 +9,7 @@ from ansible_galaxy import exceptions
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
+from ansible_galaxy import repository
 from ansible_galaxy import repository_spec_parse
 from ansible_galaxy import requirements
 from ansible_galaxy.fetch import fetch_factory
@@ -365,29 +366,6 @@ def install_repository(galaxy_context,
 
     log.debug('About to find() requested requirement_spec_to_install: %s', requirement_spec_to_install)
 
-    # potential_repository_spec is a repo spec for the install candidate we potentially found.
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    log.debug('Checking to see if %s is already installed', requirement_spec_to_install)
-
-    already_installed_iter = irdb.by_requirement_spec(requirement_spec_to_install)
-    already_installed = sorted(list(already_installed_iter))
-
-    log.debug('already_installed: %s', already_installed)
-
-    if already_installed:
-        for already_installed_repository in already_installed:
-            display_callback('%s is already installed at %s' % (already_installed_repository.repository_spec.label,
-                                                                already_installed_repository.path),
-                             level='warning')
-        log.debug('Stuff %s was already installed. In %s', requirement_spec_to_install, already_installed)
-
-        return None
-
-    # TODO: The already installed check above verifies that nothing that matches the requirement spec is installed,
-    #       but just because the name+version required wasn't installed, that doesn't mean that name at a different
-    #       version isn't installed.
-    #       To catch that, also need to check if the irdb by name to see if anything with that name is installed.
-    #
     # We dont have anything that matches the RequirementSpec installed
     fetcher = fetch_factory.get(galaxy_context=galaxy_context,
                                 requirement_spec=requirement_spec_to_install)
@@ -431,6 +409,33 @@ def install_repository(galaxy_context,
 
     log.debug('found_repository_spec: %s', found_repository_spec)
 
+    display_callback('Found %s for spec %s' % (found_repository_spec, requirement_spec_to_install.label))
+
+    # See if the found collection spec is already installed and either warn or 'force_overwrite'
+    # to remove existing first.
+
+    # cheap 'update' is to consider anything already installed that matches the request repo_spec
+    # as 'installed' and let force override that.
+
+    # potential_repository_spec is a repo spec for the install candidate we potentially found.
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    # log.debug('Checking to see if %s is already installed', requirement_spec_to_install)
+    log.debug('Checking to see if a collection named %s is already installed', found_repository_spec.label)
+
+    repository_spec_match_filter = matchers.MatchRepositorySpecNamespaceName([found_repository_spec])
+
+    # already_installed_iter = irdb.by_requirement_spec(requirement_spec_to_install)
+    already_installed_iter = irdb.select(repository_spec_match_filter=repository_spec_match_filter)
+    already_installed = sorted(list(already_installed_iter))
+
+    log.debug('already_installed: %s', already_installed)
+
+    # TODO: The already installed check above verifies that nothing that matches the requirement spec is installed,
+    #       but just because the name+version required wasn't installed, that doesn't mean that name at a different
+    #       version isn't installed.
+    #       To catch that, also need to check if the irdb by name to see if anything with that name is installed.
+    #
+
     repository_spec_to_install = found_repository_spec
     log.debug('About to download repository requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)
 
@@ -462,6 +467,32 @@ def install_repository(galaxy_context,
     #        We can get that from the galaxy API though.
     #
     # FIXME: exc handling
+
+    # Remove the already installed version, via --force
+
+    for already_installed_repository in already_installed:
+        repo_label = '%s,%s' % (already_installed_repository.repository_spec.label,
+                                already_installed_repository.repository_spec.version)
+
+        # bail if we are not overwriting already installed content
+        if not force_overwrite:
+            display_callback('%s is already installed at %s' %
+                             (repo_label,
+                              already_installed_repository.path),
+                             level='warning')
+
+            log.debug('A collection providing %s was already installed. In %s', requirement_spec_to_install, already_installed)
+
+            return None
+
+        display_callback('Removing previously installed %s from %s' %
+                         (repo_label,
+                          already_installed_repository.path),
+                         level='info')
+
+        log.debug('Removing already_installed %s', already_installed_repository)
+
+        repository.remove(already_installed_repository)
 
     installed_repositories = []
 
