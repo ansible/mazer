@@ -161,9 +161,9 @@ class CLI(six.with_metaclass(ABCMeta, object)):
         log.debug('self.args: %s', self.args)
 
         if self.config_file_path:
-            log.info(u"Using %s as config file", to_text(self.config_file_path))
+            log.debug(u"Using %s as config file", to_text(self.config_file_path))
         else:
-            log.info(u"No config file found; using defaults")
+            log.debug(u"No config file found; using defaults")
 
     def validate_conflicts(self, vault_opts=False, runas_opts=False, fork_opts=False, vault_rekey_opts=False):
         ''' check for conflicting options '''

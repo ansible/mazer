@@ -40,6 +40,7 @@ from ansible_galaxy.config import config
 
 from ansible_galaxy import matchers
 from ansible_galaxy import rest_api
+from ansible_galaxy import mazer_version
 
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.build_context import BuildContext
@@ -219,9 +220,20 @@ class GalaxyCLI(cli.CLI):
 
         log.debug('galaxy context: %s', galaxy_context)
 
-        log.debug('execute action: %s', self.action)
         log.debug('execute action with options: %s', self.options)
         log.debug('execute action with args: %s', self.args)
+
+        version_info = mazer_version.version_data(config_file_path=self.config_file_path,
+                                                  cli_version=galaxy_cli_version,
+                                                  argv=sys.argv)
+
+        log.info('exe="%s" version=%s config_file="%s" collections_path="%s" server=%s action=%s',
+                 version_info['executable_location'],
+                 version_info['version'],
+                 version_info['config_file'],
+                 galaxy_context.collections_path,
+                 galaxy_context.server['url'],
+                 self.action)
 
         return self.execute()
 

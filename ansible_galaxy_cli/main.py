@@ -59,6 +59,6 @@ def main(args=None):
         log.error('Uncaught exception, existing with exit code: %s', exit_code)
         raise
 
-    log.debug('exit code: %s', exit_code)
+    log.info('exit code: %s', exit_code)
     # do any return code setup we need here
     return exit_code
