@@ -124,6 +124,21 @@ class GalaxyArchiveError(GalaxyClientError):
         self.archive_path = archive_path
 
 
+class GalaxyArtifactChksumError(GalaxyClientError):
+    '''Raised when an artifacts chksum isn't expected indicating corrupt or incomplete artifact'''
+
+    def __init__(self, *args, **kwargs):
+        artifact_path = kwargs.pop('artifact_path', None)
+        expected = kwargs.pop('expected', None)
+        actual = kwargs.pop('actual', None)
+
+        super(GalaxyArtifactChksumError, self).__init__(*args, **kwargs)
+
+        self.artifact_path = artifact_path
+        self.expected = expected
+        self.actual = actual
+
+
 class GalaxyPublishError(GalaxyClientError):
     ''' Raised for errors related to publish command '''
 

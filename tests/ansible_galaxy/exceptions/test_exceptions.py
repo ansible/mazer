@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import logging
 
+import pytest
+
 from ansible_galaxy import exceptions
 from ansible_galaxy.utils.text import to_text
 
@@ -16,6 +18,20 @@ def test_galaxy_error():
 def test_galaxy_download_error_no_args():
     exc = exceptions.GalaxyDownloadError()
     log.debug('exc: %s', exc)
+
+
+def test_chksum_error():
+    exc = exceptions.GalaxyArtifactChksumError('some msg')
+    log.debug('exc: %s', exc)
+
+    assert isinstance(exc, exceptions.GalaxyArtifactChksumError)
+
+
+def test_raise_chksum_error():
+    with pytest.raises(exceptions.GalaxyArtifactChksumError, match='some_msg') as exc_info:
+        raise exceptions.GalaxyArtifactChksumError('some_msg')
+
+    log.debug('exc_info: %s', exc_info)
 
 
 # Format: byte representation, text representation, encoding of byte representation
