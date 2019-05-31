@@ -10,16 +10,10 @@ from ansible_galaxy import user_agent
 log = logging.getLogger(__name__)
 
 
-# FIXME: let the archive_url be passed in
-def fetch_url(archive_url, validate_certs=True):
+def fetch_url(archive_url, validate_certs=True, filename=None):
     """
     Downloads the archived content from github to a temp location
     """
-
-    # TODO: should probably be based on/shared with rest API client code, so that
-    #       content downloads could support any thing the rest code does
-    #       (ie, any TLS cert setup, proxy config, auth options, etc)
-    # WHEN: if we change the underlying http client impl at least
 
     request_headers = {}
     request_id = uuid.uuid4().hex
@@ -31,9 +25,16 @@ def fetch_url(archive_url, validate_certs=True):
         resp = requests.get(archive_url, verify=validate_certs,
                             headers=request_headers, stream=True)
 
+        # so tmp filenames begin with the expected artifact filename before '::', except
+        # if we don't know it, then it's the UNKNOWN...
+        _prefix = filename or 'UNKNOWN-UNKNOWN-UNKNOWN.tar.gz'
+        prefix = '%s::' % _prefix
+
+        # TODO: add a configured spool or cache dir and/or default to using
+        #       one in MAZER_HOME or maybe ANSIBLE_TMP?
         temp_file = tempfile.NamedTemporaryFile(delete=False,
-                                                prefix='tmp-ansible-galaxy-content-archive-',
-                                                suffix='.tar.gz')
+                                                suffix='-tmp-mazer-artifact-download',
+                                                prefix=prefix)
 
         if resp.history:
             for redirect in resp.history:

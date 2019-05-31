@@ -182,15 +182,19 @@ class GalaxyUrlFetch(base.BaseFetch):
         # download_url = _build_download_url(external_url=external_url, version=_content_version)
         # TODO: error handling if there is no download_url
 
+        expected_filename = find_results.get('artifact', {}).get('filename', None)
+
         log.debug('repository_spec=%s', self.requirement_spec)
         log.debug('download_url=%s', download_url)
+        log.debug('expected_filename=%s', expected_filename)
 
         # for including in any error messages or logging for this fetch
         self.remote_resource = download_url
 
         # can raise GalaxyDownloadError
         repository_archive_path = download.fetch_url(download_url,
-                                                     validate_certs=self.validate_certs)
+                                                     validate_certs=self.validate_certs,
+                                                     filename=expected_filename)
 
         self.local_path = repository_archive_path
 
