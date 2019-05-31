@@ -2,10 +2,9 @@
 import logging
 import os
 
+from ansible_galaxy import collection_artifact
 from ansible_galaxy import repository
 from ansible_galaxy import repository_archive
-from ansible_galaxy.utils import chksums
-
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +27,6 @@ class LocalFileFetch(object):
                                # TODO/FIXME: helper method/wrapper for making this less coupled
                                'version': str(vspec)},
                    'artifact': {'filename': os.path.basename(self.local_path),
-                                'sha256': chksums.sha256sum_from_path(self.local_path),
                                 'size': os.path.getsize(self.local_path)},
                    'custom': {},
                    }
@@ -41,6 +39,12 @@ class LocalFileFetch(object):
 
         log.debug('repository_archive_path=%s (inplace)', repository_archive_path)
 
+        # Note there is currently no chksum validation of local files for most cases
+        # since there is no expected chksum
+        if find_results.get('artifact', {}).get('sha256', None):
+            expected_chksum = find_results['artifact']['sha256']
+            collection_artifact.validate_artifact(self.local_path,  expected_chksum)
+
         repo_archive = self._load_repository_archive(repository_archive_path)
 
         repo = self._load_repository(repo_archive)
@@ -50,8 +54,9 @@ class LocalFileFetch(object):
 
         results['custom'] = {'local_path': self.local_path}
         results['content'] = find_results['content']
-        results['artifact'] = find_results['artifact']
         results['content']['fetched_name'] = repo.repository_spec.name
+        # This will have filename, size but usually not sha256
+        results['artifact'] = find_results['artifact']
 
         return results
 

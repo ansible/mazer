@@ -440,7 +440,7 @@ def install_repository(galaxy_context,
     #
 
     repository_spec_to_install = found_repository_spec
-    log.debug('About to download repository requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)
+    log.debug('About to download collection requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)
 
     if find_results['custom'].get('collection_is_deprecated', False):
         display_callback("The collection '%s' is deprecated." % (found_repository_spec.label),
@@ -454,6 +454,11 @@ def install_repository(galaxy_context,
         log.debug('fetch_results: %s', fetch_results)
         # fetch_results will include a 'archive_path' pointing to where the artifact
         # was saved to locally.
+    except exceptions.GalaxyArtifactChksumError as exc:
+        log.error(exc)
+        msg = "While fetching %s, the checksum of the fetched artifact (%s) did not match the expected checksum %s" \
+            % (found_repository_spec, exc.artifact_path, exc.expected)
+        raise exceptions.GalaxyClientError(msg)
     except exceptions.GalaxyError as e:
         # fetch error probably should just go to a FAILED state, at least until
         # we have to implement retries

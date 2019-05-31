@@ -1,6 +1,8 @@
 import logging
 import mock
 
+import pytest
+
 from ansible_galaxy.actions import install
 from ansible_galaxy import exceptions
 from ansible_galaxy import repository_spec
@@ -49,6 +51,35 @@ def test_install_repositories(galaxy_context, mocker):
 
     assert isinstance(ret, list)
     assert ret == expected_repos
+
+
+def test_install_repository_validate_artifacts_exception(galaxy_context, mocker):
+    requirements_to_install = \
+        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
+
+    find_results = {'content': {'galaxy_namespace': 'some_namespace',
+                                'repo_name': 'some_name'},
+                    'custom': {'repo_data': {},
+                               'download_url': 'http://foo.invalid/stuff/blip.tar.gz',
+                               'repoversion': {'version': '9.3.245'},
+                               'collection_is_deprecated': True,
+                               },
+                    }
+
+    mocker.patch('ansible_galaxy.actions.install.install.find',
+                 return_value=find_results)
+    mocker.patch('ansible_galaxy.actions.install.install.fetch',
+                 side_effect=exceptions.GalaxyArtifactChksumError(artifact_path='/dev/null/fake/path',
+                                                                  expected='FAKEEXPECTEDa948904f2f0f479',
+                                                                  actual='FAKEACTUAL4b0d2ed1c1cd2a1ec0fb85d2'))
+
+    with pytest.raises(exceptions.GalaxyClientError,
+                       match="While fetching some_namespace.*/dev/null/fake/path.*did not match.*FAKEEXPECTEDa948904f2f0f479") as exc_info:
+        install.install_repository(galaxy_context,
+                                   requirement_to_install=requirements_to_install[0],
+                                   display_callback=display_callback)
+
+    log.debug('exc_info: %s', exc_info)
 
 
 def test_install_repository_deprecated(galaxy_context, mocker):

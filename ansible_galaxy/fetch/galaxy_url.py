@@ -4,6 +4,7 @@ import semantic_version
 from six.moves.urllib.parse import quote as urlquote
 
 # mv details of this here
+from ansible_galaxy import collection_artifact
 from ansible_galaxy import exceptions
 from ansible_galaxy import download
 from ansible_galaxy.fetch import base
@@ -194,6 +195,10 @@ class GalaxyUrlFetch(base.BaseFetch):
         self.local_path = repository_archive_path
 
         log.debug('repository_archive_path=%s', repository_archive_path)
+
+        # validate the sha256sum of the downloaded artifact against the expected value
+        expected_chksum = find_results['artifact'].get('sha256')
+        collection_artifact.validate_artifact(self.local_path,  expected_chksum)
 
         # TODO: This is indication that a fetcher is wrong abstraction. A fetch
         #       can resolve a name/spec, find metadata about the content including avail versions,

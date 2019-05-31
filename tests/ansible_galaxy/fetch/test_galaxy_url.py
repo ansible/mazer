@@ -66,7 +66,7 @@ def galaxy_url_fetch(galaxy_context_example_invalid):
 
 
 def test_galaxy_url_fetch_find(galaxy_url_fetch, requests_mock):
-    download_url = 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/9.3.245/artifact'
+    download_url = 'http://example.invallid/download/some_ns-some_name-9.3.245.tar.gz'
 
     requests_mock.get('http://example.invalid/api/',
                       json={'current_version': 'v2'})
@@ -83,10 +83,15 @@ def test_galaxy_url_fetch_find(galaxy_url_fetch, requests_mock):
                            {'version': '9.3.245',
                             'href': 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/9.3.245/'}]})
 
+    expected_sha256 = 'AAAAAAAAAAAAAAAAAAA'
+
     # The request to get the CollectionVersion detail via href from CollectionVersion list
     requests_mock.get('http://example.invalid/api/v2/collections/some_ns/some_name/versions/9.3.245/',
                       json={'download_url': download_url,
                             'metadata': {},
+                            'artifact': {'sha256': expected_sha256,
+                                         'filename': 'some_ns-some_name-9.3.245.tar.gz',
+                                         'size': 1201},
                             'version': '9.3.245'})
 
     # The Collection detail
@@ -101,6 +106,9 @@ def test_galaxy_url_fetch_find(galaxy_url_fetch, requests_mock):
     assert res['content']['repo_name'] == 'some_name'
 
     assert res['custom']['download_url'] == download_url
+    assert res['artifact']['sha256'] == expected_sha256
+    assert res['artifact']['filename'] == 'some_ns-some_name-9.3.245.tar.gz'
+    assert res['artifact']['size'] == 1201
 
 
 def test_galaxy_url_fetch_find_no_repo_data(galaxy_url_fetch, galaxy_context, requests_mock):
@@ -120,21 +128,29 @@ def test_galaxy_url_fetch_find_no_repo_data(galaxy_url_fetch, galaxy_context, re
 
 
 def test_galaxy_url_fetch_fetch(galaxy_url_fetch, mocker, requests_mock):
-    download_url = 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/9.3.245/artifact'
+    download_url = 'http://example.invallid/download/some_ns-some_name-9.3.245.tar.gz'
     collection_path = '/dev/null/path/to/collection.tar.gz'
 
     mocked_download_fetch_url = mocker.patch('ansible_galaxy.fetch.galaxy_url.download.fetch_url', autospec=True)
     mocked_download_fetch_url.return_value = collection_path
 
+    expected_sha256 = 'AAAAAAAAAAAAAAAAAAA'
+    artifact_data = {'sha256': expected_sha256,
+                     'filename': 'some_ns-some_name-9.3.245.tar.gz',
+                     'size': 1201}
+
     # download_url = 'http://example.invalid/invalid/whatever'
-    find_results = {'content': {'galaxy_namespace': 'some_namespace',
+    find_results = {'content': {'galaxy_namespace': 'some_ns',
                                 'repo_name': 'some_name'},
+                    'artifact': artifact_data,
                     'custom': {'repo_data': {},
                                'download_url': download_url,
                                'repoversion': {'version': '9.3.245'}
                                },
                     }
 
+    mock_sha256 = mocker.patch('ansible_galaxy.fetch.galaxy_url.collection_artifact.chksums.sha256sum_from_path',
+                               return_value=expected_sha256)
     res = galaxy_url_fetch.fetch(find_results)
 
     log.debug('res:%s', res)
@@ -144,6 +160,10 @@ def test_galaxy_url_fetch_fetch(galaxy_url_fetch, mocker, requests_mock):
     assert res['custom']['download_url'] == download_url
     assert res['fetch_method'] == 'galaxy_url'
     assert isinstance(res['content'], dict)
+    assert res['artifact'] == artifact_data
+
+    log.debug('mock_sha256.call_args_list: %s', mock_sha256.call_args_list)
+    assert mock_sha256.call_args_list == [mocker.call('/dev/null/path/to/collection.tar.gz')]
 
 
 # Note that select_collection_version just gets the full version object
