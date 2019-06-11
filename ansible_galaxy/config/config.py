@@ -25,10 +25,10 @@ class Config(object):
     @classmethod
     def from_dict(cls, data):
         inst = cls()
-        inst.server = data.get('server', inst.server)
-        inst.collections_path = data.get('collections_path', inst.collections_path)
-        inst.global_collections_path = data.get('global_collections_path', inst.global_collections_path)
-        inst.options = data.get('options', inst.options)
+        inst.server = data.get('server') or inst.server
+        inst.collections_path = data.get('collections_path') or inst.collections_path
+        inst.global_collections_path = data.get('global_collections_path') or inst.global_collections_path
+        inst.options = data.get('options') or inst.options
         return inst
 
 

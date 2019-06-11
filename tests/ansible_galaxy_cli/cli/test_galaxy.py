@@ -94,6 +94,18 @@ def test_run_list(mazer_args_for_test):
     log.debug('res: %s', res)
 
 
+def test_version_invalid_config(mazer_args_for_test, mocker):
+
+    mocker.patch('ansible_galaxy_cli.cli.galaxy.config.config_file.load', return_value=None)
+    cli = galaxy.GalaxyCLI(args=mazer_args_for_test + ['version'])
+    cli.parse()
+    res = cli.run()
+
+    log.debug('mat: %s', mazer_args_for_test)
+    log.debug('res: %s', res)
+    assert res == 0
+
+
 def test_publish_no_args(mazer_args_for_test):
     cli = galaxy.GalaxyCLI(args=mazer_args_for_test + ['publish'])
     cli.parse()

@@ -56,6 +56,27 @@ def test_config_from_dict():
     assert config_.options['some_option'] == 'some_option_value'
 
 
+def test_config_from_dict_with_none_values():
+    config_data = OrderedDict([
+        ('server', None),
+        ('collections_path', None),
+        ('globals_collections_path', None),
+        ('options', None),
+    ])
+
+    config_ = config.Config.from_dict(config_data)
+    assert_object(config_)
+
+    # If the yaml/config_data has None values for server/options, should
+    # get empty dicts instead
+    # See https://github.com/ansible/mazer/issues/283
+    assert config_.server == {}
+    assert config_.options == {}
+    # collections_path attrs can be 'unset' to None
+    assert config_.collections_path is None
+    assert config_.global_collections_path is None
+
+
 def test_config_as_dict_empty():
     config_ = config.Config()
     config_data = config_.as_dict()
