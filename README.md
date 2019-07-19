@@ -5,6 +5,10 @@ A command-line tool for managing [Ansible](https://github.com/ansible/ansible) c
 **Note:** Mazer is most useful when used with a version of Ansible that understands mazer installed content.
 Currently that means ansible 2.8 and later.
 
+## DEPRECATION WARNING
+
+Mazer will be deprecated with the release of Ansible 2.9. The functionality developed in Mazer will migrate to the `ansible-galaxy` command line tool. See [PR 57106](https://github.com/ansible/ansible/pull/57106) for details. 
+
 ### Expect breaking changes!
 
 Mazer is experimental, and currently only available for tech-preview. Use with lots of caution! It is not intended for use in
